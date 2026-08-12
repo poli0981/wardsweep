@@ -1,0 +1,67 @@
+# Caller stub → poli0981/.github/.github/workflows/dotnet-ci.yml
+#
+# NOTE: explicit `permissions:` required — see rust-ci.yml.
+name: .NET CI
+
+on:
+  push:
+    branches: [main]
+    paths: ['ui/**', '*.sln', 'Directory.Build.props', '.github/workflows/dotnet-ci.yml']
+  pull_request:
+    paths: ['ui/**', '*.sln', 'Directory.Build.props']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+concurrency:
+  group: dotnet-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    uses: poli0981/.github/.github/workflows/dotnet-ci.yml@main
+    permissions:
+      contents: read
+      checks: write
+    with:
+      runs-on: windows-latest
+      dotnet-version: '10.0.x'
+      solution: 'WardSweep.sln'
+      configuration: 'Release'
+      treat-warnings-as-errors: true
+      run-format-check: true
+
+  vulnerable-packages:
+    # Hard gate. `dotnet list package --vulnerable` failing fails the build.
+    uses: poli0981/.github/.github/workflows/dotnet-vuln-scan.yml@main
+    permissions:
+      contents: read
+      security-events: write
+    with:
+      runs-on: windows-latest
+      dotnet-version: '10.0.x'
+      include-transitive: true
+      fail-on-vulnerable: true
+
+  xaml-style:
+    uses: poli0981/.github/.github/workflows/xamlstyler-check.yml@main
+    permissions:
+      contents: read
+    with:
+      path: 'ui/**/*.xaml'
+
+  arch-tests:
+    # Asserts no ViewModel references System.IO or Microsoft.Win32.Registry.
+    # The UI process must contain no destructive code path — docs/09-UI-SPEC.md.
+    uses: poli0981/.github/.github/workflows/dotnet-ci.yml@main
+    permissions:
+      contents: read
+      checks: write
+    with:
+      runs-on: windows-latest
+      dotnet-version: '10.0.x'
+      test-filter: 'Category=Architecture'
+      run-build-only: false

@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+
+    <!-- release.yml packs WardSweep.UI.exe by name; this is where that comes from. -->
+    <AssemblyName>WardSweep.UI</AssemblyName>
+    <RootNamespace>WardSweep.UI</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+
+    <!--
+      docs/10-PERF-BUDGET.md: desktop workload, latency over throughput.
+      Server GC would trade the responsiveness this UI is judged on for
+      throughput it never needs.
+    -->
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+    <TieredPGO>true</TieredPGO>
+
+    <!-- docs/17-I18N.md: English is the source language, Vietnamese ships at v1.0. -->
+    <SatelliteResourceLanguages>en;vi</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WPF-UI" />
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <!--
+      Serilog is not referenced yet. docs/18-LOGGING.md specifies a redaction
+      enricher rather than redaction at call sites, and adding the sink before
+      the enricher exists would mean shipping a logger that writes full user
+      paths. Versions are pinned in Directory.Packages.props, ready.
+    -->
+  </ItemGroup>
+
+  <!--
+    No <Generator> on the .resx: PublicResXFileCodeGenerator only runs inside
+    Visual Studio, so a CI build would have no accessor at all. Resources are
+    reached through the hand-written Resources/Strings.cs instead.
+  -->
+
+</Project>

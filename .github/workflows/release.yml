@@ -1,0 +1,148 @@
+# Release pipeline.
+#
+# Produces installer + portable zip, records SHA-256 for every artifact, and
+# emits the verification block for the release notes.
+#
+# VirusTotal upload and false-positive filing are MANUAL post-release steps —
+# see docs/14-DISTRIBUTION-TRUST.md. They are intentionally not automated: the
+# permalink must be checked by a human before it goes into the notes.
+#
+# NOTE: explicit `permissions:` required — see rust-ci.yml.
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version (e.g. 0.5.0)'
+        required: true
+
+permissions:
+  contents: write
+  attestations: write
+  id-token: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: windows-latest
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+
+      - id: ver
+        shell: pwsh
+        run: |
+          $v = if ($env:GITHUB_REF -like 'refs/tags/*') {
+            $env:GITHUB_REF -replace 'refs/tags/v',''
+          } else { '${{ inputs.version }}' }
+          "version=$v" >> $env:GITHUB_OUTPUT
+
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: '10.0.x' }
+
+      # No packing, no obfuscation — packers are the strongest AV heuristic.
+      # See docs/14-DISTRIBUTION-TRUST.md.
+      - name: Build broker + CLI
+        # --locked so the release is built from the committed Cargo.lock and not
+        # from whatever resolved that morning. docs/14-DISTRIBUTION-TRUST.md
+        # rests on anyone being able to rebuild these bytes.
+        run: cargo build --release --workspace --locked
+
+      - name: Build UI
+        run: dotnet publish ui/WardSweep.UI -c Release -r win-x64 --self-contained false -o artifacts/publish
+
+      - name: Stage native binaries and catalog
+        # The Rust binaries are built into target/release and are not otherwise
+        # copied anywhere the packaging steps look. docs/14 lists wardsweep.exe
+        # and wardsweep-broker.exe as release artifacts requiring their own
+        # SHA-256 and VirusTotal entries, so they have to be in the pack dir.
+        shell: pwsh
+        run: |
+          Copy-Item target/release/wardsweep.exe        artifacts/publish/ -Force
+          Copy-Item target/release/wardsweep-broker.exe artifacts/publish/ -Force
+          # Ship the PDBs: docs/14 lists them as a detection-reduction measure.
+          Copy-Item target/release/*.pdb artifacts/publish/ -Force -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Force artifacts/publish/catalog | Out-Null
+          Copy-Item catalog/catalog.toml     artifacts/publish/catalog/ -Force
+          Copy-Item catalog/catalog.toml.sig artifacts/publish/catalog/ -Force
+          Get-ChildItem artifacts/publish
+
+      - name: Package (Velopack)
+        shell: pwsh
+        run: |
+          dotnet tool install -g vpk
+          vpk pack --packId WardSweep --packVersion ${{ steps.ver.outputs.version }} `
+                   --packDir artifacts/publish --mainExe WardSweep.UI.exe `
+                   --outputDir artifacts
+
+      - name: Portable zip
+        shell: pwsh
+        run: Compress-Archive -Path artifacts/publish/* -DestinationPath "artifacts/WardSweep-${{ steps.ver.outputs.version }}-portable.zip"
+
+      - name: Compute SHA-256
+        shell: pwsh
+        run: |
+          # The header rows matter: body rows alone are not a markdown table and
+          # render as one run-on line in the release notes.
+          $lines = @(
+            '### Verification'
+            ''
+            'These builds are **not code-signed**. SmartScreen and some antivirus'
+            'engines will flag them; see docs/14-DISTRIBUTION-TRUST.md. Verify the'
+            'SHA-256 of what you downloaded against this table.'
+            ''
+            '| Artifact | SHA-256 | VirusTotal |'
+            '|---|---|---|'
+          )
+          $lines += Get-ChildItem artifacts -Include *.exe,*.zip -Recurse | ForEach-Object {
+            $h = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
+            "| ``$($_.Name)`` | ``$h`` | [report](https://www.virustotal.com/gui/file/$h) |"
+          }
+          $lines | Out-File artifacts/VERIFICATION.md -Encoding utf8
+          Get-Content artifacts/VERIFICATION.md
+
+      - uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: 'artifacts/*.exe, artifacts/*.zip'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts
+          path: artifacts/
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { name: release-artifacts, path: artifacts }
+
+      - name: Create draft release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true   # NEVER auto-publish: VirusTotal links go in by hand
+          body_path: artifacts/VERIFICATION.md
+          files: |
+            artifacts/*.exe
+            artifacts/*.zip
+
+      - name: Post-release checklist
+        run: |
+          echo "::notice::Draft created. Before publishing:"
+          echo "::notice::1. Upload each artifact to VirusTotal"
+          echo "::notice::2. Wait ~10 min for engines to settle"
+          echo "::notice::3. Paste permalinks + detection count into the notes"
+          echo "::notice::4. File false positives per docs/14-DISTRIBUTION-TRUST.md"
+          echo "::notice::5. Update docs/RELEASES.md"
+          echo "::notice::6. Then publish"

@@ -1,0 +1,85 @@
+# Catalog integrity gate.
+#
+# A catalog that would be refused at runtime must fail CI, not ship and fail on
+# a user's machine.
+#
+# NOTE: explicit `permissions:` required — see rust-ci.yml.
+name: Catalog Verify
+
+on:
+  push:
+    branches: [main]
+    # The tool and its checks are as much a part of this gate as the data, so a
+    # change to either re-runs it.
+    paths:
+      - 'catalog/**'
+      - 'tools/catalog/**'
+      - 'core/src/safety/**'
+      - 'core/src/catalog/**'
+      - 'Cargo.*'
+      - '.github/workflows/catalog-verify.yml'
+  pull_request:
+    paths:
+      - 'catalog/**'
+      - 'tools/catalog/**'
+      - 'core/src/safety/**'
+      - 'core/src/catalog/**'
+      - 'Cargo.*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Build catalog tool
+        run: cargo build -p wardsweep-catalog --release
+
+      - name: Schema validation
+        run: ./target/release/wardsweep-catalog validate catalog/catalog.toml
+
+      - name: Ed25519 signature
+        run: ./target/release/wardsweep-catalog verify
+             --toml catalog/catalog.toml
+             --sig  catalog/catalog.toml.sig
+             --pubkey catalog/pubkey.hex
+
+      - name: Deny-list conflict check
+        # Any catalog path resolving into a protected location is a hard failure.
+        run: ./target/release/wardsweep-catalog check-denylist catalog/catalog.toml
+
+      - name: Referential integrity
+        # Every game.anticheat id must exist; no duplicate or reused ids.
+        run: ./target/release/wardsweep-catalog check-refs catalog/catalog.toml
+
+      - name: Shared-flag audit
+        # Entries with shared=false must carry evidence. Defaulting to false
+        # without it is the G1 failure mode — docs/02-SAFETY-GATE.md.
+        run: ./target/release/wardsweep-catalog audit-shared catalog/catalog.toml --require-evidence
+
+      - name: Example catalog
+        # catalog.example.toml is the template every contribution starts from.
+        # It carries no signature, so `verify` does not apply, but if it stops
+        # validating then every new entry starts from something broken.
+        run: |
+          ./target/release/wardsweep-catalog validate       catalog/catalog.example.toml
+          ./target/release/wardsweep-catalog check-refs     catalog/catalog.example.toml
+          ./target/release/wardsweep-catalog check-denylist catalog/catalog.example.toml
+          ./target/release/wardsweep-catalog audit-shared   catalog/catalog.example.toml --require-evidence
+
+      - name: Signed bytes survived checkout
+        # The signature covers raw bytes. If .gitattributes stops marking the
+        # catalog `-text`, git rewrites line endings on this runner and
+        # verification fails for a reason that looks like a crypto bug.
+        run: |
+          if grep -qU $'\r' catalog/catalog.toml; then
+            echo "::error::catalog.toml contains CRLF; see .gitattributes"
+            exit 1
+          fi

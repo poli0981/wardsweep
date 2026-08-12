@@ -1,0 +1,59 @@
+[workspace]
+resolver = "3"
+members = ["core", "cli", "tools/catalog", "tools/observe"]
+# docs/13-P0-SPIKES.md: "Each spike is throwaway code." Excluding the directory
+# is what makes that structurally true — `cargo build --release --workspace`
+# provably cannot ship anything under spikes/.
+exclude = ["spikes"]
+
+[workspace.package]
+version = "0.0.1"
+edition = "2024"
+rust-version = "1.94"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/poli0981/WardSweep"
+publish = false
+
+[workspace.dependencies]
+wardsweep-core = { path = "core", version = "0.0.1" }
+
+aho-corasick = "1.1.5"
+anyhow = "1.0.104"
+clap = { version = "4.6.6", features = ["derive"] }
+ed25519-dalek = "3.0.0"
+getrandom = "0.4.3"
+hex = "0.4.3"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+thiserror = "2.0.20"
+toml = "1.1.4"
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
+
+# default-features off drops plotters and its image stack. The lint job builds
+# --all-targets on ubuntu, so benches are compiled there too and every avoidable
+# dependency is avoidable build time.
+criterion = { version = "0.7.0", default-features = false, features = ["cargo_bench_support"] }
+
+# Windows API surface. Kept out of [workspace.dependencies] consumers except
+# behind [target.'cfg(windows)'.dependencies] — the clippy job runs on ubuntu
+# with --all-features, so this must never become reachable via a feature flag.
+windows = { version = "0.62.2" }
+
+[workspace.lints.rust]
+# CLAUDE.md: every unsafe block needs a `// SAFETY:` comment, and an unsafe fn
+# body is not implicitly an unsafe block.
+unsafe_op_in_unsafe_fn = "forbid"
+missing_docs = "warn"
+
+[workspace.lints.clippy]
+# The lint job runs `-W clippy::pedantic -D warnings` on ubuntu-latest.
+# Declaring it here means `cargo clippy` locally matches CI without extra flags.
+pedantic = { level = "warn", priority = -1 }
+
+[profile.release]
+# docs/10-PERF-BUDGET.md: broker binary budget is 6 MB, hard fail 12 MB.
+# docs/14-DISTRIBUTION-TRUST.md: no packing or obfuscation — packers are the
+# strongest AV heuristic. These are ordinary optimisation settings only.
+lto = "thin"
+codegen-units = 1

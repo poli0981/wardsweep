@@ -1,0 +1,26 @@
+# WardSweep anti-cheat catalog
+# Licence: CC BY-SA 4.0 — see COPYING.md
+#
+# ############################################################################
+# THIS CATALOG IS INTENTIONALLY EMPTY.
+#
+# CONTRIBUTING.md rejects entries derived from memory, from a forum post, or
+# from another tool's source. docs/16-OBSERVATION-HARNESS.md requires every
+# shipping entry to come from an observed clean -> install -> uninstall diff on
+# a real machine. No such observation exists yet, so nothing here has earned
+# its place.
+#
+# An empty catalog finds nothing, which is honest and harmless. A guessed
+# catalog deletes the wrong thing on someone's machine, which is the exact
+# failure this project exists to prevent.
+#
+# catalog/catalog.example.toml is the annotated template to copy from.
+# To add an entry: docs/16-OBSERVATION-HARNESS.md, then docs/04-CATALOG-SCHEMA.md.
+# ############################################################################
+#
+# This file is signed. catalog.toml.sig is an Ed25519 signature over its RAW
+# BYTES, so it must round-trip byte for byte — see .gitattributes.
+
+schema_version      = 1
+catalog_version     = "0.0.1"
+minimum_app_version = "0.1.0"

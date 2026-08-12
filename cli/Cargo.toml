@@ -1,0 +1,31 @@
+[package]
+name = "wardsweep-cli"
+description = "WardSweep command-line frontend and elevated broker host."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+# Two binaries from one package because docs/03-ARCHITECTURE.md is explicit that
+# "the broker is also the CLI backend, so the CLI is not a second
+# implementation". A separate top-level broker/ directory would also fall
+# outside rust-ci.yml's path filters and never be built by CI.
+[[bin]]
+name = "wardsweep"
+path = "src/bin/wardsweep.rs"
+
+[[bin]]
+name = "wardsweep-broker"
+path = "src/bin/wardsweep-broker.rs"
+
+[dependencies]
+clap.workspace = true
+serde_json.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+wardsweep-core.workspace = true

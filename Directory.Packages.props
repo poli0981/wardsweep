@@ -1,0 +1,38 @@
+<Project>
+
+  <!--
+    Central package management. Versions live here so the transitive
+    vulnerability scan in dotnet-ci.yml, which is a hard gate, has one place to
+    report against and one place to fix.
+  -->
+
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+
+  <ItemGroup Label="UI">
+    <PackageVersion Include="WPF-UI" Version="4.3.0" />
+    <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
+    <PackageVersion Include="Serilog" Version="4.4.0" />
+    <PackageVersion Include="Serilog.Extensions.Hosting" Version="9.0.0" />
+    <PackageVersion Include="Serilog.Sinks.File" Version="7.0.0" />
+  </ItemGroup>
+
+  <ItemGroup Label="Testing">
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+
+  <ItemGroup Label="Analysers">
+    <!--
+      Applied to every project. CLAUDE.md requires Roslynator and
+      Meziantou.Analyzer alongside TreatWarningsAsErrors.
+    -->
+    <GlobalPackageReference Include="Roslynator.Analyzers" Version="4.14.0" />
+    <GlobalPackageReference Include="Meziantou.Analyzer" Version="2.0.242" />
+  </ItemGroup>
+
+</Project>

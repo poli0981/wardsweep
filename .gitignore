@@ -1,0 +1,47 @@
+# --- Rust ---------------------------------------------------------------
+# `/target*/` rather than `/target/`: cross-linting the workspace for Linux
+# uses a separate CARGO_TARGET_DIR so the two platforms do not thrash one
+# another's artefacts.
+/target*/
+**/*.rs.bk
+*.pdb
+
+# Cargo.lock IS committed: this workspace produces binaries, and
+# THIRD-PARTY-NOTICES.md is generated from it. Do not ignore it.
+
+# --- .NET ---------------------------------------------------------------
+# Scoped to where MSBuild actually writes, NOT a bare `**/bin/`. Cargo puts
+# binary crate roots in `src/bin/`, so the usual .NET pattern would silently
+# exclude cli/src/bin/ — both Rust executables — from the repository.
+ui/**/bin/
+ui/**/obj/
+spikes/**/bin/
+spikes/**/obj/
+*.user
+*.suo
+.vs/
+
+# packages.lock.json IS committed: the dotnet-vuln-scan CI job resolves
+# transitive packages from it. Do not ignore it.
+
+# --- Release artefacts --------------------------------------------------
+/artifacts/
+
+# --- Catalog signing ----------------------------------------------------
+# The Ed25519 secret key must never reach the repository. catalog/pubkey.hex
+# is committed on purpose; everything below is not.
+*.key
+*.sk
+secret*.hex
+catalog/*.secret*
+
+# --- Observation harness ------------------------------------------------
+# Diffs are committed, raw snapshots are not: they contain full path listings
+# of a real machine. See docs/16-OBSERVATION-HARNESS.md.
+observations/**/*-snapshot.json
+observations/**/snapshot-*.json
+*.snapshot.json
+
+# --- Editors ------------------------------------------------------------
+/.idea/
+*.swp

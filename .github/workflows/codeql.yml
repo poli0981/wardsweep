@@ -1,0 +1,30 @@
+# Caller stub → poli0981/.github/.github/workflows/codeql.yml
+#
+# NOTE: explicit `permissions:` required — see rust-ci.yml.
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 3 * * 1'
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  analyze:
+    uses: poli0981/.github/.github/workflows/codeql.yml@main
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    with:
+      languages: 'csharp'
+      queries: 'security-extended'
+      build-mode: 'manual'
+      build-command: 'dotnet build WardSweep.sln -c Release'

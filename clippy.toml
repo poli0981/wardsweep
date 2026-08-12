@@ -1,0 +1,17 @@
+# Proper nouns that appear throughout the doc comments and are not code items.
+# `..` keeps clippy's own default list rather than replacing it.
+doc-valid-idents = [
+  "WardSweep",
+  "BattlEye",
+  "EasyAntiCheat",
+  "SmartScreen",
+  "VirusTotal",
+  "PowerShell",
+  "GameGuard",
+  "AntiCheat",
+  "..",
+]
+
+# docs/10-PERF-BUDGET.md budgets memory tightly, so a large value moved by
+# accident is worth a warning rather than a shrug.
+too-many-lines-threshold = 150

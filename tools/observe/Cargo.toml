@@ -1,0 +1,22 @@
+[package]
+name = "wardsweep-observe"
+description = "Read-only snapshot and diff harness used to derive catalog entries from real machines."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+# A separate binary from the broker on purpose: docs/16-OBSERVATION-HARNESS.md
+# requires the harness to have no removal code path at all. `wardsweep observe`
+# in the CLI forwards to this executable rather than linking its logic in.
+[[bin]]
+name = "wardsweep-observe"
+path = "src/main.rs"
+
+[dependencies]
+clap.workspace = true

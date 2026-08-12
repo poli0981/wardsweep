@@ -1,0 +1,28 @@
+# Default: let git normalise line endings for text.
+* text=auto eol=lf
+
+# --- Signed bytes -------------------------------------------------------
+# The Ed25519 signature in catalog.toml.sig covers the RAW BYTES of
+# catalog.toml (docs/04-CATALOG-SCHEMA.md). If git rewrites line endings on
+# checkout, the bytes on the ubuntu CI runner differ from the bytes that were
+# signed on Windows and verification fails for a reason that looks like a
+# cryptography bug and is not. These must round-trip byte for byte.
+catalog/catalog.toml         -text
+catalog/catalog.example.toml -text
+catalog/*.sig                -text binary
+catalog/pubkey.hex           -text
+
+# --- Windows-only scripts ----------------------------------------------
+*.ps1  text eol=crlf
+*.cmd  text eol=crlf
+*.bat  text eol=crlf
+
+# --- Binary -------------------------------------------------------------
+*.ico  binary
+*.png  binary
+*.sys  binary
+*.exe  binary
+
+# --- Generated ----------------------------------------------------------
+Cargo.lock          linguist-generated=true
+**/packages.lock.json linguist-generated=true

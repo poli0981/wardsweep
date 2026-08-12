@@ -1,0 +1,102 @@
+# Seed templates for the scan_corpus benchmark.
+#
+# Expanded deterministically by core/benches/scan_corpus.rs into a corpus of
+# ~20k paths. Templates rather than a literal corpus so the repository stays
+# small: docs/12-TESTING-STRATEGY.md wants ~120k files, and committing them
+# would be minutes of clone time for a benchmark that measures string work.
+#
+# Tokens: {n} -> index, {user} -> profile name, {vol} -> drive letter.
+#
+# The list deliberately mixes paths the deny-list allows, paths it refuses, and
+# the adversarial spellings from docs/12, so the measured cost reflects the real
+# mix rather than only the fast accept path.
+C:\Program Files (x86)\EasyAntiCheat\{n}.dll
+C:\Program Files\EasyAntiCheat\bin\{n}.exe
+C:\ProgramData\EasyAntiCheat\logs\{n}.log
+C:\ProgramData\EasyAntiCheat\cache\{n}.bin
+C:\Program Files (x86)\BattlEye\{n}.dll
+C:\Program Files\BattlEye\bin\{n}.exe
+C:\ProgramData\BattlEye\logs\{n}.log
+C:\ProgramData\BattlEye\cache\{n}.bin
+C:\Program Files (x86)\Riot Vanguard\{n}.dll
+C:\Program Files\Riot Vanguard\bin\{n}.exe
+C:\ProgramData\Riot Vanguard\logs\{n}.log
+C:\ProgramData\Riot Vanguard\cache\{n}.bin
+C:\Program Files (x86)\nProtect\{n}.dll
+C:\Program Files\nProtect\bin\{n}.exe
+C:\ProgramData\nProtect\logs\{n}.log
+C:\ProgramData\nProtect\cache\{n}.bin
+C:\Program Files (x86)\XIGNCODE3\{n}.dll
+C:\Program Files\XIGNCODE3\bin\{n}.exe
+C:\ProgramData\XIGNCODE3\logs\{n}.log
+C:\ProgramData\XIGNCODE3\cache\{n}.bin
+C:\Program Files (x86)\Denuvo\{n}.dll
+C:\Program Files\Denuvo\bin\{n}.exe
+C:\ProgramData\Denuvo\logs\{n}.log
+C:\ProgramData\Denuvo\cache\{n}.bin
+C:\Program Files (x86)\FACEIT AC\{n}.dll
+C:\Program Files\FACEIT AC\bin\{n}.exe
+C:\ProgramData\FACEIT AC\logs\{n}.log
+C:\ProgramData\FACEIT AC\cache\{n}.bin
+C:\Program Files (x86)\Equ8\{n}.dll
+C:\Program Files\Equ8\bin\{n}.exe
+C:\ProgramData\Equ8\logs\{n}.log
+C:\ProgramData\Equ8\cache\{n}.bin
+C:\Program Files (x86)\mhyprot\{n}.dll
+C:\Program Files\mhyprot\bin\{n}.exe
+C:\ProgramData\mhyprot\logs\{n}.log
+C:\ProgramData\mhyprot\cache\{n}.bin
+C:\Program Files (x86)\PunkBuster\{n}.dll
+C:\Program Files\PunkBuster\bin\{n}.exe
+C:\ProgramData\PunkBuster\logs\{n}.log
+C:\ProgramData\PunkBuster\cache\{n}.bin
+C:\Users\{user}\AppData\Local\Example Shooter\Saved\Config\{n}.ini
+C:\Users\{user}\AppData\Local\Example Shooter\Cache\shader_{n}.cache
+C:\Users\{user}\AppData\Roaming\Example Shooter\Logs\{n}.log
+{vol}:\SteamLibrary\steamapps\common\Example Shooter\Binaries\Win64\{n}.pak
+{vol}:\Epic Games\Example Shooter\Engine\Content\{n}.uasset
+C:\Users\{user}\AppData\Local\Example Arena\Saved\Config\{n}.ini
+C:\Users\{user}\AppData\Local\Example Arena\Cache\shader_{n}.cache
+C:\Users\{user}\AppData\Roaming\Example Arena\Logs\{n}.log
+{vol}:\SteamLibrary\steamapps\common\Example Arena\Binaries\Win64\{n}.pak
+{vol}:\Epic Games\Example Arena\Engine\Content\{n}.uasset
+C:\Users\{user}\AppData\Local\Frontier Ops\Saved\Config\{n}.ini
+C:\Users\{user}\AppData\Local\Frontier Ops\Cache\shader_{n}.cache
+C:\Users\{user}\AppData\Roaming\Frontier Ops\Logs\{n}.log
+{vol}:\SteamLibrary\steamapps\common\Frontier Ops\Binaries\Win64\{n}.pak
+{vol}:\Epic Games\Frontier Ops\Engine\Content\{n}.uasset
+C:\Users\{user}\AppData\Local\Nightfall\Saved\Config\{n}.ini
+C:\Users\{user}\AppData\Local\Nightfall\Cache\shader_{n}.cache
+C:\Users\{user}\AppData\Roaming\Nightfall\Logs\{n}.log
+{vol}:\SteamLibrary\steamapps\common\Nightfall\Binaries\Win64\{n}.pak
+{vol}:\Epic Games\Nightfall\Engine\Content\{n}.uasset
+C:\Users\{user}\AppData\Local\Redline GP\Saved\Config\{n}.ini
+C:\Users\{user}\AppData\Local\Redline GP\Cache\shader_{n}.cache
+C:\Users\{user}\AppData\Roaming\Redline GP\Logs\{n}.log
+{vol}:\SteamLibrary\steamapps\common\Redline GP\Binaries\Win64\{n}.pak
+{vol}:\Epic Games\Redline GP\Engine\Content\{n}.uasset
+C:\Users\{user}\AppData\Local\Sector 12\Saved\Config\{n}.ini
+C:\Users\{user}\AppData\Local\Sector 12\Cache\shader_{n}.cache
+C:\Users\{user}\AppData\Roaming\Sector 12\Logs\{n}.log
+{vol}:\SteamLibrary\steamapps\common\Sector 12\Binaries\Win64\{n}.pak
+{vol}:\Epic Games\Sector 12\Engine\Content\{n}.uasset
+C:\Users\{user}\AppData\Local\Vanguard Trials\Saved\Config\{n}.ini
+C:\Users\{user}\AppData\Local\Vanguard Trials\Cache\shader_{n}.cache
+C:\Users\{user}\AppData\Roaming\Vanguard Trials\Logs\{n}.log
+{vol}:\SteamLibrary\steamapps\common\Vanguard Trials\Binaries\Win64\{n}.pak
+{vol}:\Epic Games\Vanguard Trials\Engine\Content\{n}.uasset
+C:\Users\{user}\AppData\Local\Iron Harvest X\Saved\Config\{n}.ini
+C:\Users\{user}\AppData\Local\Iron Harvest X\Cache\shader_{n}.cache
+C:\Users\{user}\AppData\Roaming\Iron Harvest X\Logs\{n}.log
+{vol}:\SteamLibrary\steamapps\common\Iron Harvest X\Binaries\Win64\{n}.pak
+{vol}:\Epic Games\Iron Harvest X\Engine\Content\{n}.uasset
+C:\Windows\System32\drivers\{n}.sys
+C:\Windows\System32\{n}.dll
+C:\Windows\Temp\{n}.tmp
+C:\ProgramData\Microsoft\Windows\{n}\index.dat
+C:\Users\{user}\NTUSER.DAT.LOG{n}
+\?\C:\Program Files (x86)\EasyAntiCheat\{n}.dll
+C:/Users/{user}/AppData/Local/Temp/{n}.tmp
+C:\Program Files\..\Program Files\Common Files\{n}.dll
+\localhost\C$\Windows\System32\{n}.dll
+C:\PROGRA~1\{n}\bin\{n}.exe
