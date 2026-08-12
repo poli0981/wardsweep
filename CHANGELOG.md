@@ -120,6 +120,11 @@ maintainer decision with rationale before it changes.
 - `dotnet list package --vulnerable` exits 0 even when it finds something, so
   the job parses its output instead of trusting the exit code.
 
+### Handover
+- `docs/PROGRESS.md` records what is true now, what is deliberately absent,
+  and the next four pieces of work in order. `CHANGELOG.md` is history;
+  that file is state.
+
 ### Known gaps
 - `THIRD-PARTY-NOTICES.md` staleness is not checked by CI, although both that
   file and `COPYING.md` previously claimed it was. Both now say so plainly.

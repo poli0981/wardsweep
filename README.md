@@ -88,12 +88,14 @@ game that references it.
 | 18 | [Logging](docs/18-LOGGING.md) | Diagnostics |
 | 19 | [Roadmap](docs/19-ROADMAP.md) | Planning |
 | 20 | [Glossary](docs/20-GLOSSARY.md) | Terminology |
+| — | [Progress & Next Steps](docs/PROGRESS.md) | **Picking the work back up** |
 | — | [Releases & Detections](docs/RELEASES.md) | Hashes, VirusTotal links, FP status |
 | — | [Disclaimer](DISCLAIMER.md) | **Before first run** |
 
 ## Status
 
-Pre-alpha. **No removal code exists yet.** The seven P0 spikes in
+Pre-alpha. **No removal code exists yet.** Current state and what comes
+next are in [`docs/PROGRESS.md`](docs/PROGRESS.md). The seven P0 spikes in
 [`docs/13-P0-SPIKES.md`](docs/13-P0-SPIKES.md) are go/no-go gates: three of them
 (S1 boot-start driver removal, S2 shared anti-cheat reference counting, S5
 rollback fidelity) decide whether the automatic-removal product is viable at all.
