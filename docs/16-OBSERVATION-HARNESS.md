@@ -50,7 +50,9 @@ human review, never a finished entry — see "Review before submitting" below.
 | Environment | Windows build, locale, installed launchers and versions |
 
 Snapshots are **read-only**. The harness has no removal code path at all — it
-is a separate binary from the broker for exactly this reason.
+ships as `wardsweep-observe.exe`, built from `tools/observe/`, for exactly
+this reason. `wardsweep observe …` in [`11`](11-CLI-REFERENCE.md) forwards to
+it rather than linking its logic into the broker frontend.
 
 Size: roughly 40–120 MB uncompressed, 5–15 MB compressed. Committed diffs, not
 committed snapshots.

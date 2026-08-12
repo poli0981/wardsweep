@@ -136,7 +136,13 @@ signature status, entry counts and schema version.
 
 ## `observe`
 
-Wraps the observation harness — see [`16`](16-OBSERVATION-HARNESS.md).
+Forwards to `wardsweep-observe.exe`, a separate read-only binary — see
+[`16`](16-OBSERVATION-HARNESS.md). The subcommand is a thin alias: the
+harness has no removal code path and does not link the broker's, and
+keeping them as separate executables is what makes that true rather than
+merely intended. Arguments are passed through unchanged, so
+`wardsweep observe snapshot -o x.json` and
+`wardsweep-observe snapshot -o x.json` are the same command.
 
 ```
 wardsweep observe snapshot -o before.json

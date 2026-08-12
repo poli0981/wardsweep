@@ -1,6 +1,7 @@
 # 06 — Removal Pipeline
 
-Six stages. Stages 0–2 are recoverable; 3 onward are quarantine-backed. The
+Seven stages, numbered 0–6. Stages 0–2 are recoverable; 3 onward are
+quarantine-backed. The
 pipeline may span a reboot between stages 3 and 5.
 
 ```

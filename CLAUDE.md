@@ -62,7 +62,7 @@ core/          Rust broker (elevated, headless)
   src/safety/  Deny-list, gate checks, refcount — highest scrutiny
   src/scan/    Detection engine
   src/plan/    Plan builder, refcount resolver
-  src/exec/    Six-stage pipeline
+  src/exec/    Stages 0-6 pipeline
   src/quar/    Quarantine + rollback
 cli/           Rust CLI frontend over core
 ui/            C# WPF + WPF-UI

@@ -50,7 +50,7 @@ core/
 ├── catalog/       TOML parse, Ed25519 verify, index build
 ├── scan/          FS walker, registry walker, service enum, Authenticode
 ├── plan/          artifact tree, refcount resolver, risk classification
-├── exec/          six-stage pipeline, reboot orchestration
+├── exec/          stages 0-6 pipeline, reboot orchestration
 ├── quar/          quarantine store, manifests, rollback
 ├── report/        HTML / MD / JSON emitters
 └── ipc/           pipe server, command dispatch

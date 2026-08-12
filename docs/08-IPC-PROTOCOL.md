@@ -17,8 +17,12 @@ line, so the pipe name is unpredictable and per-launch.
   `Administrators` full control, plus the launching user's SID. No `Everyone`.
 - `PIPE_REJECT_REMOTE_CLIENTS` set. Local only.
 - Broker calls `GetNamedPipeClientProcessId`, resolves the image path, and
-  verifies it matches the expected UI binary and its Authenticode signature
-  before accepting any command.
+  verifies it matches the expected UI binary — same directory as the broker,
+  expected filename, and the session GUID it was launched with — before
+  accepting any command. The Authenticode signature is checked **when one is
+  present**, and its absence is not a rejection: releases are unsigned by
+  design ([`14`](14-DISTRIBUTION-TRUST.md)), so requiring a signature here
+  would mean the check never passes on a real build.
 - One client. A second connect attempt is refused, not queued.
 
 ## Framing

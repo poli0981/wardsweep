@@ -6,8 +6,12 @@ their licences.
 > **This file is generated.** The authoritative version is produced at build time by
 > `cargo about generate` (Rust) and `dotnet-project-licenses` (C#), then committed. The
 > tables below are the maintained template; **regenerate before every release** so they
-> reflect the exact versions in `Cargo.lock` and `packages.lock.json`. CI fails if the
-> committed file is stale. Do not hand-edit the generated sections.
+> reflect the exact versions in `Cargo.lock` and `packages.lock.json`. Do not hand-edit
+> the generated sections.
+>
+> **Staleness is not yet checked by CI.** No workflow compares this file against a
+> fresh generation, so nothing will stop an out-of-date version from shipping.
+> Regenerating is a release-checklist item until that check exists — see `CHANGELOG.md`.
 >
 > Licence identifiers use [SPDX](https://spdx.org/licenses/). Full licence texts are
 > bundled under `licenses/` and viewable from the About page.

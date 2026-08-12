@@ -142,8 +142,15 @@ stage — see [`06`](06-REMOVAL-PIPELINE.md) and [`13`](13-P0-SPIKES.md) S1.
 `WinVerifyTrust` with `WTD_UI_NONE`, `WTD_REVOKE_WHOLECHAIN`, then extract the
 signer CN via `CryptQueryObject` / `CertGetNameStringW`.
 
-Cached by `(path, size, mtime, file_id)` for the session. Verification is the
-expensive step, so it runs only after Bloom + Aho–Corasick have narrowed the set.
+Cached by `(volume_serial, file_id, size, mtime)` for the session — file ID
+rather than path, so a file seen through two paths is verified once. See
+[`10`](10-PERF-BUDGET.md). Verification is the expensive step, so it runs only
+after Bloom + Aho–Corasick have narrowed the set.
+
+> A volume serial number is not a volume GUID and is not a hardware
+> fingerprint; it identifies a filesystem, changes on reformat, and never
+> leaves the process. G3 is not engaged. Stated here because a reviewer working
+> through the [`02`](02-SAFETY-GATE.md) checklist will reasonably ask.
 
 Expired certificates on old anti-cheat builds are **normal** and are not
 downgraded — countersigned timestamps are honoured.
@@ -182,8 +189,21 @@ HKLM\SYSTEM\CurrentControlSet\Services\*   except catalog-named services
 HKLM\SAM\**  HKLM\SECURITY\**  HKLM\BCD*
 Any path resolving to a volume root
 Any path traversing a reparse point
-Any path shorter than 4 components under a drive root
+Any top-level directory targeted as a whole: Windows, Users, ProgramData,
+  Program Files, Program Files (x86), $Recycle.Bin, System Volume Information,
+  Recovery, Boot, EFI, PerfLogs — on every drive, not only C:
+Any path with fewer than 2 components under a drive root
+Any 8.3 alias that has not been expanded through the filesystem
+Any UNC or device-namespace path
 ```
+
+> The depth floor was originally written as "fewer than 4 components under a
+> drive root". Taken literally that denies `%ProgramData%\EasyAntiCheat` and
+> `%ProgramFiles(x86)%\EasyAntiCheat` — almost every path a catalog contains,
+> and everything [`02`](02-SAFETY-GATE.md) explicitly permits removing. The
+> rule's purpose is to stop a whole top-level directory being targeted, so it
+> is implemented as a floor of 2 plus the explicit list above.
+> Enforced in `core/src/safety/denylist.rs`.
 
 Deny-list is enforced by a function that takes the *canonicalised* path, after
 `GetFinalPathNameByHandleW` resolution. Checking the pre-canonical string is a

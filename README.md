@@ -3,7 +3,7 @@
 > Windows-only. Removes anti-cheat-bearing games **together with** their anti-cheat
 > software, then sweeps the residue those uninstallers leave behind.
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](COPYING)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11%20x64-0078D4)
 ![Status](https://img.shields.io/badge/status-pre--alpha-orange)
 
@@ -73,7 +73,7 @@ game that references it.
 | 03 | [Architecture](docs/03-ARCHITECTURE.md) | Understanding process split |
 | 04 | [Catalog Schema](docs/04-CATALOG-SCHEMA.md) | Adding an anti-cheat |
 | 05 | [Detection Engine](docs/05-DETECTION-ENGINE.md) | Scan internals |
-| 06 | [Removal Pipeline](docs/06-REMOVAL-PIPELINE.md) | The six stages |
+| 06 | [Removal Pipeline](docs/06-REMOVAL-PIPELINE.md) | The seven stages |
 | 07 | [Rollback & Quarantine](docs/07-ROLLBACK-QUARANTINE.md) | Undo semantics |
 | 08 | [IPC Protocol](docs/08-IPC-PROTOCOL.md) | UI ↔ broker wire format |
 | 09 | [UI Specification](docs/09-UI-SPEC.md) | Building screens |
@@ -116,6 +116,6 @@ restored by rollback.
 
 ## Licence
 
-GPL-3.0-or-later. See [`COPYING`](COPYING).
+GPL-3.0-or-later. See [`LICENSE`](LICENSE).
 The anti-cheat catalog (`catalog/`) is CC BY-SA 4.0 so it can be reused
 independently of the application.

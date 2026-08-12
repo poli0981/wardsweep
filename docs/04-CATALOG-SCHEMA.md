@@ -23,7 +23,7 @@ is versioned independently of the application binary.
 ```toml
 schema_version = 1
 catalog_version = "2026.08.12"
-minimum_app_version = "0.5.0"
+minimum_app_version = "0.1.0"
 ```
 
 The broker refuses a catalog whose `schema_version` it does not implement, and
@@ -68,7 +68,35 @@ kind    = "exe"                             # exe | msi | none
 command = "%ProgramFiles(x86)%\\EasyAntiCheat\\EasyAntiCheat_Setup.exe"
 args    = ["uninstall", "{product_id}"]
 timeout_secs = 300
+
+# --- required only when shared = false
+[anticheat.shared_evidence]
+titles_observed = ["example-shooter", "example-arena"]
+observation_ids = ["2026-08-12-example-shooter-steam"]
+note = "Free text for anything the structured fields cannot carry."
 ```
+
+### `shared` and its evidence
+
+`shared` defaults to `true` because a wrong `shared = false` removes an
+anti-cheat another installed game still needs, which is the G1 violation this
+project exists to prevent. Downgrading it is therefore a claim that has to be
+argued for:
+
+```
+shared = false  ⇒  [anticheat.shared_evidence] is mandatory
+                   titles_observed  ≥ 2 entries
+                   observation_ids  ≥ 1 entry
+```
+
+CI enforces this — `wardsweep-catalog audit-shared --require-evidence`, run by
+[`catalog-verify.yml`](../.github/workflows/catalog-verify.yml). The
+`observation_ids` name directories under `observations/`, so the claim can be
+traced back to the diffs it came from; see
+[`16`](16-OBSERVATION-HARNESS.md), whose checklist says the same thing in
+prose: *confirm against at least two titles, or leave it `true`.*
+
+When `shared = true` the table is ignored.
 
 ### Field notes
 
@@ -80,7 +108,8 @@ timeout_secs = 300
 | `risk` | Drives UI colour and whether removal requires typed confirmation. `critical` = boot-start driver. |
 | `authenticode_cn` | Primary identity signal. A file at a matching path with the *wrong* publisher is reported as suspicious, never auto-removed. |
 | `view` | `32`, `64`, or `both`. `both` is almost always correct — see [`05`](05-DETECTION-ENGINE.md) on WOW64. |
-| `class` | `install` \| `data` \| `config` \| `service` \| `cache` \| `log`. Drives default tick state: `cache`/`log` on, `data` off pending review. |
+| `class` | `install` \| `data` \| `config` \| `service` \| `cache` \| `log` \| `save`. Drives default tick state: `cache`/`log` on, `data` off pending review. `save` appears **only** inside a game's `saves` list and is never ticked. |
+| `shared_evidence` | Required when `shared = false`, ignored otherwise. See above. |
 
 ## `[[game]]`
 
@@ -96,7 +125,7 @@ steam_appid   = 000000
 epic_app_name = "ExampleShooter"
 
 install_hints = [
-  { path = "%ProgramFiles(x86)%\\Steam\\steamapps\\common\\Example Shooter", class = "install" },
+  { path = "%STEAM_LIBRARY%\\steamapps\\common\\Example Shooter", class = "install" },
 ]
 
 residue = [
@@ -125,11 +154,21 @@ zipped into quarantine even when the user explicitly opts to remove them.
 [[launcher]]
 id      = "steam"
 display = "Steam"
-detect_registry = "HKLM\\SOFTWARE\\WOW64Node\\Valve\\Steam"
+detect_registry = "HKLM\\SOFTWARE\\WOW6432Node\\Valve\\Steam"
 library_index   = "steamapps\\libraryfolders.vdf"
 manifest_glob   = "steamapps\\appmanifest_*.acf"
 uninstall = { kind = "protocol", command = "steam://uninstall/{appid}", silent = false }
 ```
+
+`uninstall.kind` is one of:
+
+| Kind | `command` | Meaning |
+|---|---|---|
+| `protocol` | required | A URL handler, e.g. `steam://uninstall/{appid}` |
+| `msi` | required | An MSI product code in braces |
+| `msi_from_manifest` | — | Product code read from the launcher's own manifest, as Epic's `.item` files carry it |
+| `exe` | required | An executable path |
+| `none` | — | No launcher-driven path; fall back to the uninstall registry entry |
 
 Launchers matter for two reasons: they own the authoritative "is this game
 installed" answer, and they leave their own residue (the `appmanifest_*.acf`

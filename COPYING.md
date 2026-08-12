@@ -4,9 +4,9 @@
 
 `core/`, `cli/`, `ui/`, `tools/` are licensed **GPL-3.0-or-later**.
 
-The full licence text belongs in a file named `COPYING` at the repository root —
-copy it verbatim from <https://www.gnu.org/licenses/gpl-3.0.txt>. This file is a
-summary and is not a substitute for it.
+The full licence text is in [`LICENSE`](LICENSE) at the repository root. This
+file is a summary of how the licences are split across the tree and is not a
+substitute for it.
 
 ## Catalog data
 
@@ -23,8 +23,13 @@ taking on GPL obligations. Attribution: "WardSweep anti-cheat catalog".
 
 ## Third-party notices
 
-Generated at build time into `THIRD-PARTY-NOTICES.md` via `cargo-about` (Rust)
-and `dotnet-project-licenses` (C#). CI fails if the generated file is stale.
+Generated into `THIRD-PARTY-NOTICES.md` via `cargo-about` (Rust) and
+`dotnet-project-licenses` (C#), and regenerated before every release.
+
+> **Not yet enforced by CI.** No workflow currently checks the committed
+> file against a fresh generation, so a stale file will not fail a build.
+> Wiring that check up is tracked in `CHANGELOG.md`; until it exists,
+> regenerating is a release-checklist item and nothing more.
 
 Anti-cheat product names (Vanguard, Easy Anti-Cheat, BattlEye, ACE, GameGuard,
 Xigncode, Denuvo, Ricochet, PunkBuster, and others) are trademarks of their
