@@ -110,6 +110,21 @@ registry = [
   { key = "HKCU\\SOFTWARE\\ExampleShield", view = "both", class = "config" },
 ]
 
+# A wrong `shared = false` removes an anti-cheat another game still needs, which
+# is the G1 failure this project exists to prevent. So it has to be argued for,
+# not asserted: CI runs `wardsweep-catalog audit-shared --require-evidence` and
+# rejects any `shared = false` entry without this table. The checklist is in
+# docs/16-OBSERVATION-HARNESS.md — confirm against at least two titles, or leave
+# `shared = true`.
+[anticheat.shared_evidence]
+titles_observed = ["example-shooter", "example-arena"]
+observation_ids = ["0000-00-00-example-usermode-ac"]
+note = """
+ILLUSTRATIVE ONLY, like everything else in this file. A real entry names the
+observation directories under observations/ the claim came from, and the titles
+that were checked and found not to use this anti-cheat.
+"""
+
 [anticheat.official_uninstall]
 kind = "none"               # removed with the game; nothing separate to call
 
