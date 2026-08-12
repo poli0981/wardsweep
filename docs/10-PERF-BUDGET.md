@@ -74,8 +74,14 @@ order of magnitude more expensive than the last.
 ### Authenticode caching
 
 `WinVerifyTrust` is the most expensive operation in the scan by a wide margin.
-Cached by `(volume_serial, file_id, size, mtime)` for the session — file ID
-rather than path, so a file seen via two paths is verified once.
+Cached **per scan volume** by `(file_id, size, mtime)` for the session — file ID
+rather than path, so a file reached by two paths is verified once.
+
+Partitioned by the volume being walked rather than keyed by a volume serial
+number. That is a Safety Gate decision, not a performance one: a file index is
+already unique within its volume, so partitioning gives the same "verify once
+per file" property while reading no volume identifier at all. See
+[`02`](02-SAFETY-GATE.md) §Grey areas and rulings.
 
 ## Parallelism
 

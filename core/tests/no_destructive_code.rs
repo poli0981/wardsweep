@@ -72,6 +72,12 @@ const HARDWARE_IDENTITY: &[&str] = &[
     "IOCTL_STORAGE_QUERY_PROPERTY",
     "GetAdaptersAddresses",
     "Tbsi_",
+    // Not a hardware fingerprint, and banned anyway. `docs/02-SAFETY-GATE.md`
+    // §Grey areas rules that the Authenticode cache is partitioned per scan
+    // volume instead, so a file index is unique without this ever being read —
+    // including from `BY_HANDLE_FILE_INFORMATION` and `FILE_ID_INFO`, where it
+    // arrives free on a handle that is already open.
+    "VolumeSerialNumber",
 ];
 
 fn repo_root() -> PathBuf {

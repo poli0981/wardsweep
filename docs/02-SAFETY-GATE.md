@@ -4,6 +4,10 @@
 not change in response to feature requests, user demand, or convenience. Changes
 require a maintainer decision recorded in `CHANGELOG.md` with rationale.
 
+The five prohibitions have not changed since they were written. The table of
+grey-area rulings grows as real cases arrive; a ruling records how G1–G5 apply
+to a case, and may narrow the gate but never widens it.
+
 ---
 
 ## The five prohibitions
@@ -107,6 +111,7 @@ To avoid over-correction, these are fine and are the point of the project:
 | User asks for a report of what Vanguard collects | Refused as a feature. WardSweep documents *footprint* (files, services, keys), not behaviour. Behavioural analysis is someone else's project. |
 | Game files are gone but launcher still lists the game | Treated as installed until the launcher entry is removed. Conservative direction. |
 | Anti-cheat shared with a game on a *different drive/user profile* | Counts toward refcount. Per-machine scope, not per-user. |
+| Authenticode cache wants a volume serial number as part of a file identity | **Refused**, and the design changed instead. A volume serial is not in fact a hardware fingerprint — it is assigned at format time and changes on reformat — so the honest argument for allowing it was available. It was not taken, because G3's value is that it has no exceptions and the first one is the one that matters. The alternative costs nothing: the cache is partitioned per scan volume, so a file index is already unique and no identifier is read. See [`10`](10-PERF-BUDGET.md). |
 
 ## Review checklist
 

@@ -142,15 +142,18 @@ stage — see [`06`](06-REMOVAL-PIPELINE.md) and [`13`](13-P0-SPIKES.md) S1.
 `WinVerifyTrust` with `WTD_UI_NONE`, `WTD_REVOKE_WHOLECHAIN`, then extract the
 signer CN via `CryptQueryObject` / `CertGetNameStringW`.
 
-Cached by `(volume_serial, file_id, size, mtime)` for the session — file ID
-rather than path, so a file seen through two paths is verified once. See
+Cached **per scan volume** by `(file_id, size, mtime)` for the session — file ID
+rather than path, so a file reached through two paths is verified once. See
 [`10`](10-PERF-BUDGET.md). Verification is the expensive step, so it runs only
 after Bloom + Aho–Corasick have narrowed the set.
 
-> A volume serial number is not a volume GUID and is not a hardware
-> fingerprint; it identifies a filesystem, changes on reformat, and never
-> leaves the process. G3 is not engaged. Stated here because a reviewer working
-> through the [`02`](02-SAFETY-GATE.md) checklist will reasonably ask.
+> No volume serial number is read. The cache is partitioned by the volume being
+> walked, which the scanner already knows, so file identity needs nothing else.
+> `GetVolumeInformationW` is not called anywhere, and
+> `BY_HANDLE_FILE_INFORMATION.dwVolumeSerialNumber` and
+> `FILE_ID_INFO.VolumeSerialNumber` are not read even though they arrive free on
+> a handle already open. See [`02`](02-SAFETY-GATE.md) §Grey areas and rulings;
+> enforced by `core/tests/no_destructive_code.rs`.
 
 Expired certificates on old anti-cheat builds are **normal** and are not
 downgraded — countersigned timestamps are honoured.

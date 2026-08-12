@@ -63,6 +63,33 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
   asserts no destructive Win32 or filesystem call exists outside them, and that
   nothing reads a hardware identifier (Safety Gate G3).
 
+### Safety Gate decisions
+Recorded here because `docs/02-SAFETY-GATE.md` is frozen and requires a
+maintainer decision with rationale before it changes.
+
+- **Volume serial numbers stay banned under G3, and `docs/10-PERF-BUDGET.md`
+  changed instead.** The Authenticode cache was specified with
+  `(volume_serial, file_id, size, mtime)` as its key, which puts a reviewer
+  working the G3 checklist in the position of answering "yes, it reads an
+  identifier" and then arguing about it.
+
+  The argument for allowing it was available and honest: a volume serial number
+  is assigned at format time, changes on reformat, identifies a filesystem
+  rather than a device, and is not any of the things G3 enumerates. It would
+  never have left the process.
+
+  It was not taken. G3's worth is that it has no exceptions, and the first
+  exception is the one that establishes exceptions are possible. The cost of
+  refusing turned out to be zero: partitioning the cache per scan volume — which
+  the scanner already knows, because it is walking it — makes a file index
+  unique on its own, so the same "verify once per file" property holds with no
+  identifier read at all.
+
+  `docs/02` gains a grey-area ruling, `docs/05` and `docs/10` describe the
+  partitioned cache, and `core/tests/no_destructive_code.rs` fails the build if
+  `VolumeSerialNumber` appears in shipped source. The five prohibitions
+  themselves are unchanged.
+
 ### Known gaps
 - `THIRD-PARTY-NOTICES.md` staleness is not checked by CI, although both that
   file and `COPYING.md` previously claimed it was. Both now say so plainly.
