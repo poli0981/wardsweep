@@ -1,67 +1,122 @@
-# Caller stub → poli0981/.github/.github/workflows/dotnet-ci.yml
+# .NET CI.
 #
-# NOTE: explicit `permissions:` required — see rust-ci.yml.
+# Inline rather than a caller stub — see the note in rust-ci.yml.
+#
+# NOTE: explicit `permissions:` required.
 name: .NET CI
 
 on:
   push:
     branches: [main]
-    paths: ['ui/**', '*.sln', 'Directory.Build.props', '.github/workflows/dotnet-ci.yml']
+    paths: ['ui/**', '*.sln', 'Directory.Build.props', 'Directory.Packages.props', 'global.json', 'nuget.config', 'Settings.XamlStyler', '.github/workflows/dotnet-ci.yml']
   pull_request:
-    paths: ['ui/**', '*.sln', 'Directory.Build.props']
+    paths: ['ui/**', '*.sln', 'Directory.Build.props', 'Directory.Packages.props', 'global.json', 'nuget.config', 'Settings.XamlStyler']
   workflow_dispatch:
 
 permissions:
   contents: read
-  checks: write
-  pull-requests: write
 
 concurrency:
   group: dotnet-ci-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
 jobs:
   build-test:
-    uses: poli0981/.github/.github/workflows/dotnet-ci.yml@main
-    permissions:
-      contents: read
-      checks: write
-    with:
-      runs-on: windows-latest
-      dotnet-version: '10.0.x'
-      solution: 'WardSweep.sln'
-      configuration: 'Release'
-      treat-warnings-as-errors: true
-      run-format-check: true
+    name: build + test (windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
 
-  vulnerable-packages:
-    # Hard gate. `dotnet list package --vulnerable` failing fails the build.
-    uses: poli0981/.github/.github/workflows/dotnet-vuln-scan.yml@main
-    permissions:
-      contents: read
-      security-events: write
-    with:
-      runs-on: windows-latest
-      dotnet-version: '10.0.x'
-      include-transitive: true
-      fail-on-vulnerable: true
+      - uses: actions/setup-dotnet@v6
+        with:
+          # global.json pins the SDK; this installs whatever it names, so the
+          # version lives in exactly one place.
+          global-json-file: global.json
 
-  xaml-style:
-    uses: poli0981/.github/.github/workflows/xamlstyler-check.yml@main
-    permissions:
-      contents: read
-    with:
-      path: 'ui/**/*.xaml'
+      - name: Restore
+        # --locked-mode fails if packages.lock.json is out of date rather than
+        # silently updating it. docs/14-DISTRIBUTION-TRUST.md wants builds that
+        # reproduce, which means the lock file is authoritative.
+        run: dotnet restore WardSweep.sln --locked-mode
+
+      - name: Build
+        run: dotnet build WardSweep.sln -c Release --no-restore
+
+      - name: Format check
+        run: dotnet format WardSweep.sln --verify-no-changes --severity warn --no-restore
+
+      - name: Test
+        run: dotnet test WardSweep.sln -c Release --no-build
 
   arch-tests:
-    # Asserts no ViewModel references System.IO or Microsoft.Win32.Registry.
-    # The UI process must contain no destructive code path — docs/09-UI-SPEC.md.
-    uses: poli0981/.github/.github/workflows/dotnet-ci.yml@main
-    permissions:
-      contents: read
-      checks: write
-    with:
-      runs-on: windows-latest
-      dotnet-version: '10.0.x'
-      test-filter: 'Category=Architecture'
-      run-build-only: false
+    # Its own check on purpose. docs/09-UI-SPEC.md states that the UI process
+    # has no destructive code path at all, and a guarantee that shares a green
+    # tick with everything else is easy to stop noticing.
+    name: architecture tests
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - run: dotnet restore WardSweep.sln --locked-mode
+
+      - name: No destructive code path in the UI
+        # A filter that matches nothing exits non-zero with "No test matches",
+        # so this also fails if the tests are ever renamed out of the category.
+        run: dotnet test WardSweep.sln -c Release --filter "Category=Architecture"
+
+  vulnerable-packages:
+    name: vulnerable packages
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - run: dotnet restore WardSweep.sln --locked-mode
+
+      - name: Scan, transitively
+        # Hard gate. `dotnet list package --vulnerable` reports findings on
+        # stdout and still exits 0, so the exit code alone would pass a build
+        # with a known-vulnerable dependency in it.
+        shell: pwsh
+        run: |
+          $output = dotnet list WardSweep.sln package --vulnerable --include-transitive | Out-String
+          Write-Host $output
+          if ($output -match 'has the following vulnerable packages') {
+            Write-Host "::error::vulnerable packages found"
+            exit 1
+          }
+          Write-Host "no vulnerable packages"
+
+  xaml-style:
+    name: XamlStyler
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - run: dotnet tool install -g XamlStyler.Console
+
+      - name: Check XAML formatting
+        shell: pwsh
+        run: |
+          $output = xstyler --passive --recursive --directory ui | Out-String
+          Write-Host $output
+          if ($output -match 'FAIL') {
+            Write-Host "::error::XAML is not XamlStyler-clean; run 'xstyler --recursive --directory ui'"
+            exit 1
+          }

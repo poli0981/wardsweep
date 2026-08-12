@@ -34,7 +34,7 @@ jobs:
     outputs:
       version: ${{ steps.ver.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with: { fetch-depth: 0 }
 
       - id: ver
@@ -45,9 +45,11 @@ jobs:
           } else { '${{ inputs.version }}' }
           "version=$v" >> $env:GITHUB_OUTPUT
 
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: actions/setup-dotnet@v4
-        with: { dotnet-version: '10.0.x' }
+      - name: Install the pinned toolchain
+        run: rustup show
+
+      - uses: actions/setup-dotnet@v6
+        with: { global-json-file: global.json }
 
       # No packing, no obfuscation — packers are the strongest AV heuristic.
       # See docs/14-DISTRIBUTION-TRUST.md.
@@ -110,11 +112,11 @@ jobs:
           $lines | Out-File artifacts/VERIFICATION.md -Encoding utf8
           Get-Content artifacts/VERIFICATION.md
 
-      - uses: actions/attest-build-provenance@v1
+      - uses: actions/attest-build-provenance@v4
         with:
           subject-path: 'artifacts/*.exe, artifacts/*.zip'
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: release-artifacts
           path: artifacts/
@@ -125,11 +127,11 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with: { name: release-artifacts, path: artifacts }
 
       - name: Create draft release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           draft: true   # NEVER auto-publish: VirusTotal links go in by hand
           body_path: artifacts/VERIFICATION.md
