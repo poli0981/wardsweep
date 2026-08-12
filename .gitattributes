@@ -17,6 +17,14 @@ catalog/pubkey.hex           -text
 *.cmd  text eol=crlf
 *.bat  text eol=crlf
 
+# --- XAML ---------------------------------------------------------------
+# XamlStyler always writes CRLF and has no setting to change it, so the repo's
+# default of eol=lf produced files the formatter would immediately rewrite:
+# green locally where the tool had just run, red in CI where the checkout was
+# LF. The tool is authoritative for XAML and this is a Windows-only project, so
+# the policy bends here rather than the files.
+*.xaml text eol=crlf
+
 # --- Binary -------------------------------------------------------------
 *.ico  binary
 *.png  binary

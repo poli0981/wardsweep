@@ -14,6 +14,10 @@ max_line_length = 100
 [*.{cs,xaml,csproj,props,targets}]
 indent_size = 4
 
+# XamlStyler emits CRLF and cannot be configured otherwise; see .gitattributes.
+[*.xaml]
+end_of_line = crlf
+
 [*.{toml,yml,yaml,json}]
 indent_size = 2
 
