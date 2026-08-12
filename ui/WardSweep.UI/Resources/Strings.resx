@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="app.title" xml:space="preserve">
+    <value>WardSweep</value>
+  </data>
+  <data name="app.status.prealpha" xml:space="preserve">
+    <value>Pre-alpha. No scan, plan or removal capability exists in this build.</value>
+  </data>
+  <data name="shell.gate.title" xml:space="preserve">
+    <value>Nothing here can change your machine</value>
+  </data>
+  <data name="shell.gate.body" xml:space="preserve">
+    <value>The seven P0 spikes in docs/13-P0-SPIKES.md are go/no-go gates. Until each has a recorded verdict, no feature work begins.</value>
+  </data>
+  <data name="broker.status.disconnected" xml:space="preserve">
+    <value>Not connected to the broker.</value>
+  </data>
+  <data name="broker.status.connected" xml:space="preserve">
+    <value>Broker {version}, not elevated.</value>
+    <comment>{version} is the broker executable version.</comment>
+  </data>
+  <data name="broker.status.connected_elevated" xml:space="preserve">
+    <value>Broker {version}, elevated.</value>
+    <comment>{version} is the broker executable version.</comment>
+  </data>
+  <data name="catalog.status.unknown" xml:space="preserve">
+    <value>Catalog status unknown.</value>
+  </data>
+  <data name="catalog.status.verified" xml:space="preserve">
+    <value>Catalog {version}, signature valid.</value>
+    <comment>{version} is the catalog data version, not the app version.</comment>
+  </data>
+  <data name="catalog.status.absent" xml:space="preserve">
+    <value>No verified catalog is loaded.</value>
+  </data>
+  <data name="err.catalog.signature_invalid" xml:space="preserve">
+    <value>The catalog signature is not valid, so the catalog was refused.</value>
+  </data>
+</root>

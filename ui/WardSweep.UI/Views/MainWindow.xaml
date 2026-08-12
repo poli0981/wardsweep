@@ -1,0 +1,60 @@
+﻿<ui:FluentWindow
+    x:Class="WardSweep.UI.Views.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:res="clr-namespace:WardSweep.UI.Resources"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    Title="{x:Static res:Strings.AppTitle}"
+    Width="1100"
+    Height="720"
+    MinWidth="900"
+    MinHeight="640"
+    ExtendsContentIntoTitleBar="True"
+    WindowBackdropType="Mica"
+    WindowCornerPreference="Round"
+    WindowStartupLocation="CenterScreen">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <ui:TitleBar Title="{x:Static res:Strings.AppTitle}" Grid.Row="0" />
+
+        <!--  Shell only. The Scan, Findings, Plan, Jobs, Quarantine and Catalog  -->
+        <!--  screens in docs/09-UI-SPEC.md arrive with v0.1 and v0.5; showing an  -->
+        <!--  empty nav item would suggest a screen exists when it does not.  -->
+        <StackPanel
+            Grid.Row="1"
+            Margin="32"
+            VerticalAlignment="Center">
+
+            <ui:TextBlock FontTypography="TitleLarge" Text="{x:Static res:Strings.AppTitle}" />
+
+            <ui:TextBlock
+                Margin="0,8,0,0"
+                FontTypography="Body"
+                Text="{x:Static res:Strings.AppStatusPreAlpha}"
+                TextWrapping="Wrap" />
+
+            <ui:InfoBar
+                Title="{x:Static res:Strings.ShellGateTitle}"
+                Margin="0,24,0,0"
+                IsClosable="False"
+                IsOpen="True"
+                Message="{x:Static res:Strings.ShellGateBody}"
+                Severity="Informational" />
+
+            <ui:TextBlock
+                Margin="0,24,0,0"
+                FontTypography="Caption"
+                Text="{Binding BrokerStatus, Mode=OneWay}" />
+
+            <ui:TextBlock
+                Margin="0,4,0,0"
+                FontTypography="Caption"
+                Text="{Binding CatalogStatus, Mode=OneWay}" />
+        </StackPanel>
+    </Grid>
+</ui:FluentWindow>
