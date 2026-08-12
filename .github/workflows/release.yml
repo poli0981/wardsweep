@@ -52,17 +52,37 @@ jobs:
       # No packing, no obfuscation — packers are the strongest AV heuristic.
       # See docs/14-DISTRIBUTION-TRUST.md.
       - name: Build broker + CLI
-        run: cargo build --release --workspace
+        # --locked so the release is built from the committed Cargo.lock and not
+        # from whatever resolved that morning. docs/14-DISTRIBUTION-TRUST.md
+        # rests on anyone being able to rebuild these bytes.
+        run: cargo build --release --workspace --locked
 
       - name: Build UI
-        run: dotnet publish ui/WardSweep.UI -c Release -r win-x64 --self-contained false
+        run: dotnet publish ui/WardSweep.UI -c Release -r win-x64 --self-contained false -o artifacts/publish
+
+      - name: Stage native binaries and catalog
+        # The Rust binaries are built into target/release and are not otherwise
+        # copied anywhere the packaging steps look. docs/14 lists wardsweep.exe
+        # and wardsweep-broker.exe as release artifacts requiring their own
+        # SHA-256 and VirusTotal entries, so they have to be in the pack dir.
+        shell: pwsh
+        run: |
+          Copy-Item target/release/wardsweep.exe        artifacts/publish/ -Force
+          Copy-Item target/release/wardsweep-broker.exe artifacts/publish/ -Force
+          # Ship the PDBs: docs/14 lists them as a detection-reduction measure.
+          Copy-Item target/release/*.pdb artifacts/publish/ -Force -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Force artifacts/publish/catalog | Out-Null
+          Copy-Item catalog/catalog.toml     artifacts/publish/catalog/ -Force
+          Copy-Item catalog/catalog.toml.sig artifacts/publish/catalog/ -Force
+          Get-ChildItem artifacts/publish
 
       - name: Package (Velopack)
         shell: pwsh
         run: |
           dotnet tool install -g vpk
           vpk pack --packId WardSweep --packVersion ${{ steps.ver.outputs.version }} `
-                   --packDir artifacts/publish --mainExe WardSweep.UI.exe
+                   --packDir artifacts/publish --mainExe WardSweep.UI.exe `
+                   --outputDir artifacts
 
       - name: Portable zip
         shell: pwsh
@@ -71,11 +91,23 @@ jobs:
       - name: Compute SHA-256
         shell: pwsh
         run: |
-          $rows = Get-ChildItem artifacts -Include *.exe,*.zip -Recurse | ForEach-Object {
+          # The header rows matter: body rows alone are not a markdown table and
+          # render as one run-on line in the release notes.
+          $lines = @(
+            '### Verification'
+            ''
+            'These builds are **not code-signed**. SmartScreen and some antivirus'
+            'engines will flag them; see docs/14-DISTRIBUTION-TRUST.md. Verify the'
+            'SHA-256 of what you downloaded against this table.'
+            ''
+            '| Artifact | SHA-256 | VirusTotal |'
+            '|---|---|---|'
+          )
+          $lines += Get-ChildItem artifacts -Include *.exe,*.zip -Recurse | ForEach-Object {
             $h = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
             "| ``$($_.Name)`` | ``$h`` | [report](https://www.virustotal.com/gui/file/$h) |"
           }
-          $rows | Out-File artifacts/VERIFICATION.md -Encoding utf8
+          $lines | Out-File artifacts/VERIFICATION.md -Encoding utf8
           Get-Content artifacts/VERIFICATION.md
 
       - uses: actions/attest-build-provenance@v1

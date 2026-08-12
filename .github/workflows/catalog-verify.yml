@@ -8,9 +8,23 @@ name: Catalog Verify
 
 on:
   push:
-    paths: ['catalog/**', '.github/workflows/catalog-verify.yml']
+    branches: [main]
+    # The tool and its checks are as much a part of this gate as the data, so a
+    # change to either re-runs it.
+    paths:
+      - 'catalog/**'
+      - 'tools/catalog/**'
+      - 'core/src/safety/**'
+      - 'core/src/catalog/**'
+      - 'Cargo.*'
+      - '.github/workflows/catalog-verify.yml'
   pull_request:
-    paths: ['catalog/**']
+    paths:
+      - 'catalog/**'
+      - 'tools/catalog/**'
+      - 'core/src/safety/**'
+      - 'core/src/catalog/**'
+      - 'Cargo.*'
   workflow_dispatch:
 
 permissions:
@@ -46,6 +60,26 @@ jobs:
         run: ./target/release/wardsweep-catalog check-refs catalog/catalog.toml
 
       - name: Shared-flag audit
-        # Entries with shared=false must carry an evidence note. Defaulting to
-        # false without evidence is the G1 failure mode — docs/02-SAFETY-GATE.md.
+        # Entries with shared=false must carry evidence. Defaulting to false
+        # without it is the G1 failure mode — docs/02-SAFETY-GATE.md.
         run: ./target/release/wardsweep-catalog audit-shared catalog/catalog.toml --require-evidence
+
+      - name: Example catalog
+        # catalog.example.toml is the template every contribution starts from.
+        # It carries no signature, so `verify` does not apply, but if it stops
+        # validating then every new entry starts from something broken.
+        run: |
+          ./target/release/wardsweep-catalog validate       catalog/catalog.example.toml
+          ./target/release/wardsweep-catalog check-refs     catalog/catalog.example.toml
+          ./target/release/wardsweep-catalog check-denylist catalog/catalog.example.toml
+          ./target/release/wardsweep-catalog audit-shared   catalog/catalog.example.toml --require-evidence
+
+      - name: Signed bytes survived checkout
+        # The signature covers raw bytes. If .gitattributes stops marking the
+        # catalog `-text`, git rewrites line endings on this runner and
+        # verification fails for a reason that looks like a crypto bug.
+        run: |
+          if grep -qU $'\r' catalog/catalog.toml; then
+            echo "::error::catalog.toml contains CRLF; see .gitattributes"
+            exit 1
+          fi

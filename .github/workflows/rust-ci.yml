@@ -35,13 +35,17 @@ jobs:
 
   test-windows:
     # Sandbox tests create services and load registry hives — needs a Windows runner.
+    #
+    # Clippy runs here as well as in `lint`. The ubuntu job compiles with
+    # cfg(windows) off, so every Win32 code path — the largest and most
+    # dangerous part of this codebase — would otherwise never be linted at all.
     uses: poli0981/.github/.github/workflows/rust-ci.yml@main
     permissions:
       contents: read
       checks: write
     with:
       runs-on: windows-latest
-      run-clippy: false
+      clippy-args: '--all-targets --all-features -- -D warnings -W clippy::pedantic'
       test-args: '--all-features --workspace'
 
   deny:
