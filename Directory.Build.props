@@ -1,0 +1,65 @@
+<Project>
+
+  <!--
+    Applies to every project in the repository. `.github/workflows/dotnet-ci.yml`
+    path-filters on this file, so a change here re-runs the whole .NET pipeline.
+  -->
+
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+
+    <!--
+      CodeQL builds this solution with `dotnet build WardSweep.sln -c Release`
+      and the analysis runner is not necessarily Windows. Without this, a WPF
+      project fails to restore off-Windows and the security scan never runs.
+    -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+
+    <!--
+      XML doc comments are not generated: CS1591 plus TreatWarningsAsErrors
+      turns every undocumented member into a build failure, which buys nothing
+      for an application assembly nobody references as a library.
+    -->
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+
+    <!--
+      docs/14-DISTRIBUTION-TRUST.md: blank version metadata correlates with
+      malware, and every scrap of legitimate provenance helps an unsigned
+      binary. This is a trust requirement, not decoration.
+    -->
+    <Product>WardSweep</Product>
+    <Company>WardSweep contributors</Company>
+    <Authors>WardSweep contributors</Authors>
+    <Copyright>Copyright (C) WardSweep contributors</Copyright>
+    <Description>Removes anti-cheat-bearing games together with their anti-cheat, then sweeps the residue.</Description>
+    <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/poli0981/WardSweep</RepositoryUrl>
+    <Version>0.0.1</Version>
+
+    <!--
+      Reproducible builds; see docs/14-DISTRIBUTION-TRUST.md. An unsigned binary
+      has one trust story: anyone can rebuild it and get the same bytes. The
+      lock file is also what THIRD-PARTY-NOTICES.md is generated against.
+    -->
+    <Deterministic>true</Deterministic>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <NeutralLanguage>en-US</NeutralLanguage>
+
+    <!--
+      docs/17-I18N.md needs real culture formatting for Vietnamese number and
+      date rendering, so invariant globalization stays off.
+    -->
+    <InvariantGlobalization>false</InvariantGlobalization>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+</Project>
