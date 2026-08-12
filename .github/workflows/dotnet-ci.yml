@@ -10,7 +10,7 @@ on:
     branches: [main]
     paths: ['ui/**', '*.sln', 'Directory.Build.props', 'Directory.Packages.props', 'global.json', 'nuget.config', 'Settings.XamlStyler', '.github/workflows/dotnet-ci.yml']
   pull_request:
-    paths: ['ui/**', '*.sln', 'Directory.Build.props', 'Directory.Packages.props', 'global.json', 'nuget.config', 'Settings.XamlStyler']
+    paths: ['ui/**', '*.sln', 'Directory.Build.props', 'Directory.Packages.props', 'global.json', 'nuget.config', 'Settings.XamlStyler', '.github/workflows/dotnet-ci.yml']
   workflow_dispatch:
 
 permissions:

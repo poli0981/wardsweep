@@ -25,6 +25,7 @@ on:
       - 'core/src/safety/**'
       - 'core/src/catalog/**'
       - 'Cargo.*'
+      - '.github/workflows/catalog-verify.yml'
   workflow_dispatch:
 
 permissions:
