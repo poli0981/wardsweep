@@ -1,0 +1,65 @@
+# Caller stub → poli0981/.github/.github/workflows/rust-ci.yml
+#
+# NOTE: `permissions:` MUST be declared explicitly here. Permissions are not
+# reliably inherited by reusable workflows — standing rule across the portfolio.
+name: Rust CI
+
+on:
+  push:
+    branches: [main]
+    paths: ['core/**', 'cli/**', 'tools/**', 'Cargo.*', '.github/workflows/rust-ci.yml']
+  pull_request:
+    paths: ['core/**', 'cli/**', 'tools/**', 'Cargo.*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+concurrency:
+  group: rust-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    uses: poli0981/.github/.github/workflows/rust-ci.yml@main
+    permissions:
+      contents: read
+      checks: write
+    with:
+      runs-on: ubuntu-latest
+      components: 'rustfmt, clippy'
+      clippy-args: '--all-targets --all-features -- -D warnings -W clippy::pedantic'
+      run-tests: false
+
+  test-windows:
+    # Sandbox tests create services and load registry hives — needs a Windows runner.
+    uses: poli0981/.github/.github/workflows/rust-ci.yml@main
+    permissions:
+      contents: read
+      checks: write
+    with:
+      runs-on: windows-latest
+      run-clippy: false
+      test-args: '--all-features --workspace'
+
+  deny:
+    uses: poli0981/.github/.github/workflows/cargo-deny.yml@main
+    permissions:
+      contents: read
+      security-events: write
+    with:
+      checks: 'advisories bans licenses sources'
+
+  bench:
+    # Perf budgets from docs/10-PERF-BUDGET.md are enforced, not advisory.
+    if: github.event_name == 'push'
+    uses: poli0981/.github/.github/workflows/rust-bench.yml@main
+    permissions:
+      contents: read
+    with:
+      runs-on: windows-latest
+      bench-args: '--bench scan_corpus'
+      fail-on-regression: true
+      regression-threshold-pct: 15

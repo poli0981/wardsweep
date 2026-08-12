@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Antivirus detection
+    url: https://github.com/poli0981/WardSweep/blob/main/docs/RELEASES.md
+    about: Detections are expected and tracked here. Check before filing an issue.
+  - name: Security vulnerability
+    url: https://github.com/poli0981/WardSweep/security/advisories/new
+    about: Report privately, not as a public issue.
+  - name: Safety Gate
+    url: https://github.com/poli0981/WardSweep/blob/main/docs/02-SAFETY-GATE.md
+    about: What WardSweep will never do, and why.

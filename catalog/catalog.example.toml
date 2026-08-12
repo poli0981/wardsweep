@@ -1,0 +1,199 @@
+# WardSweep anti-cheat catalog — EXAMPLE / TEMPLATE
+# Licence: CC BY-SA 4.0
+#
+# ############################################################################
+# EVERYTHING BELOW IS ILLUSTRATIVE.
+#
+# No entry here has been verified against a real machine. Anti-cheat vendors
+# change service names, driver filenames, install paths and uninstall commands
+# frequently, and a wrong entry deletes the wrong thing on someone's machine.
+#
+# Every shipping entry MUST be derived from an observation-harness diff.
+# See docs/16-OBSERVATION-HARNESS.md.
+# ############################################################################
+
+schema_version      = 1
+catalog_version     = "0.0.0-example"
+minimum_app_version = "0.1.0"
+
+# ----------------------------------------------------------------------------
+# ANTI-CHEAT — kernel, shared across many titles
+# ----------------------------------------------------------------------------
+[[anticheat]]
+id      = "example-kernel-ac"
+display = "Example Anti-Cheat"
+vendor  = "Example Security Ltd"
+kind    = "kernel"          # kernel | usermode | hybrid
+shared  = true              # true => reference counting is MANDATORY (Gate G1)
+risk    = "high"            # low | medium | high | critical
+
+# Identity. A file at a matching path with the WRONG publisher is reported as
+# `suspicious` and is never auto-selected for removal.
+authenticode_cn = ["Example Security Ltd"]
+file_hashes     = []        # optional SHA-256 pins for known builds
+
+services = ["ExampleAC", "ExampleACSvc"]
+drivers  = ["exampleac.sys"]
+
+paths = [
+  { path = "%ProgramFiles(x86)%\\ExampleAC", class = "install" },
+  { path = "%ProgramData%\\ExampleAC",       class = "data"    },
+  { path = "%ProgramData%\\ExampleAC\\logs", class = "log"     },
+]
+
+registry = [
+  { key = "HKLM\\SOFTWARE\\ExampleAC", view = "both", class = "config"  },
+  { key = "HKLM\\SYSTEM\\CurrentControlSet\\Services\\ExampleAC", view = "64", class = "service" },
+]
+
+tasks          = ["\\ExampleAC\\Report"]
+firewall_rules = ["ExampleAC*"]
+event_sources  = ["ExampleAC"]
+
+# Always attempted BEFORE any manual removal.
+[anticheat.official_uninstall]
+kind         = "exe"        # exe | msi | none
+command      = "%ProgramFiles(x86)%\\ExampleAC\\ExampleAC_Setup.exe"
+args         = ["uninstall"]
+timeout_secs = 300
+
+# ----------------------------------------------------------------------------
+# ANTI-CHEAT — boot-start driver. Highest risk class.
+# ----------------------------------------------------------------------------
+[[anticheat]]
+id      = "example-bootstart-ac"
+display = "Example Guard"
+vendor  = "Example Games"
+kind    = "kernel"
+shared  = true              # e.g. shared between two titles by the same publisher
+risk    = "critical"        # boot-start => disable -> reboot -> delete only
+
+authenticode_cn = ["Example Games Inc."]
+
+services = ["exguard", "exgc"]
+drivers  = ["exguard.sys"]
+
+paths = [
+  { path = "%ProgramFiles%\\Example Guard", class = "install" },
+]
+
+registry = [
+  { key = "HKLM\\SYSTEM\\CurrentControlSet\\Services\\exguard", view = "64", class = "service" },
+  { key = "HKLM\\SYSTEM\\CurrentControlSet\\Services\\exgc",    view = "64", class = "service" },
+]
+
+[anticheat.official_uninstall]
+kind    = "msi"
+command = "{00000000-0000-0000-0000-000000000000}"
+args    = ["/qn", "/norestart"]
+
+# ----------------------------------------------------------------------------
+# ANTI-CHEAT — user-mode only. Lowest risk, no reboot.
+# ----------------------------------------------------------------------------
+[[anticheat]]
+id      = "example-usermode-ac"
+display = "Example Shield"
+vendor  = "Example Studios"
+kind    = "usermode"
+shared  = false             # ONLY with positive evidence across titles
+risk    = "low"
+
+authenticode_cn = ["Example Studios Co., Ltd."]
+services = []
+drivers  = []
+
+paths = [
+  { path = "%LOCALAPPDATA%\\ExampleShield", class = "data" },
+]
+
+registry = [
+  { key = "HKCU\\SOFTWARE\\ExampleShield", view = "both", class = "config" },
+]
+
+[anticheat.official_uninstall]
+kind = "none"               # removed with the game; nothing separate to call
+
+# ----------------------------------------------------------------------------
+# GAME
+# ----------------------------------------------------------------------------
+[[game]]
+id        = "example-shooter"
+display   = "Example Shooter"
+publisher = "Example Studios"
+anticheat = ["example-kernel-ac"]
+platforms = ["steam", "epic"]
+
+steam_appid   = 0
+epic_app_name = "ExampleShooter"
+
+install_hints = [
+  { path = "%STEAM_LIBRARY%\\steamapps\\common\\Example Shooter", class = "install" },
+  { path = "%EPIC_LIBRARY%\\ExampleShooter",                      class = "install" },
+]
+
+residue = [
+  { path = "%LOCALAPPDATA%\\ExampleShooter\\Cache",  class = "cache" },
+  { path = "%LOCALAPPDATA%\\ExampleShooter\\Logs",   class = "log"   },
+  { path = "%LOCALAPPDATA%\\ExampleShooter\\Crashes",class = "log"   },
+]
+
+# PROTECTION LIST, NOT A REMOVAL LIST.
+# Excluded from every plan by default; archived to quarantine even when the
+# user explicitly opts in to removing them.
+saves = [
+  { path = "%LOCALAPPDATA%\\ExampleShooter\\Saved\\SaveGames", class = "save" },
+  { path = "%USERPROFILE%\\Documents\\Example Shooter",        class = "save" },
+]
+
+registry = [
+  { key = "HKCU\\SOFTWARE\\Example Studios\\Example Shooter", view = "both", class = "config" },
+]
+
+# A second game sharing the same anti-cheat — this is what makes refcount matter.
+[[game]]
+id        = "example-arena"
+display   = "Example Arena"
+publisher = "Example Studios"
+anticheat = ["example-kernel-ac"]
+platforms = ["steam"]
+
+steam_appid = 1
+
+install_hints = [
+  { path = "%STEAM_LIBRARY%\\steamapps\\common\\Example Arena", class = "install" },
+]
+
+residue = [
+  { path = "%LOCALAPPDATA%\\ExampleArena\\Cache", class = "cache" },
+]
+
+saves = [
+  { path = "%LOCALAPPDATA%\\ExampleArena\\Saved", class = "save" },
+]
+
+# ----------------------------------------------------------------------------
+# LAUNCHER
+# ----------------------------------------------------------------------------
+[[launcher]]
+id              = "steam"
+display         = "Steam"
+detect_registry = "HKLM\\SOFTWARE\\WOW6432Node\\Valve\\Steam"
+library_index   = "steamapps\\libraryfolders.vdf"
+manifest_glob   = "steamapps\\appmanifest_*.acf"
+
+# Deleting the game directory without removing appmanifest_{appid}.acf leaves
+# Steam believing the game is installed. See docs/06-REMOVAL-PIPELINE.md.
+[launcher.uninstall]
+kind    = "protocol"
+command = "steam://uninstall/{appid}"
+silent  = false
+
+[[launcher]]
+id              = "epic"
+display         = "Epic Games Launcher"
+detect_registry = "HKLM\\SOFTWARE\\WOW6432Node\\Epic Games\\EpicGamesLauncher"
+manifest_glob   = "%ProgramData%\\Epic\\EpicGamesLauncher\\Data\\Manifests\\*.item"
+
+[launcher.uninstall]
+kind    = "msi_from_manifest"
+silent  = true

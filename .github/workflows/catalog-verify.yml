@@ -1,0 +1,51 @@
+# Catalog integrity gate.
+#
+# A catalog that would be refused at runtime must fail CI, not ship and fail on
+# a user's machine.
+#
+# NOTE: explicit `permissions:` required — see rust-ci.yml.
+name: Catalog Verify
+
+on:
+  push:
+    paths: ['catalog/**', '.github/workflows/catalog-verify.yml']
+  pull_request:
+    paths: ['catalog/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Build catalog tool
+        run: cargo build -p wardsweep-catalog --release
+
+      - name: Schema validation
+        run: ./target/release/wardsweep-catalog validate catalog/catalog.toml
+
+      - name: Ed25519 signature
+        run: ./target/release/wardsweep-catalog verify
+             --toml catalog/catalog.toml
+             --sig  catalog/catalog.toml.sig
+             --pubkey catalog/pubkey.hex
+
+      - name: Deny-list conflict check
+        # Any catalog path resolving into a protected location is a hard failure.
+        run: ./target/release/wardsweep-catalog check-denylist catalog/catalog.toml
+
+      - name: Referential integrity
+        # Every game.anticheat id must exist; no duplicate or reused ids.
+        run: ./target/release/wardsweep-catalog check-refs catalog/catalog.toml
+
+      - name: Shared-flag audit
+        # Entries with shared=false must carry an evidence note. Defaulting to
+        # false without evidence is the G1 failure mode — docs/02-SAFETY-GATE.md.
+        run: ./target/release/wardsweep-catalog audit-shared catalog/catalog.toml --require-evidence
