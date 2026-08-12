@@ -135,16 +135,23 @@ v1.0. Discovering it from a user's bug report is the failure case.
 
 ## CI matrix
 
-| Job | Runner | Gates |
-|---|---|---|
-| `rust-fmt-clippy` | ubuntu | fmt, clippy pedantic `-D warnings` |
-| `rust-test` | windows | unit + sandbox + golden |
-| `rust-bench` | windows | perf budgets from [`10`](10-PERF-BUDGET.md) |
-| `cargo-deny` | ubuntu | advisories, licences, bans |
-| `dotnet-build-test` | windows | build, test, `TreatWarningsAsErrors` |
-| `dotnet-vuln` | windows | `dotnet list package --vulnerable` — hard gate |
-| `catalog-verify` | ubuntu | signature + schema + deny-list conflict check |
-| `codeql` | ubuntu | C# and (where supported) Rust |
+Every workflow is defined in this repository rather than called out to a shared
+one. [`14`](14-DISTRIBUTION-TRUST.md) treats public CI as part of the trust
+story for an unsigned binary, and a pipeline you cannot read from here is not
+public in any useful sense.
+
+| Workflow | Job | Runner | Gates |
+|---|---|---|---|
+| Rust CI | `lint` | ubuntu | `cargo fmt --check`, clippy pedantic `-D warnings`. Building with `cfg(windows)` off is also what proves no Win32 dependency has reached the portable crates. |
+| Rust CI | `test-windows` | windows | clippy pedantic again — the linux job lints no Win32 code path at all — plus unit, sandbox and golden tests |
+| Rust CI | `deny` | ubuntu | advisories, bans, licences, sources |
+| Rust CI | `bench` | windows | `scan_corpus`, gated on the hard-fail budgets in [`10`](10-PERF-BUDGET.md). Push only. |
+| .NET CI | `build-test` | windows | restore `--locked-mode`, build, `dotnet format`, test |
+| .NET CI | `arch-tests` | windows | `Category=Architecture`: no destructive code path in the UI |
+| .NET CI | `vulnerable-packages` | windows | transitive scan. Hard gate, and the output is parsed rather than the exit code, which is always 0. |
+| .NET CI | `xaml-style` | windows | XamlStyler |
+| Catalog Verify | `verify` | ubuntu | signature, schema, referential integrity, deny-list conflict, shared-flag audit |
+| CodeQL | `analyze` | windows | C# `security-extended`. Windows rather than ubuntu because the solution is WPF and building the real thing on the real platform is worth the deviation. CodeQL has no Rust support; clippy pedantic and `cargo deny` cover that side. |
 
 `catalog-verify` includes a check that no catalog entry resolves to a
 deny-listed path. A catalog that would be refused at runtime must fail CI, not

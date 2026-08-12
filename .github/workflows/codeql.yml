@@ -1,6 +1,17 @@
-# Caller stub → poli0981/.github/.github/workflows/codeql.yml
+# CodeQL.
 #
-# NOTE: explicit `permissions:` required — see rust-ci.yml.
+# Inline rather than a caller stub — see the note in rust-ci.yml.
+#
+# Runs on windows-latest rather than ubuntu. The analysis has to build the
+# solution, and the solution is WPF: a Linux runner needs EnableWindowsTargeting
+# and still exercises a code path nobody ships. docs/12-TESTING-STRATEGY.md puts
+# this job on ubuntu in its CI matrix; building the real thing on the real
+# platform is worth the deviation.
+#
+# Rust is not analysed: CodeQL has no Rust support at the time of writing.
+# `cargo deny` and clippy pedantic cover that side — see rust-ci.yml.
+#
+# NOTE: explicit `permissions:` required.
 name: CodeQL
 
 on:
@@ -10,21 +21,41 @@ on:
     branches: [main]
   schedule:
     - cron: '0 3 * * 1'
+  workflow_dispatch:
 
 permissions:
   contents: read
-  security-events: write
-  actions: read
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   analyze:
-    uses: poli0981/.github/.github/workflows/codeql.yml@main
+    name: analyze C#
+    runs-on: windows-latest
     permissions:
       contents: read
       security-events: write
       actions: read
-    with:
-      languages: 'csharp'
-      queries: 'security-extended'
-      build-mode: 'manual'
-      build-command: 'dotnet build WardSweep.sln -c Release'
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: csharp
+          queries: security-extended
+          build-mode: manual
+
+      - name: Build
+        run: |
+          dotnet restore WardSweep.sln --locked-mode
+          dotnet build WardSweep.sln -c Release --no-restore
+
+      - uses: github/codeql-action/analyze@v4
+        with:
+          category: /language:csharp

@@ -1,69 +1,105 @@
-# Caller stub → poli0981/.github/.github/workflows/rust-ci.yml
+# Rust CI.
 #
-# NOTE: `permissions:` MUST be declared explicitly here. Permissions are not
-# reliably inherited by reusable workflows — standing rule across the portfolio.
+# Inline rather than a caller stub. docs/14-DISTRIBUTION-TRUST.md rests on
+# public, inspectable CI: an unsigned binary's trust story is that anyone can
+# see how it was built and rebuild it themselves. A pipeline that lives in
+# another repository cannot be read from here.
+#
+# NOTE: `permissions:` are declared explicitly — standing rule across the
+# portfolio, and they are not reliably inherited.
 name: Rust CI
 
 on:
   push:
     branches: [main]
-    paths: ['core/**', 'cli/**', 'tools/**', 'Cargo.*', '.github/workflows/rust-ci.yml']
+    paths: ['core/**', 'cli/**', 'tools/**', 'Cargo.*', 'catalog/**', 'rust-toolchain.toml', 'clippy.toml', 'rustfmt.toml', 'deny.toml', '.github/workflows/rust-ci.yml']
   pull_request:
-    paths: ['core/**', 'cli/**', 'tools/**', 'Cargo.*']
+    paths: ['core/**', 'cli/**', 'tools/**', 'Cargo.*', 'catalog/**', 'rust-toolchain.toml', 'clippy.toml', 'rustfmt.toml', 'deny.toml', '.github/workflows/rust-ci.yml', '.github/scripts/**']
   workflow_dispatch:
 
 permissions:
   contents: read
-  checks: write
-  pull-requests: write
 
 concurrency:
   group: rust-ci-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+
 jobs:
   lint:
-    uses: poli0981/.github/.github/workflows/rust-ci.yml@main
-    permissions:
-      contents: read
-      checks: write
-    with:
-      runs-on: ubuntu-latest
-      components: 'rustfmt, clippy'
-      clippy-args: '--all-targets --all-features -- -D warnings -W clippy::pedantic'
-      run-tests: false
+    # ubuntu on purpose. Everything reachable from the catalog gate is pure
+    # logic, and building it with cfg(windows) off is what proves no Win32
+    # dependency has leaked into it — see docs/12-TESTING-STRATEGY.md on
+    # pure-logic crates being linted on Linux.
+    name: fmt + clippy (linux)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install the pinned toolchain
+        # rust-toolchain.toml is the single source of truth for the version and
+        # the components; `rustup show` installs whatever it names.
+        run: rustup show
+
+      - uses: Swatinem/rust-cache@v2
+
+      - run: cargo fmt --all --check
+
+      - run: cargo clippy --all-targets --all-features -- -D warnings -W clippy::pedantic
 
   test-windows:
-    # Sandbox tests create services and load registry hives — needs a Windows runner.
-    #
-    # Clippy runs here as well as in `lint`. The ubuntu job compiles with
-    # cfg(windows) off, so every Win32 code path — the largest and most
-    # dangerous part of this codebase — would otherwise never be linted at all.
-    uses: poli0981/.github/.github/workflows/rust-ci.yml@main
-    permissions:
-      contents: read
-      checks: write
-    with:
-      runs-on: windows-latest
-      clippy-args: '--all-targets --all-features -- -D warnings -W clippy::pedantic'
-      test-args: '--all-features --workspace'
+    # Sandbox tests create services and load registry hives, so they need a
+    # Windows runner. Clippy runs here too: with cfg(windows) off, the linux
+    # job never lints a single Win32 code path.
+    name: clippy + test (windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install the pinned toolchain
+        run: rustup show
+
+      - uses: Swatinem/rust-cache@v2
+
+      - run: cargo clippy --all-targets --all-features -- -D warnings -W clippy::pedantic
+
+      - run: cargo test --all-features --workspace
 
   deny:
-    uses: poli0981/.github/.github/workflows/cargo-deny.yml@main
-    permissions:
-      contents: read
-      security-events: write
-    with:
-      checks: 'advisories bans licenses sources'
+    name: cargo-deny
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check advisories bans licenses sources
 
   bench:
-    # Perf budgets from docs/10-PERF-BUDGET.md are enforced, not advisory.
+    # docs/10-PERF-BUDGET.md: "Budgets are enforced, not aspirational."
+    name: scan_corpus benchmark
     if: github.event_name == 'push'
-    uses: poli0981/.github/.github/workflows/rust-bench.yml@main
-    permissions:
-      contents: read
-    with:
-      runs-on: windows-latest
-      bench-args: '--bench scan_corpus'
-      fail-on-regression: true
-      regression-threshold-pct: 15
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install the pinned toolchain
+        run: rustup show
+
+      - uses: Swatinem/rust-cache@v2
+
+      - run: cargo bench --bench scan_corpus
+
+      - name: Enforce the docs/10 hard-fail budgets
+        shell: bash
+        run: python .github/scripts/check_bench_budget.py
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: criterion-report
+          path: target/criterion/
+          retention-days: 14

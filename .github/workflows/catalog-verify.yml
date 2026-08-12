@@ -25,6 +25,7 @@ on:
       - 'core/src/safety/**'
       - 'core/src/catalog/**'
       - 'Cargo.*'
+      - '.github/workflows/catalog-verify.yml'
   workflow_dispatch:
 
 permissions:
@@ -35,9 +36,13 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: dtolnay/rust-toolchain@stable
+      - name: Install the pinned toolchain
+        # rust-toolchain.toml is the single source of truth for the version.
+        run: rustup show
+
+      - uses: Swatinem/rust-cache@v2
 
       - name: Build catalog tool
         run: cargo build -p wardsweep-catalog --release

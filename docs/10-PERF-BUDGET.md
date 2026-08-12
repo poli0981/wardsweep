@@ -125,8 +125,19 @@ Every PR touching `scan/`, `plan/` or the UI item pipeline reports:
 cargo bench --bench scan_corpus      # fixed synthetic corpus, committed
 ```
 
-CI records peak RSS via a job wrapper and fails on hard-fail thresholds. Budgets
-are enforced, not aspirational.
+Budgets are enforced, not aspirational — but only the ones that can currently be
+measured honestly:
+
+| Budget | Enforced |
+|---|---|
+| Catalog load + automaton build, hard fail | Yes, by the `bench` job via `.github/scripts/check_bench_budget.py` |
+| The other wall-time budgets | No — they need the scanner |
+| Peak RSS | No — there is no job wrapper measuring it yet |
+| 15 % regression threshold | No. Criterion compares against a baseline in `target/criterion`, which does not survive between runs, and a 15 % threshold on a shared runner would flake more often than it would catch anything. The absolute hard-fail budgets hold in the meantime. |
+
+Only the hard-fail figures are gated, never the target figures: a GitHub runner
+is not the reference machine above, so failing a build on the target would be
+measuring the runner rather than the code.
 
 Benchmark corpus is a committed fixture tree (~120 k synthetic files, ~40 k
 registry keys) so results are comparable across machines and over time. Real

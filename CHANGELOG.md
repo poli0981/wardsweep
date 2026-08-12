@@ -90,6 +90,36 @@ maintainer decision with rationale before it changes.
   `VolumeSerialNumber` appears in shipped source. The five prohibitions
   themselves are unchanged.
 
+### Continuous integration
+- **The CI workflows now exist.** Rust CI, .NET CI and CodeQL were caller stubs
+  delegating to `poli0981/.github/.github/workflows/*@main`. That repository is
+  real, but none of the six workflows they named are in it, so all three failed
+  at startup on every push and pull request — including on an empty one. Only
+  Catalog Verify, the single inline workflow, had ever run.
+
+  They are now defined here, inline. `docs/14-DISTRIBUTION-TRUST.md` treats
+  public CI as part of the trust story for an unsigned binary, and a pipeline
+  that cannot be read from this repository is not public in any useful sense.
+
+- Every action pin was several majors behind and some would not have resolved:
+  `actions/checkout` v4 → v7, `setup-dotnet` v4 → v6, `upload-artifact` v4 → v7,
+  `download-artifact` v4 → v8, `attest-build-provenance` v1 → v4,
+  `action-gh-release` v2 → v3, and CodeQL v3 → v4.
+
+- The Rust toolchain is installed with `rustup show` so `rust-toolchain.toml`
+  stays the single source of truth for the version, and the .NET SDK with
+  `global-json-file` for the same reason.
+
+- The performance budget is a real gate: `.github/scripts/check_bench_budget.py`
+  reads criterion's estimates and fails the build on the hard-fail figures in
+  `docs/10-PERF-BUDGET.md`. The 15 % regression threshold the old stub asked for
+  is not enforced and `docs/10` now says so — criterion's baseline does not
+  survive between runs, and that threshold on a shared runner would flake more
+  than it would catch.
+
+- `dotnet list package --vulnerable` exits 0 even when it finds something, so
+  the job parses its output instead of trusting the exit code.
+
 ### Known gaps
 - `THIRD-PARTY-NOTICES.md` staleness is not checked by CI, although both that
   file and `COPYING.md` previously claimed it was. Both now say so plainly.
