@@ -287,9 +287,25 @@ moment in the software's own lifecycle:
 | Minutes after a restart | `system` (1) |
 | **Minutes after a fresh install** | **`system` (1)** |
 
-So `system` is what Vanguard *installs*, and `demand` is what the value settles
-to. A catalog entry derived from an observation taken hours after an install
-records the settled value and calls it the fact.
+`system` is therefore what Vanguard *writes*, and `demand` is what a machine
+that has been up for hours reports. A catalog entry derived from a late
+observation records the later reading and calls it the fact.
+
+> **How much of that is actually established.** The two endpoint values are
+> measured and repeatable. **The transition between them has never been
+> observed**, and the one attempt to catch it is so far a null result: a
+> one-minute poll of SCM, the registry key and the run state was armed
+> immediately after this install and reported no change for the next
+> **thirty-five minutes**, with `vgk` still at `SYSTEM_START` throughout. After
+> the earlier restart the same value read `demand` about fifteen minutes in, so
+> whatever lowers it is not simply a timer.
+>
+> What is safe to say is the narrow version: **the value differs between a
+> freshly installed or freshly booted machine and one that has been running for
+> hours, and a single reading cannot tell you which you have.** The mechanism —
+> whether `vgc` lowers it, whether a game launch raises it, whether it depends
+> on the client running — is not established, and this note should not be read
+> as claiming it is.
 
 Two things follow for the catalog, and they pull in opposite directions:
 
@@ -298,9 +314,10 @@ Two things follow for the catalog, and they pull in opposite directions:
    `risk = critical` — correctly does **not** fire, and the draft says
    `risk = high`. Vanguard's driver loads early, but not in the class that
    forces the reboot stage.
-2. **The value a scan happens to read is not the value the installer wrote**,
-   and the difference is one step of severity. The inference rule is sound; what
-   it is fed is a moment.
+2. **The value a scan happens to read need not be the value the installer
+   wrote**, and the difference is one step of severity. The inference rule is
+   sound; what it is fed is a moment. Reading it once and recording the answer
+   as a property is the mistake, whichever direction it lands in.
 
 ### The residue survived a reinstall too
 

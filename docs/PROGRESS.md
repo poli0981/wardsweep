@@ -102,9 +102,11 @@ that the observation could not tell.
 
 Two facts worth carrying forward. No reboot was required, contrary to
 expectation, because the client was closed and `vgk` was not loaded. And **`vgk`
-is installed at `SYSTEM_START` but reads `demand` hours later** — `docs/16`
-infers `risk` from a value that settles, so a late observation records the
-settled reading and calls it the fact.
+is installed at `SYSTEM_START` but reads `demand` on a machine that has been up
+for hours** — `docs/16` infers `risk` from a value that moves, so a late
+observation records the later reading and calls it the fact. The endpoints are
+measured; the transition between them has never been caught, and a 35-minute
+poll straight after the install saw no change at all.
 
 **3. `observe intersect`.**
 The last unwritten subcommand. The intersection of the same anti-cheat observed
