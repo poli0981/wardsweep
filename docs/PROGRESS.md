@@ -37,6 +37,7 @@ architecture survived contact, its protocol did not survive it unamended.
 | `ui/` — WPF shell | Shell only, plus the architecture tests that assert the UI has no destructive code path |
 | CI — Rust, .NET, CodeQL, Catalog Verify | Done, inline in this repository, all green |
 | Spike S3 — split-privilege architecture | **PASS.** All six criteria measured — 23 checks, 0 failed. `spikes/S3-RESULT.md`. Throwaway code in `spikes/s3-split-privilege/`, unreachable from either build. |
+| `observations/2026-08-19-anticheatexpert/` | **First real observation.** Uninstall half of the `docs/16` cycle, committed with its diff, draft entry and notes. Reinstall half pending. |
 | `tools/observe/` — the observation harness | **`snapshot`, `diff`, `suggest`, `redact`.** Services, filesystem and registry, with Authenticode signer clustering and both WOW64 views. A draft entry is generated from the shipped schema and is proven to load through the real parser. Scheduled tasks, firewall, event sources and environment are named as `not_captured` rather than omitted; `intersect` is not written. |
 
 Enforced by tests rather than by review:
@@ -61,59 +62,73 @@ has seen fail is not a gate.
 
 ## Next, in order
 
-**1. Finish the observation harness (`tools/observe/`).**
-`CONTRIBUTING.md` ranks a real observation diff above any amount of code,
-because no catalog entry may ship without one. Until this exists the catalog
-cannot grow, and until the catalog grows there is nothing to detect.
+**1. Finish the AntiCheatExpert observation — one game launch.**
+The uninstall half is done and committed at
+`observations/2026-08-19-anticheatexpert/`. To finish it: start Neverness To
+Everness so it reinstalls ACE, take a snapshot, and diff `01-uninstalled`
+against it for the true install footprint. The earlier snapshots are at
+`%LOCALAPPDATA%\WardSweep\observations\`.
 
-Services and filesystem are done and work on a real machine. Signer clustering
-delivers what [`16`](16-OBSERVATION-HARNESS.md) promised: on the development
-machine it names the entire Riot Vanguard footprint — seven files, one
-publisher — without any path knowledge at all.
+The half that already exists is the one [`16`](16-OBSERVATION-HARNESS.md) says
+"alone justifies the cycle", and its answer was that **ACEVILLE's uninstaller
+leaves nothing of its own**. A project that sweeps residue has to report that as
+readily as the opposite.
 
-Registry is done too, in both WOW64 views. The distinctness
-[`12`](12-TESTING-STRATEGY.md) asks about is real and measured: on the
-development machine 2 676 keys exist only in the 32-bit view and 86 344 only in
-the 64-bit one.
+**2. A second observation, on a different anti-cheat.**
+One observation is a data point. `shared` cannot be lowered from `true` without
+at least two titles ([`04`](04-CATALOG-SCHEMA.md)), and `observe intersect` —
+which S2 needs — has nothing to intersect until there are several. Riot Vanguard
+is the obvious next target and is installed on the development machine; note
+that Valorant is installed too, so its refcount is 1 and uninstalling costs a
+reboot and an automatic reinstall.
 
-What is left, roughly in value order:
+**3. `observe intersect`.**
+The last unwritten subcommand. The intersection of the same anti-cheat observed
+across three titles is what makes a `shared = true` footprint right, and it
+feeds S2 directly.
 
-1. **`suggest`** — the draft entry generator. It must build on
-   `wardsweep_core::catalog::schema` rather than define the shape a second time,
-   or drafts drift from the schema and only `catalog-verify` finds out.
-2. **`redact`** — [`16`](16-OBSERVATION-HARNESS.md) requires it before a raw
-   snapshot may be shared, and nothing should be shared until it exists. A
-   snapshot names every file under the user's profile.
-3. Scheduled tasks, firewall, event sources, environment.
-4. **`intersect`** — needed by S2, which is now unblocked.
-
-On the spike gate in [`13`](13-P0-SPIKES.md): six spikes still have no verdict,
-and the gate says feature work waits for all seven. The harness is the exception
-that proves the rule rather than a breach of it — **S2 needs
-`observe intersect` across several titles and S7 needs the residue diff**, so
-this is the measuring instrument the remaining spikes are blocked on, not a
-feature they are blocking. Nothing else should start ahead of them.
-
-Snapshot → diff → suggest, per [`16`](16-OBSERVATION-HARNESS.md). Read-only, no
-removal path, a separate binary from the broker.
-
-**2. Run S1 and S2**, which S3 has now unblocked, in parallel. **Read
+**4. Run S1 and S2**, which S3 unblocked, in parallel. **Read
 [`15`](15-TEST-MACHINE-PROTOCOL.md) before S1 touches real hardware** — the
-failure mode is an unbootable machine.
+failure mode is an unbootable machine. S2 should start from the evidence already
+gathered, below.
 
-**3. `core/src/safety/refcount.rs` and the ownership graph.**
+**5. `core/src/safety/refcount.rs` and the ownership graph.**
 Pure logic, testable on Linux, and it carries the G1 invariant. Six of the
-fourteen named tests in [`12`](12-TESTING-STRATEGY.md) are waiting on it. Model
-it over an evidence collection rather than a live machine, or the "other user
-profile" and "other volume" cases from S2 cannot be tested at all.
+fourteen named tests in [`12`](12-TESTING-STRATEGY.md) are waiting on it. The
+three S2 findings below are what it has to be right about.
 
-**4. The detection engine (`core/src/scan/`), and then v0.1.**
+**6. The detection engine (`core/src/scan/`), and then v0.1.**
+
+The remaining harness domains — scheduled tasks, firewall, event sources,
+environment — are worth adding when an observation actually needs one, not
+before. Nothing observed so far has.
 
 S1, S2 and S4–S7 remain unrun.
 
 Deferred test coverage is tracked in [`spikes/README.md`](../spikes/README.md):
 five of the fourteen named tests are done, one is partial, eight are waiting on
 code that does not exist yet.
+
+## Evidence gathered for spikes that have not run
+
+Recorded here so it is not lost between now and the spike.
+
+**S2 — shared anti-cheat reference counting.** Determining which installed games
+reference ACE took three attempts by hand on a machine that had the answer on
+it, and the first attempt was wrong in the direction that violates G1. Full
+account in `observations/2026-08-19-anticheatexpert/notes.md`; three findings
+that S2 should start from rather than rediscover:
+
+- Absence of a game from the library paths you thought to check is not evidence
+  of absence. The game was in a path none of the obvious roots covered. A
+  refcount resolver must enumerate libraries from launcher manifests.
+- An anti-cheat's own uninstall entry names the game that **installed** it, not
+  the games that **need** it, and is not updated when that game is removed.
+  Useful as a lead, never as a count — it over-counted here by naming a game
+  that had been uninstalled.
+- Three kernel-class anti-cheats were found on one ordinary developer machine
+  (Vanguard, AntiCheatExpert, EA Javelin), two of them only by enumerating
+  rather than by looking for names already known.
 
 ## Open, needs a maintainer decision
 
