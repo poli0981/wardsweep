@@ -21,8 +21,18 @@ path = "src/main.rs"
 [dependencies]
 anyhow.workspace = true
 clap.workspace = true
+rayon.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+sha2.workspace = true
+
+[dev-dependencies]
+# Cleans up its own temp trees on Drop. The inline test modules in src/ cannot
+# call std::fs::remove_dir_all themselves: core/tests/no_destructive_code.rs
+# scopes its ban by directory, and although its comment says "test and benchmark
+# code may clean up after itself", a #[cfg(test)] module inside src/ is not
+# reached by that exemption.
+tempfile.workspace = true
 
 # Everything Win32 lives here, never behind a cargo feature: the CI lint job
 # runs `clippy --all-features` on ubuntu-latest. Only `snapshot` needs Windows —
@@ -33,4 +43,5 @@ windows = { workspace = true, features = [
     "Win32_Foundation",
     "Win32_System_Services",
     "Win32_Security",
+    "Win32_Security_Cryptography",
 ] }

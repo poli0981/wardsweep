@@ -23,7 +23,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use serde::{Deserialize, Serialize};
 
-use crate::model::{Coverage, ServiceRecord, Snapshot};
+use crate::model::{Coverage, FileRecord, ServiceRecord, Snapshot};
 
 /// Wire-format version of a diff file.
 pub const DIFF_FORMAT_VERSION: u32 = 1;
@@ -74,6 +74,30 @@ pub struct ServiceChange {
     pub fields: Vec<FieldChange>,
 }
 
+/// A file that differs between two snapshots.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct FileChange {
+    /// Full path.
+    pub path: String,
+    /// Added, removed, or modified.
+    pub kind: ChangeKind,
+    /// The signer of whichever record exists, carried so a reviewer can cluster
+    /// by publisher without going back to the snapshots. `docs/16` calls this
+    /// the single most useful signal there is.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub signer: Option<String>,
+    /// Whether the path names a kernel driver image.
+    pub is_driver_image: bool,
+    /// The record as it was, when there was one.
+    pub before: Option<FileRecord>,
+    /// The record as it is, when there is one.
+    pub after: Option<FileRecord>,
+    /// Field-level differences, for a modification.
+    #[serde(default)]
+    pub fields: Vec<FieldChange>,
+}
+
 /// A change the noise filter moved out of the way, and why.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -82,6 +106,16 @@ pub struct Suppressed {
     pub rule: String,
     /// The change itself, unmodified.
     pub change: ServiceChange,
+}
+
+/// A file change the noise filter moved out of the way, and why.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SuppressedFile {
+    /// The rule that matched.
+    pub rule: String,
+    /// The change itself, unmodified.
+    pub change: FileChange,
 }
 
 /// The result of comparing two snapshots.
@@ -100,6 +134,31 @@ pub struct Diff {
     pub services: Vec<ServiceChange>,
     /// Changes the noise filter moved aside, each with its rule.
     pub suppressed: Vec<Suppressed>,
+    /// File changes that survived the noise filter.
+    #[serde(default)]
+    pub files: Vec<FileChange>,
+    /// File changes the noise filter moved aside.
+    #[serde(default)]
+    pub suppressed_files: Vec<SuppressedFile>,
+    /// Whether the two snapshots walked the filesystem under different rules.
+    ///
+    /// When this is true every file difference below is suspect, because a
+    /// change to the roots, the exclusions or the hash policy moves files in
+    /// and out of the snapshot without anything happening on the machine.
+    ///
+    /// This is not hypothetical. The first two full snapshots taken during
+    /// development were captured either side of a change to the exclusion list,
+    /// and 86 of the 109 reported differences were the list, not the machine.
+    /// A diff that cannot notice that is a diff that invents evidence.
+    #[serde(default)]
+    pub filesystem_policy_changed: bool,
+    /// Signer common names seen among the surviving file changes, with counts.
+    ///
+    /// The clustering `docs/16` asks for, precomputed: everything an installer
+    /// dropped shares a publisher, so a single unfamiliar name against a large
+    /// count is usually the whole footprint.
+    #[serde(default)]
+    pub signers: BTreeMap<String, usize>,
 }
 
 impl Diff {
@@ -108,6 +167,9 @@ impl Diff {
     pub fn suppression_counts(&self) -> BTreeMap<String, usize> {
         let mut counts = BTreeMap::new();
         for entry in &self.suppressed {
+            *counts.entry(entry.rule.clone()).or_insert(0) += 1;
+        }
+        for entry in &self.suppressed_files {
             *counts.entry(entry.rule.clone()).or_insert(0) += 1;
         }
         counts
@@ -172,14 +234,158 @@ pub fn compare(
         }
     }
 
+    let coverage = before.coverage.intersect(&after.coverage);
+
+    // Only diff a domain both sides actually captured. Comparing a snapshot
+    // that walked the filesystem against one that did not would report every
+    // file as removed, which is an artefact of the collection rather than
+    // anything that happened on the machine.
+    let (files, suppressed_files) = if coverage.covers(crate::model::Domain::Filesystem) {
+        compare_files(&before.files, &after.files, filter)
+    } else {
+        (Vec::new(), Vec::new())
+    };
+
+    // Compared before the changes are read, because it decides whether they
+    // mean anything.
+    let filesystem_policy_changed = before.filesystem_policy != after.filesystem_policy;
+
+    let mut signers: BTreeMap<String, usize> = BTreeMap::new();
+    for change in &files {
+        if let Some(signer) = &change.signer {
+            *signers.entry(signer.clone()).or_insert(0) += 1;
+        }
+    }
+
     Ok(Diff {
         format_version: DIFF_FORMAT_VERSION,
         before_taken_utc: before.taken_utc.clone(),
         after_taken_utc: after.taken_utc.clone(),
-        coverage: before.coverage.intersect(&after.coverage),
+        coverage,
         services: kept,
         suppressed,
+        files,
+        suppressed_files,
+        filesystem_policy_changed,
+        signers,
     })
+}
+
+fn compare_files(
+    before: &[FileRecord],
+    after: &[FileRecord],
+    filter: &NoiseFilter,
+) -> (Vec<FileChange>, Vec<SuppressedFile>) {
+    let index = |records: &[FileRecord]| -> BTreeMap<String, FileRecord> {
+        records
+            .iter()
+            .map(|record| (record.path.to_ascii_lowercase(), record.clone()))
+            .collect()
+    };
+
+    let before_index = index(before);
+    let after_index = index(after);
+    let paths: BTreeSet<&String> = before_index.keys().chain(after_index.keys()).collect();
+
+    let mut kept = Vec::new();
+    let mut suppressed = Vec::new();
+
+    for path in paths {
+        let old = before_index.get(path);
+        let new = after_index.get(path);
+
+        let change = match (old, new) {
+            (None, Some(record)) => FileChange {
+                path: record.path.clone(),
+                kind: ChangeKind::Added,
+                signer: record.signer.clone(),
+                is_driver_image: record.is_driver_image(),
+                before: None,
+                after: Some(record.clone()),
+                fields: Vec::new(),
+            },
+            (Some(record), None) => FileChange {
+                path: record.path.clone(),
+                kind: ChangeKind::Removed,
+                signer: record.signer.clone(),
+                is_driver_image: record.is_driver_image(),
+                before: Some(record.clone()),
+                after: None,
+                fields: Vec::new(),
+            },
+            (Some(old), Some(new)) => {
+                let fields = file_field_changes(old, new);
+                if fields.is_empty() {
+                    continue;
+                }
+                FileChange {
+                    path: new.path.clone(),
+                    kind: ChangeKind::Modified,
+                    signer: new.signer.clone(),
+                    is_driver_image: new.is_driver_image(),
+                    before: Some(old.clone()),
+                    after: Some(new.clone()),
+                    fields,
+                }
+            }
+            (None, None) => continue,
+        };
+
+        match filter.file_rule_for(&change) {
+            Some(rule) => suppressed.push(SuppressedFile {
+                rule: rule.to_owned(),
+                change,
+            }),
+            None => kept.push(change),
+        }
+    }
+
+    (kept, suppressed)
+}
+
+fn file_field_changes(before: &FileRecord, after: &FileRecord) -> Vec<FieldChange> {
+    fn compare(changes: &mut Vec<FieldChange>, field: &str, old: &str, new: &str) {
+        if old != new {
+            changes.push(FieldChange {
+                field: field.to_owned(),
+                before: old.to_owned(),
+                after: new.to_owned(),
+            });
+        }
+    }
+
+    let mut changes = Vec::new();
+    compare(
+        &mut changes,
+        "size",
+        &before.size.to_string(),
+        &after.size.to_string(),
+    );
+    compare(
+        &mut changes,
+        "sha256",
+        before.sha256.as_deref().unwrap_or_default(),
+        after.sha256.as_deref().unwrap_or_default(),
+    );
+    compare(
+        &mut changes,
+        "signer",
+        before.signer.as_deref().unwrap_or_default(),
+        after.signer.as_deref().unwrap_or_default(),
+    );
+    // Reported only alongside something else. docs/16 asks for timestamp-only
+    // changes to be ignored, and a file whose size and contents are identical
+    // was not touched by an installer whatever its timestamp says.
+    if !changes.is_empty() {
+        compare(
+            &mut changes,
+            "modified_utc",
+            &before.modified_utc,
+            &after.modified_utc,
+        );
+    }
+
+    changes
 }
 
 fn compare_services(
@@ -376,6 +582,27 @@ impl NoiseFilter {
         }
     }
 
+    /// The rule that suppresses a file change, if any.
+    ///
+    /// The walk already refused to descend into the volatile directories, so
+    /// little is left to do here. What remains is the case the walk cannot see:
+    /// a file whose only difference is its timestamp, which `docs/16` asks to
+    /// be ignored and which `file_field_changes` already declines to report on
+    /// its own — this is the belt to that brace.
+    #[must_use]
+    pub fn file_rule_for(&self, change: &FileChange) -> Option<&str> {
+        if !self.normalise_per_user_instances {
+            return None;
+        }
+        if change.kind == ChangeKind::Modified
+            && change.fields.len() == 1
+            && change.fields[0].field == "modified_utc"
+        {
+            return Some("timestamp-only");
+        }
+        None
+    }
+
     /// The rule that suppresses this change, if any.
     #[must_use]
     pub fn rule_for(&self, change: &ServiceChange) -> Option<&str> {
@@ -419,6 +646,8 @@ mod tests {
                 access_denied: Vec::new(),
             },
             services,
+            files: Vec::new(),
+            filesystem_policy: None,
         }
     }
 
@@ -517,6 +746,42 @@ mod tests {
 
         assert_eq!(diff.services.len(), 2);
         assert!(diff.suppressed.is_empty());
+    }
+
+    #[test]
+    fn a_policy_change_between_snapshots_is_flagged() {
+        use crate::model::FilesystemPolicy;
+
+        let policy = |excluded: &str| {
+            Some(FilesystemPolicy {
+                roots: vec!["C:\\Program Files".to_owned()],
+                excluded: vec![excluded.to_owned()],
+                hashed_extensions: vec!["sys".to_owned()],
+                max_hash_bytes: 1,
+            })
+        };
+
+        let mut before = snapshot(vec![]);
+        let mut after = snapshot(vec![]);
+        before.coverage.captured.push(Domain::Filesystem);
+        after.coverage.captured.push(Domain::Filesystem);
+        before.filesystem_policy = policy("\\temp\\");
+        after.filesystem_policy = policy("\\windows\\temp\\");
+
+        let diff = compare(&before, &after, &NoiseFilter::permissive()).unwrap();
+
+        assert!(diff.filesystem_policy_changed);
+    }
+
+    #[test]
+    fn an_unchanged_policy_is_not_flagged() {
+        let mut before = snapshot(vec![]);
+        let after = snapshot(vec![]);
+        before.coverage.captured.push(Domain::Filesystem);
+
+        let diff = compare(&before, &after, &NoiseFilter::permissive()).unwrap();
+
+        assert!(!diff.filesystem_policy_changed);
     }
 
     #[test]

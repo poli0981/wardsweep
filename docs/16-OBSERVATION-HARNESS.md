@@ -54,8 +54,42 @@ ships as `wardsweep-observe.exe`, built from `tools/observe/`, for exactly
 this reason. `wardsweep observe …` in [`11`](11-CLI-REFERENCE.md) forwards to
 it rather than linking its logic into the broker frontend.
 
-Size: roughly 40–120 MB uncompressed, 5–15 MB compressed. Committed diffs, not
-committed snapshots.
+Size and time, measured rather than estimated. On the development machine —
+745 000 files under those roots, of which 124 000 are hashed — a full snapshot
+is **156 MB uncompressed** and takes **about three and a half minutes**, with
+hashing and the signer lookup running in parallel. The earlier estimate of
+40–120 MB was optimistic for a machine with games and toolchains installed.
+
+The resulting diff is small: **0.1 MB and under three seconds**, because
+almost nothing changes between two snapshots. That asymmetry is the design
+working — the snapshot is machine input and is written compact, the diff is
+what a person reads and is written indented.
+
+Committed diffs, not committed snapshots.
+
+### Snapshots taken under different policies are not comparable
+
+A snapshot records the roots it walked, the fragments it excluded, and the hash
+policy it applied. `diff` compares them and **says so loudly when they differ**,
+because changing the exclusion list moves files in and out of the snapshot
+without anything happening on the machine.
+
+This is not hypothetical. Two development snapshots taken either side of one
+exclusion-list change produced 109 differences, of which 86 were the list. A
+later pair, across a second change, produced 31 579. A diff that cannot notice
+that is a diff that invents evidence.
+
+For contrast, the same machine under an **unchanged** policy, five minutes
+apart and in use the whole time: **18 file differences**, all of them Electron
+application state — a desktop app's `leveldb` and `IndexedDB` directories, and
+a vendor tray application's log.
+
+That number is the one to judge a new noise rule against. Eighteen is already
+low enough that adding rules to reduce it costs more than it saves: every
+exclusion is a directory that is never read again, and the `	emp\` mistake
+above shows how that fails. If residual noise ever does need addressing, prefer
+a *suppression* rule — which relocates a change and keeps it recoverable — over
+an *exclusion*, which does not.
 
 ## Reducing noise
 
@@ -65,7 +99,13 @@ telemetry, MRU lists, prefetch.
 
 The differ applies a noise filter:
 
-- Ignore list of known-volatile paths and keys (shipped, versioned, reviewable)
+- Ignore list of known-volatile paths and keys (shipped, versioned, reviewable).
+  Keep the fragments **precise**: an early version excluded a bare `\temp\`,
+  which caught the system temp directories as intended and also every
+  application that keeps its own `…\SomeGame\Temp\`. An excluded directory is
+  never read, so unlike a suppressed change it cannot be recovered from the
+  snapshot afterwards — the cost of a rule that is too broad is silent and
+  permanent.
 - Ignore `LastWriteTime`-only registry changes with unchanged values
 - Ignore files under `%TEMP%`, `%SystemRoot%\SoftwareDistribution`, Defender
   platform directories, browser profiles

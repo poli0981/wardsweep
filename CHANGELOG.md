@@ -62,6 +62,22 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
   - The service control manager is opened with `SC_MANAGER_ENUMERATE_SERVICE`
     and each service with `SERVICE_QUERY_CONFIG`, so read-only is enforced by
     the handles held rather than by the calls happening not to be made.
+- `tools/observe` filesystem domain: path, size, timestamp, SHA-256 and
+  Authenticode signer under the roots `docs/16-OBSERVATION-HARNESS.md` names.
+  - **Signer clustering works as the document promised.** On the development
+    machine it names the entire Riot Vanguard footprint — seven files, one
+    publisher — with no path knowledge at all.
+  - `diff` compares the two snapshots' filesystem policies and **warns when
+    they differ**. Changing an exclusion moves files in and out of a snapshot
+    without anything happening on the machine: two development snapshots either
+    side of one such change produced 109 differences of which 86 were the
+    change, and a later pair produced 31 579. A diff that cannot notice that is
+    a diff that invents evidence.
+  - Reparse points are never traversed, and are recorded as not-traversed
+    rather than silently skipped.
+  - `std::fs` rather than raw Win32 for metadata, deliberately: Safety Gate G3
+    bans reading a hardware identifier even for reporting, and the Win32
+    structures hand you a volume serial number whether you asked or not.
 - `spikes/Directory.Build.props` and `spikes/Directory.Packages.props`, which
   terminate the repository's MSBuild and NuGet inheritance chains. Without them
   a spike project inherits `TreatWarningsAsErrors`, the lock-file policy and the
