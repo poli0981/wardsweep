@@ -91,6 +91,25 @@ above shows how that fails. If residual noise ever does need addressing, prefer
 a *suppression* rule — which relocates a change and keeps it recoverable — over
 an *exclusion*, which does not.
 
+### A snapshot is not an instant
+
+The services are enumerated, then the filesystem is walked, then the registry.
+On a developer machine the skew between the first and last domain is around
+**five minutes**, so a value that changes during the walk is captured
+inconsistently *across domains, within one file*.
+
+Measured: a Riot Vanguard baseline recorded `vgk start_type = system` in the
+services domain and `Start = 3` (demand) on that same service's registry key
+four minutes later, because the anti-cheat raised its own driver's start type
+while its client ran and lowered it again. Both readings were correct. The file
+implied they were simultaneous.
+
+Every snapshot therefore records `domain_started_utc` per domain and prints the
+span it covered. That does not remove the skew — nothing short of a
+transactional capture would, and Windows offers none across these three
+domains — but it stops the file making a promise it cannot keep, and it tells a
+reviewer which cross-domain comparisons are safe.
+
 ## Reducing noise
 
 A snapshot pair taken minutes apart on an idle machine still differs in

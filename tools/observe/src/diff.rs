@@ -779,6 +779,7 @@ pub(crate) mod tests {
                 not_captured: Vec::new(),
                 access_denied: Vec::new(),
             },
+            domain_started_utc: std::collections::BTreeMap::new(),
             services,
             files: Vec::new(),
             filesystem_policy: None,
