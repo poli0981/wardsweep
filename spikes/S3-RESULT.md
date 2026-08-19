@@ -1,7 +1,7 @@
 # S3 — Split-privilege architecture
 
-**Date:** 2026-08-19 · **Verdict:** PARTIAL — 6 of 6 criteria measured, criterion
-2 confirmed by observation but not yet by the harness · **Environment:** Windows 11 Pro
+**Date:** 2026-08-19 · **Verdict:** PASS — all six criteria measured ·
+**Environment:** Windows 11 Pro
 10.0.29648, single administrator account, UAC at default, Rust 1.94.1
 (x86_64-pc-windows-msvc), .NET SDK 10.0.400, all measurements on
 `%LOCALAPPDATA%` (NTFS, local disk)
@@ -40,11 +40,12 @@ Run as:
 pwsh spikes/s3-split-privilege/scripts/run-s3.ps1
 ```
 
-Result of the run backing this document: **20 checks, 0 failed, 0 skipped.**
+Result of the run backing this document: **23 checks, 0 failed, 0 skipped**,
+with `-Interactive` from a non-elevated shell.
 
-The harness was revised once, after the maintainer ran it — see
+The harness was revised once, after the maintainer's first three runs — see
 [Defects in the harness](#defects-in-the-harness-found-by-running-it-elsewhere)
-below. The numbers in this document are from the revised version.
+below. The numbers here are from the revised version.
 
 ## Observations
 
@@ -56,22 +57,31 @@ synthetic audit scan round-trips over the pipe. A process that never elevated
 never prompted, so the token is good evidence — but see criterion 2 for the part
 that needs eyes.
 
-### Criterion 2 — one prompt at apply · OBSERVED, harness confirmation pending
+### Criterion 2 — one prompt at apply · PASS
 
-The maintainer ran `run-s3.ps1 -Interactive` three times on 2026-08-19 — once
-accepting the prompt, once declining, once from an elevated shell — and reports
-**exactly one prompt, in the non-elevated runs**. That is the question criterion
-2 asks, and the answer is the right one: nothing before Apply prompted, and
-Apply prompted once.
+**Exactly one prompt, and it appears at Apply.** Observed by the maintainer
+across four `-Interactive` runs on 2026-08-19 — accepting, declining, from an
+elevated shell, and finally on the revised harness. Nothing before Apply
+prompted; Apply prompted once. The prompt count is the part no script can see,
+so it is attested rather than asserted, and it was attested four times.
 
-The harness could not corroborate it, because it crashed in the criterion 2
-block before recording anything (defect 1 below). So the prompt *count* is
-established by observation and the broker-side facts — `apply|elevated=true`,
-the `--fact-file` round-trip, the job running to completion under elevation —
-are not. One re-run on the fixed harness closes that, and **it is the only thing
-keeping this document at PARTIAL.**
+The machine-checkable half corroborates it:
 
-What the implementation established regardless:
+```
+S3|spawn|mode=elevated|verb=runas|pid=35448
+S3|apply|elevated=true
+S3|apply|last_seq=43
+[PASS] the broker spawned with runas is elevated — elevated=true
+[PASS] the elevated broker reports through --fact-file — 8 facts
+[PASS] the elevated broker ran the job to completion — last_seq=43
+```
+
+The elevated broker came up, was reached over the pipe, and ran the synthetic
+job end to end under elevation. Criterion 1's `elevated=false` in the same run
+is what makes the pair meaningful: the audit half of the session genuinely was
+not elevated, so the single prompt is the whole cost of the split.
+
+What the implementation established along the way:
 
 - `Verb = "runas"` **requires** `UseShellExecute = true`, and that forecloses
   stdio redirection and handle inheritance outright. An elevated broker's stdout
@@ -355,17 +365,18 @@ with SKIP counted separately from FAIL in the summary and the exit code.
 
 ## Verdict and consequences
 
-**PARTIAL.** All six criteria have now been exercised. Five pass on machine
-measurement; criterion 2's prompt count — exactly one, at Apply — was confirmed
-by the maintainer at the keyboard, but the harness crashed before it could
-record the broker-side facts, so that half is attested rather than measured. One
-re-run of `run-s3.ps1 -Interactive` from a non-elevated shell closes it.
+**PASS.** All six criteria measured. The audit path is genuinely unelevated, the
+elevation costs exactly one prompt and it falls at Apply, the pipe is genuinely
+restricted, a wrong image is genuinely refused, the broker genuinely outlives its
+UI with the stream resuming gapless, and the job state is genuinely readable
+without it.
 
-Nothing found argues for the `docs/13` fallback. The split-privilege design
-survives contact: the audit path is genuinely unelevated, the pipe is genuinely
-restricted, a wrong image is genuinely refused, the broker genuinely outlives
-its UI, and the job state is genuinely readable without it. **On current
-evidence S3 is heading for PASS, and no design change to `docs/03` is implied.**
+Nothing found argues for the `docs/13` fallback, and **no design change to
+`docs/03-ARCHITECTURE.md` is implied.** The single-elevated-process alternative
+is not needed.
+
+What did change is `docs/08-IPC-PROTOCOL.md`, in five places. The split-privilege
+*architecture* survived contact; its *protocol* did not survive it unamended.
 
 What changes as a result:
 
@@ -388,11 +399,11 @@ What changes as a result:
 
 ## Follow-ups
 
-- **Criterion 2, harness confirmation.** `run-s3.ps1 -Interactive` from a
-  non-elevated shell, accepting the prompt, on the fixed harness. The prompt
-  count is already observed; what is missing is `apply|elevated=true`, the
-  `--fact-file` round-trip, and the job completing under elevation. Until then
-  this document stays PARTIAL.
+- **The declined-UAC path is implemented but never confirmed end to end.** The
+  decline run happened on the pre-fix harness and died before recording
+  anything. `ERROR_CANCELLED` handling is in the code and the harness now has a
+  branch for it, but no transcript shows it firing. Cheap to close next time
+  someone runs the runbook.
 - **The unreproduced TRUNCATE failure.** Seen once, in an elevated-shell run, on
   the pre-fix harness that printed no error. Attributed to the stray-broker
   defect above on circumstantial grounds. If it recurs on the fixed harness the

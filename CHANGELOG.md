@@ -31,10 +31,13 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
 - `spikes/` scaffolding and result template.
 - Spike **S3** (split-privilege architecture) run, with throwaway code in
   `spikes/s3-split-privilege/` and the finding in `spikes/S3-RESULT.md`.
-  Verdict **PARTIAL**: all six criteria in `docs/13-P0-SPIKES.md` exercised,
-  five measured by `scripts/run-s3.ps1` (20 assertions) and the sixth — the UAC
-  prompt count — observed at the keyboard but not yet recorded by the harness.
-  Nothing found argues for the single-elevated-process fallback.
+  Verdict **PASS**: all six criteria in `docs/13-P0-SPIKES.md` measured, 23
+  assertions in `scripts/run-s3.ps1`, none failed. The audit path is unelevated,
+  elevation costs exactly one prompt and it falls at Apply, the pipe is
+  restricted, a wrong client image is refused, the broker outlives its UI with
+  the event stream resuming gapless, and job state is readable without it.
+  Nothing found argues for the single-elevated-process fallback, and
+  `docs/03-ARCHITECTURE.md` is unchanged as a result.
 - `spikes/Directory.Build.props` and `spikes/Directory.Packages.props`, which
   terminate the repository's MSBuild and NuGet inheritance chains. Without them
   a spike project inherits `TreatWarningsAsErrors`, the lock-file policy and the

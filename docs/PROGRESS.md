@@ -18,9 +18,10 @@ M0 delivered the parts that had to come before any of that: a workspace shaped
 to what CI requires, the safety gate's first real code, and a catalog integrity
 gate that runs on every relevant change.
 
-Since then, **S3 has been run** — the first of the seven verdicts, and the root
-of the dependency graph. It came back PARTIAL, one manual observation short of
-PASS, and it changed `docs/08-IPC-PROTOCOL.md` in five places.
+Since then, **S3 has been run and passed** — the first of the seven verdicts,
+and the root of the dependency graph. It changed `docs/08-IPC-PROTOCOL.md` in
+five places and left `docs/03-ARCHITECTURE.md` untouched: the split-privilege
+architecture survived contact, its protocol did not survive it unamended.
 
 ## What exists and is verified
 
@@ -35,7 +36,7 @@ PASS, and it changed `docs/08-IPC-PROTOCOL.md` in five places.
 | `core/benches/scan_corpus.rs` | Done, gated on the hard-fail budgets in [`10`](10-PERF-BUDGET.md) |
 | `ui/` — WPF shell | Shell only, plus the architecture tests that assert the UI has no destructive code path |
 | CI — Rust, .NET, CodeQL, Catalog Verify | Done, inline in this repository, all green |
-| Spike S3 — split-privilege architecture | **PARTIAL.** All six criteria exercised; five measured, the sixth attested. `spikes/S3-RESULT.md`. Throwaway code in `spikes/s3-split-privilege/`, unreachable from either build. |
+| Spike S3 — split-privilege architecture | **PASS.** All six criteria measured — 23 checks, 0 failed. `spikes/S3-RESULT.md`. Throwaway code in `spikes/s3-split-privilege/`, unreachable from either build. |
 
 Enforced by tests rather than by review:
 
@@ -59,27 +60,24 @@ has seen fail is not a gate.
 
 ## Next, in order
 
-**1. Close S3 — one run, five minutes.**
-The thing a script cannot see has been seen: the maintainer ran the interactive
-path and confirmed **exactly one UAC prompt, at Apply**. What is missing is only
-the harness's own record of it — the interactive block crashed before writing
-anything, and that crash is now fixed. Run
-
-```
-pwsh spikes/s3-split-privilege/scripts/run-s3.ps1 -Interactive
-```
-
-from a **non-elevated** shell, accept the prompt, and if `C2` reports
-`elevated=true` change the verdict in `spikes/S3-RESULT.md` from PARTIAL to
-PASS. Until then the spike gate in [`13`](13-P0-SPIKES.md) is not satisfied and
-no feature work should begin.
-
-**2. Build the observation harness (`tools/observe/`).**
+**1. Build the observation harness (`tools/observe/`).**
 `CONTRIBUTING.md` ranks a real observation diff above any amount of code,
 because no catalog entry may ship without one. Until this exists the catalog
-cannot grow, and until the catalog grows there is nothing to detect. Snapshot →
-diff → suggest, per [`16`](16-OBSERVATION-HARNESS.md). Read-only, no removal
-path.
+cannot grow, and until the catalog grows there is nothing to detect.
+
+On the spike gate in [`13`](13-P0-SPIKES.md): six spikes still have no verdict,
+and the gate says feature work waits for all seven. The harness is the exception
+that proves the rule rather than a breach of it — **S2 needs
+`observe intersect` across several titles and S7 needs the residue diff**, so
+this is the measuring instrument the remaining spikes are blocked on, not a
+feature they are blocking. Nothing else should start ahead of them.
+
+Snapshot → diff → suggest, per [`16`](16-OBSERVATION-HARNESS.md). Read-only, no
+removal path, a separate binary from the broker.
+
+**2. Run S1 and S2**, which S3 has now unblocked, in parallel. **Read
+[`15`](15-TEST-MACHINE-PROTOCOL.md) before S1 touches real hardware** — the
+failure mode is an unbootable machine.
 
 **3. `core/src/safety/refcount.rs` and the ownership graph.**
 Pure logic, testable on Linux, and it carries the G1 invariant. Six of the
@@ -89,9 +87,7 @@ profile" and "other volume" cases from S2 cannot be tested at all.
 
 **4. The detection engine (`core/src/scan/`), and then v0.1.**
 
-S1, S2 and S4–S7 remain unrun. S1 and S2 are unblocked by S3 and can go in
-parallel; **read [`15`](15-TEST-MACHINE-PROTOCOL.md) before S1 touches real
-hardware.**
+S1, S2 and S4–S7 remain unrun.
 
 Deferred test coverage is tracked in [`spikes/README.md`](../spikes/README.md):
 five of the fourteen named tests are done, one is partial, eight are waiting on
