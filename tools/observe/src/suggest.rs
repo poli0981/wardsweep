@@ -45,7 +45,7 @@
 //! runtime would refuse has produced an entry that cannot work, and the person
 //! reviewing it has no way to know that by reading it.
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 
 use wardsweep_core::catalog::schema::{
@@ -470,23 +470,28 @@ fn registry_entries(
     review: &mut Vec<String>,
 ) -> Vec<RegistryEntry> {
     let mut unattributed = 0usize;
-    let added: BTreeSet<String> = footprint
-        .registry
-        .iter()
-        .filter(|change| change.kind == ChangeKind::Added)
-        .map(|change| change.key.clone())
-        .filter(|key| {
-            // Registry needs the same attribution as the filesystem. Without
-            // it the first real draft carried a shell session key that had
-            // nothing to do with the anti-cheat.
-            let lowered = key.to_ascii_lowercase();
-            let attributed = tokens.iter().any(|token| lowered.contains(token.as_str()));
-            if !attributed {
-                unattributed += 1;
-            }
-            attributed
-        })
-        .collect();
+    // Keyed by the key, valued by the WOW64 views it was actually seen added
+    // in. The harness opens both views explicitly and stamps every change with
+    // the one it came from, so a draft can record what was observed instead of
+    // assuming.
+    let mut added: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    for change in &footprint.registry {
+        if change.kind != ChangeKind::Added {
+            continue;
+        }
+        // Registry needs the same attribution as the filesystem. Without it the
+        // first real draft carried a shell session key that had nothing to do
+        // with the anti-cheat.
+        let lowered = change.key.to_ascii_lowercase();
+        if !tokens.iter().any(|token| lowered.contains(token.as_str())) {
+            unattributed += 1;
+            continue;
+        }
+        added
+            .entry(change.key.clone())
+            .or_default()
+            .insert(change.view.clone());
+    }
 
     if unattributed > 0 {
         review.push(format!(
@@ -494,11 +499,13 @@ fn registry_entries(
         ));
     }
 
-    added
-        .iter()
+    let mut narrowed = Vec::new();
+    let mut undetermined = Vec::new();
+    let entries: Vec<RegistryEntry> = added
+        .keys()
         .filter(|candidate| {
             !added
-                .iter()
+                .keys()
                 .any(|other| other != *candidate && candidate.starts_with(&format!("{other}\\")))
         })
         .filter(|key| {
@@ -510,14 +517,54 @@ fn registry_entries(
             }
             allowed
         })
-        .map(|key| RegistryEntry {
-            key: key.clone(),
-            // `both` is almost always right per docs/04, and the observation
-            // cannot distinguish "only in one view" from "we only looked once".
-            view: View::Both,
-            class: Class::Config,
+        .map(|key| {
+            let views = &added[key];
+            let view = match (views.contains("32"), views.contains("64")) {
+                (true, true) => View::Both,
+                (true, false) => {
+                    narrowed.push(format!("`{key}` (32-bit view only)"));
+                    View::Bits32
+                }
+                (false, true) => {
+                    narrowed.push(format!("`{key}` (64-bit view only)"));
+                    View::Bits64
+                }
+                // No recognised view on any change for this key. Falling back
+                // to `both` is the wider claim, so it is named rather than made
+                // quietly.
+                (false, false) => {
+                    undetermined.push(format!("`{key}`"));
+                    View::Both
+                }
+            };
+            RegistryEntry {
+                key: key.clone(),
+                view,
+                class: Class::Config,
+            }
         })
-        .collect()
+        .collect();
+
+    if !narrowed.is_empty() {
+        review.push(format!(
+            "{} key(s) were seen in one WOW64 view only and are recorded that way rather than \
+             as `both`: {}. `HKLM\\SOFTWARE` is redirected and `HKLM\\SYSTEM` is not, so a \
+             single view is usually a fact about redirection — but confirm it, because widening \
+             to `both` claims a key the observation never saw.",
+            narrowed.len(),
+            narrowed.join(", ")
+        ));
+    }
+    if !undetermined.is_empty() {
+        review.push(format!(
+            "{} key(s) carried no recognised WOW64 view and defaulted to `both`, which is the \
+             wider claim: {}. Check the diff before submitting.",
+            undetermined.len(),
+            undetermined.join(", ")
+        ));
+    }
+
+    entries
 }
 
 /// Replace a known prefix with its `%VAR%` template.
@@ -718,6 +765,44 @@ mod tests {
         let paths = entries_for(&diff, &attributable, &[], &mut review);
         assert_eq!(paths.len(), 1);
         assert_eq!(paths[0].path, r"%ProgramFiles%\Riot Vanguard");
+    }
+
+    #[test]
+    fn the_view_comes_from_the_observation_rather_than_from_both_by_default() {
+        // Measured on a real Riot Vanguard install. The two service keys exist
+        // in both views because `HKLM\SYSTEM` is not WOW64-redirected; the
+        // uninstall entry exists only in the 64-bit view because
+        // `HKLM\SOFTWARE` is. A draft that said `both` for all three would be
+        // claiming a key the observation never saw.
+        let mut review: Vec<String> = Vec::new();
+        let diff = crate::diff::tests::diff_with_added_registry_keys(&[
+            (r"HKLM\SYSTEM\CurrentControlSet\Services\vgk", "32"),
+            (r"HKLM\SYSTEM\CurrentControlSet\Services\vgk", "64"),
+            (
+                r"HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Riot Vanguard",
+                "64",
+            ),
+        ]);
+        let tokens: BTreeSet<String> = ["vgk", "riot vanguard"]
+            .iter()
+            .map(|t| (*t).to_owned())
+            .collect();
+        let exceptions = Exceptions::new(Vec::<String>::new(), vec!["vgk".to_owned()]);
+
+        let entries = registry_entries(&diff, &tokens, &exceptions, &mut review);
+
+        let view_of = |needle: &str| {
+            entries
+                .iter()
+                .find(|entry| entry.key.contains(needle))
+                .map(|entry| entry.view)
+        };
+        assert_eq!(view_of("Services\\vgk"), Some(View::Both));
+        assert_eq!(view_of("Uninstall"), Some(View::Bits64));
+        assert!(
+            review.iter().any(|note| note.contains("64-bit view only")),
+            "narrowing must be explained, not silent: {review:?}"
+        );
     }
 
     #[test]

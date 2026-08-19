@@ -1,9 +1,14 @@
 # Riot Vanguard — observation notes
 
-The uninstall half is done. Riot Vanguard is the first anti-cheat observed here
-that **leaves something behind**, which makes it the first evidence for the
-claim this project is built on — and the amount it leaves is small enough that
-saying so honestly matters more than saying so loudly.
+Both halves are done: uninstalled by the vendor's own uninstaller, then
+reinstalled by the Riot Client. Riot Vanguard is the first anti-cheat observed
+here that **leaves something behind** — which makes it the first evidence for
+the claim this project is built on, and the amount it leaves is small enough
+that saying so honestly matters more than saying so loudly.
+
+It is also the observation that cost the tooling three defects: two harness
+blind spots and a wrong assumption in the draft generator, none of which would
+have been visible without a second anti-cheat to compare against.
 
 ## Pre-state, 2026-08-19
 
@@ -254,21 +259,116 @@ like an installer at work until you know a reboot happened, and a registry
 value the observation itself wrote and nearly attributed to its subject. The
 value here is in what it takes to know the answer, not in the answer's size.
 
+## The reinstall half
+
+The Riot Client was started at 21:21 local and reinstalled Vanguard without
+being asked to. Captured as `15-vanguard-reinstalled` nine minutes later, in the
+**same boot session** as `13` and `14` — `rebooted_between` reads `false`, so
+nothing in this diff is a restart's doing.
+
+| Domain | Installed |
+|---|---|
+| Services | `vgc` — win32, `demand`; `vgk` — kernel driver, **`system`** |
+| Registry keys | `Services\vgc` and `Services\vgk` in both views; `Uninstall\Riot Vanguard` in the **64-bit view only** |
+| Registry values | `Run\Riot Vanguard`, `UFH\ARP\0`, `RunNotification\StartupTNotiRiot Vanguard` |
+| Files | 9, **207,105,553 bytes** — the same eight stable files, plus one fresh log |
+
+Byte for byte the same eight files, and a footprint symmetric with the removal.
+Whatever else is true of this uninstaller, it puts back exactly what it took.
+
+### `vgk` is installed at `SYSTEM_START`, and the baseline said `demand`
+
+This is the third reading of that value and the first one taken at a known
+moment in the software's own lifecycle:
+
+| When | `vgk` start type |
+|---|---|
+| Four baseline snapshots, machine up for hours | `demand` (3) |
+| Minutes after a restart | `system` (1) |
+| **Minutes after a fresh install** | **`system` (1)** |
+
+So `system` is what Vanguard *installs*, and `demand` is what the value settles
+to. A catalog entry derived from an observation taken hours after an install
+records the settled value and calls it the fact.
+
+Two things follow for the catalog, and they pull in opposite directions:
+
+1. **`SYSTEM_START` is not `BOOT_START`.** The diff reports
+   `is_boot_start = false`, so `docs/16`'s rule — `SERVICE_BOOT_START` implies
+   `risk = critical` — correctly does **not** fire, and the draft says
+   `risk = high`. Vanguard's driver loads early, but not in the class that
+   forces the reboot stage.
+2. **The value a scan happens to read is not the value the installer wrote**,
+   and the difference is one step of severity. The inference rule is sound; what
+   it is fed is a moment.
+
+### The residue survived a reinstall too
+
+`vgtray-settings.json` and `vgtray.log` under `%LOCALAPPDATA%` still carry their
+pre-uninstall timestamps — 20:31:14 and 20:18:38, both from before the
+uninstaller ran. The vendor's own reinstall did not reset them either. "The
+uninstaller left them behind" understates it: **nothing in the vendor's own
+install-uninstall-reinstall cycle touches them at all.**
+
+### `suggest` passed a test signer clustering would have failed
+
+`Riot Games, Inc.` signs the Riot Client as well as Vanguard, and the install
+diff contains **51 Riot Client files** alongside the anti-cheat's. Signer
+clustering alone — which `docs/16` calls the single most useful signal — would
+have pulled the entire launcher into the draft.
+
+It did not. The draft contains `%ProgramFiles%\Riot Vanguard` and three registry
+keys, and nothing of the client, because attribution runs on tokens taken from
+the service names and the anti-cheat's own directory rather than on the
+publisher. This is the first case where the two signals disagree and the
+narrower one was right.
+
+### …and `suggest` was wrong about WOW64 views
+
+Every key in a draft was emitted as `view = "both"`, on the stated grounds that
+"the observation cannot distinguish *only in one view* from *we only looked
+once*". **That was never true of this harness**, which opens both views
+explicitly and stamps every record with the one it came from.
+
+Vanguard is the counter-example. `HKLM\SYSTEM` is not WOW64-redirected, so the
+two service keys genuinely exist in both views. `HKLM\SOFTWARE` *is* redirected,
+so the uninstall entry exists only in the 64-bit view — and the draft claimed
+both, which asserts a key nobody observed.
+
+`suggest` now derives the view from what was seen and says so in the review
+notes when it narrows. The committed `draft.toml` records `view = "64"` for the
+uninstall entry.
+
+### What the draft still cannot say
+
+`suggest` has no input shape for *what survived the uninstall*. Residue is by
+definition unchanged between the two snapshots, so it appears in a diff as
+nothing at all — neither added nor removed — and can only be recovered by
+comparing against a clean baseline, which is exactly what a machine with the
+game already installed does not have.
+
+So Vanguard's residue is known to the byte and the draft cannot carry it. The
+`--residue` flag exists, and on this machine there is nothing to put in it.
+Recorded in `docs/PROGRESS.md` under "Open, needs a maintainer decision".
+
 ## Still to do
 
 | Step | What |
 |---|---|
-| 1 | Baseline — `10-vanguard-baseline`, `11-vanguard-baseline-2` after the timestamp fix |
+| 1 | Baseline — `10-vanguard-baseline`, `11-vanguard-baseline-2` after the timestamp fix — done |
 | 2 | Uninstall by the maintainer — done |
 | 3 | Snapshot `12-vanguard-uninstalled`, diff — done |
 | 4 | Snapshot `13-vanguard-uninstalled-dirs`, the first to record directories and boot session — done |
-| 5 | Snapshot `14-noise-floor` and its diff against `13`, to measure what the new fields cost — done |
-| 6 | **Launch VALORANT so it reinstalls Vanguard** — not done |
-| 7 | Snapshot, diff for the true install footprint — not done |
+| 5 | Snapshot `14-noise-floor` and its diff against `13` — done |
+| 6 | Riot Client reinstalled Vanguard; snapshot `15-vanguard-reinstalled`, diff, draft — done |
+| 7 | A second title carrying Vanguard, so `shared` can be argued about at all — not done |
 
-No catalog draft is committed yet. The removal footprint is known and the
-install footprint is not, and `docs/16` requires an entry to come from an
-observation rather than from half of one.
+`draft.toml` is committed and is **a hypothesis, not an entry**. It carries
+seven review items, `id` and `display` are placeholders, and `shared = true`
+must stay so until a second title has been observed — `docs/04` is explicit that
+a wrong `shared = false` is the G1 violation this project exists to prevent.
 
 Raw snapshots are **not** committed. They are at
-`%LOCALAPPDATA%\WardSweep\observations\`.
+`%LOCALAPPDATA%\WardSweep\observations\`. The redacted diffs the draft was
+derived from are: `install.json` (`14` → `15`) and `residue.json`
+(`11` → `12`).

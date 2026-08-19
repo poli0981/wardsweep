@@ -895,6 +895,27 @@ pub(crate) mod tests {
         compare(&before, &after, &NoiseFilter::permissive()).expect("fixture diffs cleanly")
     }
 
+    /// A diff in which each `(key, view)` pair appears as an added key.
+    ///
+    /// The view matters: `HKLM\SOFTWARE` is WOW64-redirected and
+    /// `HKLM\SYSTEM` is not, so the same anti-cheat writes some keys into both
+    /// views and some into one.
+    pub(crate) fn diff_with_added_registry_keys(keys: &[(&str, &str)]) -> Diff {
+        let mut before = snapshot(vec![]);
+        let mut after = snapshot(vec![]);
+        before.coverage.captured.push(Domain::Registry);
+        after.coverage.captured.push(Domain::Registry);
+        after.registry = keys
+            .iter()
+            .map(|(key, view)| crate::model::RegistryRecord {
+                key: (*key).to_owned(),
+                view: (*view).to_owned(),
+                values: Vec::new(),
+            })
+            .collect();
+        compare(&before, &after, &NoiseFilter::permissive()).expect("fixture diffs cleanly")
+    }
+
     fn boot(started_unix_ms: u64) -> crate::model::BootSession {
         crate::model::BootSession {
             started_utc: crate::clock::from_unix_millis(u128::from(started_unix_ms)),
