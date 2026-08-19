@@ -29,12 +29,43 @@
 
 use crate::model::BootSession;
 
+/// The boot session this process is running in.
+///
+/// `None` where the platform cannot say — which is everywhere but Windows, and
+/// is why the field is optional all the way through the model.
+#[must_use]
+pub fn boot_session(now_unix_ms: u128) -> Option<BootSession> {
+    uptime_ms().map(|uptime| from_uptime(now_unix_ms, uptime))
+}
+
+/// Milliseconds since the machine started, when the platform can say.
+///
+/// The only part of this module that differs by platform. Keeping the split
+/// here rather than on [`boot_session`] means [`from_uptime`] is compiled and
+/// exercised everywhere instead of becoming dead code off Windows.
+#[cfg(not(windows))]
+const fn uptime_ms() -> Option<u64> {
+    None
+}
+
+/// Milliseconds since the machine started.
+#[cfg(windows)]
+#[allow(
+    clippy::unnecessary_wraps,
+    reason = "the Option is shared with the non-Windows arm, which has no answer"
+)]
+fn uptime_ms() -> Option<u64> {
+    // SAFETY: `GetTickCount64` takes no arguments, writes through no pointer,
+    // and is documented to always succeed. There is nothing to get wrong.
+    Some(unsafe { windows::Win32::System::SystemInformation::GetTickCount64() })
+}
+
 /// Build the record from a wall-clock instant and an uptime.
 ///
 /// Split out from the Win32 call so the arithmetic is tested on Linux, where
 /// the ubuntu lint job builds this crate.
 #[must_use]
-pub fn from_uptime(now_unix_ms: u128, uptime_ms: u64) -> BootSession {
+fn from_uptime(now_unix_ms: u128, uptime_ms: u64) -> BootSession {
     // Saturating rather than wrapping: a clock set behind the uptime would
     // otherwise produce a boot instant in the far future and read as a reboot
     // against every other snapshot.
@@ -44,33 +75,6 @@ pub fn from_uptime(now_unix_ms: u128, uptime_ms: u64) -> BootSession {
         started_unix_ms: u64::try_from(started_unix_ms).unwrap_or(u64::MAX),
         uptime_ms,
     }
-}
-
-#[cfg(not(windows))]
-/// Not available off Windows.
-///
-/// Returns `None` rather than failing: a snapshot cannot be taken here anyway,
-/// and the field is optional precisely so older snapshots stay readable.
-#[must_use]
-pub const fn boot_session(_now_unix_ms: u128) -> Option<BootSession> {
-    None
-}
-
-#[cfg(windows)]
-/// The boot session this process is running in.
-///
-/// Always `Some` here. The `Option` is the signature the non-Windows build has
-/// to satisfy, where there is nothing to return.
-#[must_use]
-#[allow(
-    clippy::unnecessary_wraps,
-    reason = "the Option is shared with the non-Windows arm, which returns None"
-)]
-pub fn boot_session(now_unix_ms: u128) -> Option<BootSession> {
-    // SAFETY: `GetTickCount64` takes no arguments, writes through no pointer,
-    // and is documented to always succeed. There is nothing to get wrong.
-    let uptime_ms = unsafe { windows::Win32::System::SystemInformation::GetTickCount64() };
-    Some(from_uptime(now_unix_ms, uptime_ms))
 }
 
 #[cfg(test)]

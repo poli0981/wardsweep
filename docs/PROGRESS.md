@@ -290,6 +290,15 @@ it ever fails with a `cc` error, a C-backed crate has escaped
   and fail on every fresh checkout.
 - **Windows dependencies belong under `[target.'cfg(windows)'.dependencies]`,
   never behind a cargo feature.** CI lints with `--all-features` on ubuntu.
+- **A `cfg(windows)` split can make a shared helper dead code off Windows**, and
+  Windows clippy will never say so. `#[cfg(not(windows))]` on the *public*
+  function leaves anything only its Windows twin called unreachable, and
+  `-D warnings` turns that into a build failure on the ubuntu job alone. Put the
+  `cfg` on the smallest thing that genuinely differs — "can this platform answer
+  at all?" — and let the shared code stay shared. `collect/boot.rs` is the
+  worked example: the split is on `uptime_ms`, not on `boot_session`.
+  **Run the ubuntu lint below before pushing**, not after CI says so; it takes
+  seconds and this failure mode has cost a round trip.
 - **The .NET ignore pattern in `.gitignore` is scoped to `ui/`** rather than
   matching `bin/` anywhere. Cargo puts binary crate roots in `src/bin/`, so the
   conventional pattern silently excludes `cli/src/bin/` — both Rust
