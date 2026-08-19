@@ -1,0 +1,20 @@
+<Project>
+
+  <!--
+    Deliberately does NOT import ../Directory.Packages.props.
+
+    NuGet resolves the nearest Directory.Packages.props walking up, so this file
+    terminates central package management for everything under spikes/. Without
+    it, a spike wanting Microsoft.Data.Sqlite would have to add a <PackageVersion>
+    to the repository's central version file — which is in the dotnet-ci.yml path
+    filter, so throwaway code would re-run the entire .NET pipeline and leave a
+    permanent entry in the file the vulnerability gate reports against.
+
+    Spike projects pin their own versions inline instead.
+  -->
+
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+</Project>

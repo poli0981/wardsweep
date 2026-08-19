@@ -8,15 +8,14 @@ implementation.
 
 ## Status
 
-Nothing has been run. A missing `SN-RESULT.md` means the spike has not been
-attempted; that is deliberately unambiguous, and `ls spikes/*-RESULT.md` is the
-gate check.
+A missing `SN-RESULT.md` means the spike has not been attempted; that is
+deliberately unambiguous, and `ls spikes/*-RESULT.md` is the gate check.
 
 | Spike | Question | Verdict |
 |---|---|---|
 | S1 | Boot-start driver removal across a reboot | — |
 | S2 | Shared anti-cheat reference counting | — |
-| S3 | Split-privilege architecture | — |
+| S3 | Split-privilege architecture | **PARTIAL** — [`S3-RESULT.md`](S3-RESULT.md). Five of six criteria pass; the UAC prompt count needs a person, per [`RUNBOOK.md`](s3-split-privilege/RUNBOOK.md). Nothing found argues for the fallback. |
 | S4 | Performance on a genuinely messy machine | — |
 | S5 | Rollback fidelity | — |
 | S6 | Antivirus false-positive rate | — |

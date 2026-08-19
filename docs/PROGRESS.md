@@ -3,7 +3,7 @@
 Where the project actually stands, and what to pick up next. `CHANGELOG.md`
 records what happened; this file records what is true now and what is not done.
 
-Last updated at milestone **M0 — Foundation**.
+Last updated after **spike S3**.
 
 ---
 
@@ -18,6 +18,10 @@ M0 delivered the parts that had to come before any of that: a workspace shaped
 to what CI requires, the safety gate's first real code, and a catalog integrity
 gate that runs on every relevant change.
 
+Since then, **S3 has been run** — the first of the seven verdicts, and the root
+of the dependency graph. It came back PARTIAL, one manual observation short of
+PASS, and it changed `docs/08-IPC-PROTOCOL.md` in five places.
+
 ## What exists and is verified
 
 | Area | State |
@@ -31,6 +35,7 @@ gate that runs on every relevant change.
 | `core/benches/scan_corpus.rs` | Done, gated on the hard-fail budgets in [`10`](10-PERF-BUDGET.md) |
 | `ui/` — WPF shell | Shell only, plus the architecture tests that assert the UI has no destructive code path |
 | CI — Rust, .NET, CodeQL, Catalog Verify | Done, inline in this repository, all green |
+| Spike S3 — split-privilege architecture | **PARTIAL.** All six criteria exercised; five measured, the sixth attested. `spikes/S3-RESULT.md`. Throwaway code in `spikes/s3-split-privilege/`, unreachable from either build. |
 
 Enforced by tests rather than by review:
 
@@ -54,13 +59,20 @@ has seen fail is not a gate.
 
 ## Next, in order
 
-**1. Run spike S3 — split-privilege architecture.**
-It is the root of the dependency graph in [`13`](13-P0-SPIKES.md): S3 → S1 → S5
-and S3 → S2 → S5. Nothing else is testable without it, and it decides whether
-the elevated-broker design survives at all. Throwaway code in `spikes/`, which
-is excluded from the workspace and absent from `WardSweep.sln` so neither build
-can reach it. The deliverable is `spikes/S3-RESULT.md`, not a merged
-implementation.
+**1. Close S3 — one run, five minutes.**
+The thing a script cannot see has been seen: the maintainer ran the interactive
+path and confirmed **exactly one UAC prompt, at Apply**. What is missing is only
+the harness's own record of it — the interactive block crashed before writing
+anything, and that crash is now fixed. Run
+
+```
+pwsh spikes/s3-split-privilege/scripts/run-s3.ps1 -Interactive
+```
+
+from a **non-elevated** shell, accept the prompt, and if `C2` reports
+`elevated=true` change the verdict in `spikes/S3-RESULT.md` from PARTIAL to
+PASS. Until then the spike gate in [`13`](13-P0-SPIKES.md) is not satisfied and
+no feature work should begin.
 
 **2. Build the observation harness (`tools/observe/`).**
 `CONTRIBUTING.md` ranks a real observation diff above any amount of code,
@@ -77,6 +89,10 @@ profile" and "other volume" cases from S2 cannot be tested at all.
 
 **4. The detection engine (`core/src/scan/`), and then v0.1.**
 
+S1, S2 and S4–S7 remain unrun. S1 and S2 are unblocked by S3 and can go in
+parallel; **read [`15`](15-TEST-MACHINE-PROTOCOL.md) before S1 touches real
+hardware.**
+
 Deferred test coverage is tracked in [`spikes/README.md`](../spikes/README.md):
 five of the fourteen named tests are done, one is partial, eight are waiting on
 code that does not exist yet.
@@ -87,6 +103,33 @@ code that does not exist yet.
   a volume serial number engages G3 — was ruled on: refused, with the
   Authenticode cache partitioned per volume instead. See the grey-areas table in
   [`02`](02-SAFETY-GATE.md) and the rationale in `CHANGELOG.md`.
+- S3 amended [`08`](08-IPC-PROTOCOL.md) rather than raising a question, because
+  every change narrowed the contract to what the platform actually does. If any
+  of the five is contentious, `spikes/S3-RESULT.md` records the measurement
+  behind it.
+
+## What S3 changed, in one place
+
+Detail is in [`spikes/S3-RESULT.md`](../spikes/S3-RESULT.md); these are the
+consequences that outlive the spike.
+
+- **Events need `seq`, `Hello` needs `resume_from`.** Reconnection was
+  unimplementable without them, not merely unimplemented.
+- **The broker needs overlapped I/O.** A synchronous pipe handle serialises a
+  write behind a pending read — measured at 2 735 ms against a 0 ms control — so
+  streaming and `ScanCancel` cannot coexist on one.
+- **`FILE_FLAG_FIRST_PIPE_INSTANCE` on every creation.** It is what makes the
+  unelevated-to-elevated handover fail closed instead of into a squatter's pipe.
+- **A DACL readback never string-matches the SDDL that was requested.** Generic
+  rights are mapped at creation: `GA` returns as `FA`, `GRGW` as `0x12019F`.
+- **The UI may not reference `System.IO.File` or `Directory`** — the
+  architecture test reads the TypeReference table, so a call inside a method
+  body counts. `FileStream` is fine; the broker creates directories.
+- **`jobs.db` is not self-contained without its `-wal`.** Uncheckpointed, the
+  base file had no schema at all. Anything that copies it alone — a diagnostics
+  bundle, a backup — copies a header.
+- **`Microsoft.Data.Sqlite` 10.0.0 fails the transitive vulnerability gate**
+  (`SQLitePCLRaw.lib.e_sqlite3` 2.1.11, GHSA-2m69-gcr7-jv3q). 10.0.11 is clean.
 
 ## Known gaps
 

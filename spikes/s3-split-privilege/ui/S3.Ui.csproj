@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Spike S3 stand-in for WardSweep.UI.exe. Deliberately absent from
+    WardSweep.sln, and spikes/Directory.Build.props terminates the repository's
+    MSBuild inheritance so none of the product's analyzer or lock-file policy
+    reaches this project.
+
+    Console rather than WPF on purpose. S3 measures the process split — UAC,
+    the pipe, client verification, reconnection, read-only state — and none of
+    that is WPF-shaped. A window would add build surface and measure nothing.
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <AssemblyName>S3.Ui</AssemblyName>
+    <RootNamespace>S3.Ui</RootNamespace>
+
+    <!--
+      asInvoker, exactly as ui/WardSweep.UI/app.manifest requires of the real
+      UI. If the spike UI elevated itself, criterion 1 would be untestable: an
+      already-elevated process spawns an elevated child with no prompt, and the
+      "audit runs with zero prompts" claim would pass for the wrong reason.
+    -->
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      Version pinned inline. Central package management is off for spikes/, so
+      this never reaches the repository's Directory.Packages.props, which the
+      .NET CI vulnerability gate reports against and whose path filter would
+      otherwise re-run the whole pipeline for throwaway code.
+
+      10.0.11 rather than 10.0.0 for a reason worth carrying forward: 10.0.0
+      resolves SQLitePCLRaw.lib.e_sqlite3 2.1.11, which carries a high-severity
+      advisory (GHSA-2m69-gcr7-jv3q). The `vulnerable-packages` job in
+      dotnet-ci.yml scans transitively and is a hard gate, so a real UI that
+      took Microsoft.Data.Sqlite at 10.0.0 would fail CI on a transitive
+      dependency it never named. 10.0.11 resolves clean.
+    -->
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.11" />
+  </ItemGroup>
+
+</Project>

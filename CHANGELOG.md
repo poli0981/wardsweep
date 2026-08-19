@@ -29,8 +29,35 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
 - WPF shell with an architecture test asserting the UI assembly references
   neither the registry nor any filesystem type that can delete.
 - `spikes/` scaffolding and result template.
+- Spike **S3** (split-privilege architecture) run, with throwaway code in
+  `spikes/s3-split-privilege/` and the finding in `spikes/S3-RESULT.md`.
+  Verdict **PARTIAL**: all six criteria in `docs/13-P0-SPIKES.md` exercised,
+  five measured by `scripts/run-s3.ps1` (20 assertions) and the sixth — the UAC
+  prompt count — observed at the keyboard but not yet recorded by the harness.
+  Nothing found argues for the single-elevated-process fallback.
+- `spikes/Directory.Build.props` and `spikes/Directory.Packages.props`, which
+  terminate the repository's MSBuild and NuGet inheritance chains. Without them
+  a spike project inherits `TreatWarningsAsErrors`, the lock-file policy and the
+  global analysers, and any package it needs has to be added to the central
+  version file that `dotnet-ci.yml` path-filters on — so throwaway code would
+  re-run the whole .NET pipeline and leave a permanent entry behind.
 
 ### Changed
+- `docs/08-IPC-PROTOCOL.md` amended from the S3 findings, in five places. Events
+  now carry a monotonic `seq` and `Hello` carries `resume_from`: the document
+  required a reconnecting UI to resume the event stream but gave it no way to
+  say where it had got to, which made the requirement unimplementable rather
+  than merely unimplemented. The transport is now `FILE_FLAG_OVERLAPPED`,
+  because a synchronous handle was measured serialising a write behind a pending
+  read and `docs/09` promises an immediate `ScanCancel` during a scan. The pipe
+  is created with `FILE_FLAG_FIRST_PIPE_INSTANCE`, which is what closes the
+  squatting window during the unelevated-to-elevated handover. "A second connect
+  attempt is refused, not queued" was wrong about the transport — with one
+  instance the second client waits in `WaitNamedPipe` and there is no way to
+  refuse a waiter, so the refusal is at the application layer. And the client
+  check no longer claims to verify the session GUID against the client's command
+  line, which would need `NtQueryInformationProcess` for no benefit; the GUID
+  echoed in `Hello` is compared instead.
 - `shared = false` catalog entries now require an `[anticheat.shared_evidence]`
   table naming at least two observed titles and at least one observation.
   `audit-shared --require-evidence` had been a CI gate with no schema behind it,

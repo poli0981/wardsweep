@@ -3,6 +3,9 @@
 # uses a separate CARGO_TARGET_DIR so the two platforms do not thrash one
 # another's artefacts.
 /target*/
+# Spike crates are excluded from the workspace, so they have their own target
+# directories and the root-anchored pattern above does not reach them.
+spikes/**/target/
 **/*.rs.bk
 *.pdb
 
