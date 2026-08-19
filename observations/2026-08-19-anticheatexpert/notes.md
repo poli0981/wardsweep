@@ -227,6 +227,63 @@ made the generator refuse the service keys the entry itself declares -
 technically correct, practically wrong, and it would have taught a contributor
 to delete three correct lines.
 
+## WMI disagrees with SCM about what was removed
+
+Found while checking whether the uninstall had really taken. Immediately after
+`Uninstaller.exe` ran, with no reboot:
+
+| Source | Reports `ACE-ADVT`? |
+|---|---|
+| `EnumServicesStatusExW` (what the harness uses) | no |
+| `HKLM\SYSTEM\CurrentControlSet\Services\ACE-ADVT` | absent |
+| `sc query ACE-ADVT` | error 1060, "does not exist" |
+| `driverquery` | not listed |
+| **WMI `Win32_SystemDriver`** | **yes**, with empty `PathName` and `ServiceType`/`StartMode` both `Unknown` |
+
+The `.sys` files were gone from disk. The obvious hypothesis — that the driver
+was still resident in the kernel because no reboot had happened — does not hold:
+`driverquery` enumerates loaded drivers and does not list it either.
+
+So WMI is returning a stale entry, and **a detection engine built on
+`Win32_SystemDriver` would report an anti-cheat present after it was fully
+removed.** Recorded in [`05`](../../docs/05-DETECTION-ENGINE.md), which already
+specified `EnumServicesStatusExW` but did not say why the easier API is wrong.
+
+Two things were nearly recorded as findings and were not, because the evidence
+did not support them:
+
+- *"the driver is still loaded"* — `driverquery` refutes it.
+- *"471 drivers exist in WMI but not in SCM"* — an artifact of comparing against
+  `Get-Service | Where ServiceType -match 'Driver'`, which returns nothing in
+  PowerShell 7. The number meant nothing.
+
+Both are written down because a record that only keeps the conclusions that
+survived teaches nobody which checks were worth running.
+
+## The reinstall half is still pending
+
+Two attempts, neither of which installed anything:
+
+- **`02-launcher-ran`** — the launcher ran and patched. It downloaded fresh ACE
+  payload into the game directory (`ACE-Base64.dll`, `ACE-CORE.sys`,
+  `ACE-CORE.sys2`) but installed nothing machine-wide. Diff against
+  `01-uninstalled`: one Windows gamepad driver, some Qt cache, and ordinary
+  churn. **No ACE.**
+- **`03-game-frontend-ran`** — the game frontend ran and stopped at a resource
+  repair prompt (`loadCheckDirListAndCheck … code:-34`). The client itself never
+  started. **Still no ACE.**
+
+That is itself worth knowing: **the launcher does not install the anti-cheat,
+and neither does the frontend. The game client does.** A machine can therefore
+hold a game that is installed, patched and ready to play while its anti-cheat is
+entirely absent — so the presence of a game does not imply the presence of its
+anti-cheat, which is the converse of the refcount question and matters to how a
+scan reports "clean".
+
+Snapshots are named for what they are rather than for what they were meant to
+be. Calling `02` a reinstall when nothing was reinstalled is the kind of label
+this whole design exists to avoid.
+
 ## A note on what is committed here
 
 Only one diff was taken: `00-current` to `01-uninstalled`, committed as
@@ -246,9 +303,11 @@ reinstall, at step 7.
 | 2 | Uninstall via `Uninstaller.exe` — **run by the maintainer, not by WardSweep**; no reboot required | 2026-08-19 |
 | 3 | `01-uninstalled` snapshot | 2026-08-19 |
 | 4 | Diff `00-current` → `01-uninstalled`: what the uninstaller removed, and what it left | 2026-08-19 |
-| 5 | Launch Neverness To Everness so it reinstalls ACE | pending |
-| 6 | `02-reinstalled` snapshot | pending |
-| 7 | Diff `01-uninstalled` → `02-reinstalled`: the true install footprint | pending |
+| 5a | Launcher run — patched the game, installed nothing (`02-launcher-ran`) | 2026-08-19 |
+| 5b | Game frontend run — stopped at a resource repair prompt, installed nothing (`03-game-frontend-ran`) | 2026-08-19 |
+| 5 | Get the game **client** to run, so it installs ACE | pending |
+| 6 | `04-reinstalled` snapshot | pending |
+| 7 | Diff `01-uninstalled` → `04-reinstalled`: the true install footprint | pending |
 
 Raw snapshots are **not** committed: they list every file under the profile.
 They are kept at `%LOCALAPPDATA%\WardSweep\observations\`.

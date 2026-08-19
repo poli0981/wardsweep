@@ -137,6 +137,30 @@ Recorded per service: `ServiceType`, `StartType`, `ErrorControl`, `BinaryPathNam
 `StartType == SERVICE_BOOT_START` sets `risk = critical` and forces the reboot
 stage — see [`06`](06-REMOVAL-PIPELINE.md) and [`13`](13-P0-SPIKES.md) S1.
 
+### Not WMI
+
+`Win32_SystemDriver` looks like an easier way to enumerate drivers and is not
+one: it can report a driver that no longer exists.
+
+Measured during the AntiCheatExpert observation
+(`observations/2026-08-19-anticheatexpert/`), immediately after the vendor's own
+uninstaller ran:
+
+| Source | Reports `ACE-ADVT`? |
+|---|---|
+| `EnumServicesStatusExW` | no |
+| `HKLM\SYSTEM\CurrentControlSet\Services\ACE-ADVT` | absent |
+| `sc query ACE-ADVT` | error 1060, "does not exist" |
+| `driverquery` | not listed |
+| **WMI `Win32_SystemDriver`** | **yes** — empty `PathName`, `ServiceType` and `StartMode` all `Unknown` |
+
+The `.sys` files were gone from disk and the machine had not rebooted.
+
+A scanner built on WMI would therefore report an anti-cheat driver present after
+it had been completely removed — and for this tool that means offering to remove
+something that is not there, on a machine the user was told is not clean. SCM is
+the authority; WMI is a cache with its own opinion.
+
 ## Authenticode verification
 
 `WinVerifyTrust` with `WTD_UI_NONE`, `WTD_REVOKE_WHOLECHAIN`, then extract the
