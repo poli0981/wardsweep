@@ -37,6 +37,7 @@ architecture survived contact, its protocol did not survive it unamended.
 | `ui/` — WPF shell | Shell only, plus the architecture tests that assert the UI has no destructive code path |
 | CI — Rust, .NET, CodeQL, Catalog Verify | Done, inline in this repository, all green |
 | Spike S3 — split-privilege architecture | **PASS.** All six criteria measured — 23 checks, 0 failed. `spikes/S3-RESULT.md`. Throwaway code in `spikes/s3-split-privilege/`, unreachable from either build. |
+| `tools/observe/` — snapshot and diff | **Services domain only.** `snapshot` and `diff` work end to end against a real machine; every other domain is named as `not_captured` in the file rather than omitted. `suggest`, `intersect` and `redact` are not written. |
 
 Enforced by tests rather than by review:
 
@@ -60,10 +61,27 @@ has seen fail is not a gate.
 
 ## Next, in order
 
-**1. Build the observation harness (`tools/observe/`).**
+**1. Finish the observation harness (`tools/observe/`).**
 `CONTRIBUTING.md` ranks a real observation diff above any amount of code,
 because no catalog entry may ship without one. Until this exists the catalog
 cannot grow, and until the catalog grows there is nothing to detect.
+
+The services domain is done and works on a real machine. What is left, roughly
+in value order:
+
+1. **Filesystem** — path, size, SHA-256, and Authenticode signer. `docs/16`
+   calls signer clustering "the single most useful signal", and it is the one
+   thing that separates an installer's additions from Windows Update noise
+   without an ignore list at all.
+2. **Registry**, both WOW64 views. Needed before any catalog entry can name a
+   key, and `wow64_both_views_produce_distinct_artifacts` in
+   [`12`](12-TESTING-STRATEGY.md) is waiting on it.
+3. **`suggest`** — the draft entry generator. It must build on
+   `wardsweep_core::catalog::schema` rather than define the shape a second time,
+   or drafts drift from the schema and only `catalog-verify` finds out.
+4. Scheduled tasks, firewall, event sources, environment.
+5. **`redact`** — `docs/16` requires it before a raw snapshot may be shared, and
+   nothing should be shared until it exists.
 
 On the spike gate in [`13`](13-P0-SPIKES.md): six spikes still have no verdict,
 and the gate says feature work waits for all seven. The harness is the exception
@@ -128,6 +146,17 @@ consequences that outlive the spike.
   (`SQLitePCLRaw.lib.e_sqlite3` 2.1.11, GHSA-2m69-gcr7-jv3q). 10.0.11 is clean.
 
 ## Known gaps
+
+- `tools/observe` captures one of seven domains. This is visible in every
+  snapshot and every diff rather than implied, but it does mean **no diff from
+  this build is yet sufficient for a catalog entry** — `docs/16`'s review
+  checklist asks for paths, registry keys and a verified signer CN, none of
+  which are collected.
+- The harness can describe a machine that already has an anti-cheat installed.
+  That is a *detection*, not an observation: `CONTRIBUTING.md` requires a
+  before/after cycle, and `docs/16` §"The uninstall-and-reinstall cycle" is the
+  procedure for recovering a clean baseline from a machine where the game was
+  installed first.
 
 - `THIRD-PARTY-NOTICES.md` staleness is not checked by CI. Needs `cargo-about`
   configuration and a `dotnet-project-licenses` run. Worth closing before the

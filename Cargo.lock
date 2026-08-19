@@ -871,7 +871,11 @@ dependencies = [
 name = "wardsweep-observe"
 version = "0.0.1"
 dependencies = [
+ "anyhow",
  "clap",
+ "serde",
+ "serde_json",
+ "windows",
 ]
 
 [[package]]
