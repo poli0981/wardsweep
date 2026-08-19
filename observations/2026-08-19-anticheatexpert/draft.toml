@@ -1,0 +1,107 @@
+# DRAFT — generated 2026-08-19T12:03:41.542Z
+# REVIEW EVERY FIELD BEFORE SUBMITTING.
+#
+# This is a hypothesis produced from an observation diff, not an entry.
+# CONTRIBUTING.md rejects entries that are not derived from a diff; it does
+# not accept one that was derived from a diff and never read.
+#
+# Publishers seen in this diff:
+#       5 file(s)  Microsoft Windows Hardware Compatibility Publisher
+#       2 file(s)  ACEVILLE PTE LTD
+#
+# Before submitting:
+#   - a driver was observed but not at boot start. Vanguard has been seen
+#     configured either way, so confirm the start type rather than assuming this
+#     one generalises.
+#   - 14 added file(s) could not be attributed to this publisher and were left
+#     out. That is ordinary machine churn between the two snapshots; check the
+#     diff if the footprint looks short.
+#   - `C:\WINDOWS\System32\drivers` was dropped: the deny-list refuses it. A
+#     driver there belongs in `drivers = [...]` by file name, never as a path.
+#   - 2 added registry key(s) could not be attributed to this anti-cheat and
+#     were left out.
+#   - no residue diff was given, so every path is classified from the install
+#     diff alone. docs/16 calls the residue diff the more valuable of the two
+#     — it is the exact set of things the vendor's uninstaller leaves behind.
+#   - `shared` is `true` and must stay so until at least two titles have been
+#     observed. docs/04: a wrong `shared = false` is the G1 violation this
+#     project exists to prevent.
+#   - verify every signer with `signtool verify /v /pa <file>` and paste the
+#     output into the pull request, per the docs/16 checklist.
+
+[[anticheat]]
+id = "REVIEW-me"
+display = "REVIEW: ACEVILLE PTE LTD"
+vendor = "ACEVILLE PTE LTD"
+kind = "kernel"
+shared = true
+risk = "high"
+authenticode_cn = ["ACEVILLE PTE LTD"]
+file_hashes = []
+services = [
+    "ACE-ADVT",
+    "ACE-BASE",
+    "AntiCheatExpert Protection",
+]
+drivers = [
+    "ACE-ADVT.sys",
+    "ACE-BASE.sys",
+    "ACE-CORE106095005.sys",
+    "ACE-CORE206095005.sys",
+]
+tasks = []
+firewall_rules = []
+event_sources = []
+
+[[anticheat.paths]]
+path = '%ProgramFiles%\AntiCheatExpert'
+class = "data"
+
+[[anticheat.paths]]
+path = '%ProgramData%\AntiCheatExpert'
+class = "data"
+
+[[anticheat.registry]]
+key = 'HKCU\SOFTWARE\appdatalow\AntiCheatExpert\{4324E6D9-BA90-499E-9B3A-A7DAB216C94E}\AntiCheatExpert'
+view = "both"
+class = "config"
+
+[[anticheat.registry]]
+key = 'HKCU\SOFTWARE\appdatalow\AntiCheatExpert\{4324E6D9-BA90-499E-9B3A-A7DAB216C94E}\Tencent'
+view = "both"
+class = "config"
+
+[[anticheat.registry]]
+key = 'HKCU\SOFTWARE\appdatalow\AntiCheatExpert\{D15B7548-72D6-4BF4-93E7-98A44949A3BC}\Tencent'
+view = "both"
+class = "config"
+
+[[anticheat.registry]]
+key = 'HKCU\SOFTWARE\appdatalow\AntiCheatExpert\{F63EEEBB-2033-42E2-818E-2126FDEB47C4}\AntiCheatExpert\6095005'
+view = "both"
+class = "config"
+
+[[anticheat.registry]]
+key = 'HKCU\SOFTWARE\appdatalow\AntiCheatExpert\{F63EEEBB-2033-42E2-818E-2126FDEB47C4}\Tencent\6095005'
+view = "both"
+class = "config"
+
+[[anticheat.registry]]
+key = 'HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\AntiCheatExpert'
+view = "both"
+class = "config"
+
+[[anticheat.registry]]
+key = 'HKLM\SYSTEM\CurrentControlSet\Services\ACE-ADVT'
+view = "both"
+class = "config"
+
+[[anticheat.registry]]
+key = 'HKLM\SYSTEM\CurrentControlSet\Services\ACE-BASE'
+view = "both"
+class = "config"
+
+[[anticheat.registry]]
+key = 'HKLM\SYSTEM\CurrentControlSet\Services\AntiCheatExpert Protection'
+view = "both"
+class = "config"

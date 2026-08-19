@@ -28,6 +28,22 @@
 //! which is the G1 violation the project exists to prevent. Downgrading it is a
 //! claim a person makes with evidence from several titles, not something a
 //! generator infers from one.
+//!
+//! # Two filters, both learned from a real run
+//!
+//! The first draft this module produced from a real observation contained
+//! `%SystemRoot%\System32\drivers`, a running application's `leveldb`
+//! directory, and a token-broker cache. All three were ordinary machine churn
+//! between the two snapshots, swept in because every added path was taken.
+//!
+//! So a path now has to be **attributable**: some file under it must carry the
+//! chosen publisher's signature, or be one of the observed service or driver
+//! images. Everything else becomes a review note naming what was dropped.
+//!
+//! And the draft is checked against the **same deny-list the broker enforces at
+//! runtime**, not a copy of its intent. A generator that proposes a path the
+//! runtime would refuse has produced an entry that cannot work, and the person
+//! reviewing it has no way to know that by reading it.
 
 use std::collections::BTreeSet;
 use std::fmt::Write as _;
@@ -35,6 +51,9 @@ use std::fmt::Write as _;
 use wardsweep_core::catalog::schema::{
     AntiCheat, Class, Kind, PathEntry, RegistryEntry, Risk, View,
 };
+
+use wardsweep_core::safety::denylist::{Exceptions, Stage, check_path, check_registry_key};
+use wardsweep_core::safety::paths::{canonicalise_reg_key, canonicalise_syntactic};
 
 use crate::diff::{ChangeKind, Diff};
 
@@ -146,8 +165,32 @@ pub fn draft(footprint: &Diff, residue: Option<&Diff>, signer: Option<&str>) -> 
         );
     }
 
-    let paths = path_entries(footprint, residue, &mut review);
-    let registry = registry_entries(footprint);
+    // Files this publisher signed, plus the images the observed services point
+    // at. Anything else added between the snapshots is somebody else's.
+    // The deny-list allows a service key only when the catalog declares that
+    // service, and a driver file only when the catalog names it. Those are the
+    // two carve-outs `Exceptions` exists for, so the draft is validated with
+    // exactly the exceptions its own fields would unlock at runtime — not with
+    // `Exceptions::none()`, which refuses the entry for declaring the very
+    // services it is about.
+    let service_names: Vec<String> = added_services
+        .iter()
+        .map(|change| change.name.clone())
+        .collect();
+    let exceptions = Exceptions::new(drivers.iter().cloned(), service_names.iter().cloned());
+
+    let attributable = attributable_paths(footprint, residue, chosen.as_deref(), &added_services);
+    let tokens = attribution_tokens(&attributable, &service_names);
+
+    let paths = path_entries(
+        footprint,
+        residue,
+        &attributable,
+        &tokens,
+        &exceptions,
+        &mut review,
+    );
+    let registry = registry_entries(footprint, &tokens, &exceptions, &mut review);
 
     if residue.is_none() {
         review.push(
@@ -200,6 +243,121 @@ pub fn draft(footprint: &Diff, residue: Option<&Diff>, signer: Option<&str>) -> 
     }
 }
 
+/// Every file that can be attributed to this anti-cheat.
+///
+/// Attribution is by publisher signature, or by being an image an observed
+/// service points at. Without it a draft picks up whatever else the machine did
+/// between the two snapshots — the first real run produced
+/// `%SystemRoot%\System32\drivers`, a running application's `leveldb`
+/// directory, and a token-broker cache.
+fn attributable_paths(
+    footprint: &Diff,
+    residue: Option<&Diff>,
+    signer: Option<&str>,
+    services: &[&crate::diff::ServiceChange],
+) -> BTreeSet<String> {
+    let mut attributable = BTreeSet::new();
+
+    let mut consider = |change: &crate::diff::FileChange| {
+        if change.kind != ChangeKind::Added {
+            return;
+        }
+        if let (Some(want), Some(have)) = (signer, change.signer.as_deref())
+            && have.eq_ignore_ascii_case(want)
+        {
+            attributable.insert(change.path.to_ascii_lowercase());
+        }
+    };
+
+    for change in &footprint.files {
+        consider(change);
+    }
+    if let Some(residue) = residue {
+        for change in &residue.files {
+            consider(change);
+        }
+    }
+
+    // A driver is attestation-signed by Microsoft rather than by its vendor.
+    // Measured on a real machine: every `.sys` in the footprint carried
+    // "Microsoft Windows Hardware Compatibility Publisher" and only the two
+    // user-mode binaries carried the vendor. Signature alone would drop the
+    // whole kernel half of the footprint, so a service's own image counts too.
+    for service in services {
+        if let Some(record) = &service.after {
+            attributable.insert(normalise_image(&record.binary_path).to_ascii_lowercase());
+        }
+    }
+
+    attributable
+}
+
+/// Names that identify this anti-cheat in a path or a key.
+///
+/// Taken from the directories its own files live in, and from its service
+/// names. `%ProgramData%\AntiCheatExpert` holds one unsigned `.dat` file and
+/// nothing else, so nothing about the file attributes it — but the directory
+/// carries the same name as `%ProgramFiles%\AntiCheatExpert`, which the service
+/// images anchor. Almost every installer lays itself out that way.
+fn attribution_tokens(attributable: &BTreeSet<String>, services: &[String]) -> BTreeSet<String> {
+    let mut tokens = BTreeSet::new();
+
+    for path in attributable {
+        if let Some(parent) = parent_of(path)
+            && let Some(leaf) = parent.rsplit('\\').next()
+            // A shared system directory names nothing in particular. Without
+            // this, `System32\drivers` would make `drivers` an identifier and
+            // match half the machine.
+            && leaf.len() >= 4
+            && !SHARED_DIRECTORIES.contains(&leaf.to_ascii_lowercase().as_str())
+        {
+            tokens.insert(leaf.to_ascii_lowercase());
+        }
+    }
+
+    for service in services {
+        tokens.insert(service.to_ascii_lowercase());
+    }
+
+    tokens
+}
+
+/// Directory leaf names too general to identify anything.
+const SHARED_DIRECTORIES: &[&str] = &[
+    "drivers",
+    "system32",
+    "syswow64",
+    "windows",
+    "program files",
+    "program files (x86)",
+    "programdata",
+    "common files",
+    "appdata",
+    "local",
+    "roaming",
+    "temp",
+    "bin",
+    "lib",
+    "data",
+    "config",
+    "cache",
+    "logs",
+];
+
+/// Strip the NT prefix and any arguments from a service image path.
+fn normalise_image(image: &str) -> String {
+    let trimmed = image.trim();
+    let without_prefix = trimmed.strip_prefix(r"\??\").unwrap_or(trimmed);
+
+    // `"C:\path\x.exe" -autorun` — take what is inside the quotes.
+    if let Some(rest) = without_prefix.strip_prefix('"')
+        && let Some(end) = rest.find('"')
+    {
+        return rest[..end].to_owned();
+    }
+    without_prefix.trim().to_owned()
+}
+
 /// Directories that gained files, as `%VAR%`-templated path entries.
 ///
 /// Directories rather than individual files: a catalog names a footprint, and
@@ -208,24 +366,47 @@ pub fn draft(footprint: &Diff, residue: Option<&Diff>, signer: Option<&str>) -> 
 fn path_entries(
     footprint: &Diff,
     residue: Option<&Diff>,
+    attributable: &BTreeSet<String>,
+    tokens: &BTreeSet<String>,
+    exceptions: &Exceptions,
     review: &mut Vec<String>,
 ) -> Vec<PathEntry> {
-    let mut directories: BTreeSet<String> = footprint
-        .files
-        .iter()
-        .filter(|change| change.kind == ChangeKind::Added)
-        .filter_map(|change| parent_of(&change.path))
-        .collect();
+    let mut directories: BTreeSet<String> = BTreeSet::new();
+    let mut dropped = 0usize;
 
-    // Anything the uninstaller left behind is footprint the entry is *for*.
-    if let Some(residue) = residue {
-        for change in &residue.files {
-            if change.kind == ChangeKind::Added
-                && let Some(parent) = parent_of(&change.path)
-            {
+    let gather = |changes: &[crate::diff::FileChange],
+                  directories: &mut BTreeSet<String>,
+                  dropped: &mut usize| {
+        for change in changes {
+            if change.kind != ChangeKind::Added {
+                continue;
+            }
+            let lowered = change.path.to_ascii_lowercase();
+            // Signed by the publisher, or living in a directory this
+            // anti-cheat names. The second is what keeps an unsigned data file
+            // under `%ProgramData%\<Product>` in the footprint.
+            let attributed = attributable.contains(&lowered)
+                || tokens.iter().any(|token| lowered.contains(token.as_str()));
+            if !attributed {
+                *dropped += 1;
+                continue;
+            }
+            if let Some(parent) = parent_of(&change.path) {
                 directories.insert(parent);
             }
         }
+    };
+
+    gather(&footprint.files, &mut directories, &mut dropped);
+    // Anything the uninstaller left behind is footprint the entry is *for*.
+    if let Some(residue) = residue {
+        gather(&residue.files, &mut directories, &mut dropped);
+    }
+
+    if dropped > 0 {
+        review.push(format!(
+            "{dropped} added file(s) could not be attributed to this publisher and were left              out. That is ordinary machine churn between the two snapshots; check the diff if              the footprint looks short."
+        ));
     }
 
     // Collapse a directory whose parent is also listed: `…\Vanguard\Logs` adds
@@ -250,6 +431,23 @@ fn path_entries(
 
     collapsed
         .into_iter()
+        .filter(|path| {
+            // Checked against the deny-list the broker enforces, not against a
+            // restatement of its intent. A driver lives in
+            // `%SystemRoot%\System32\drivers`, which is shared with the whole
+            // operating system: naming it here would be an entry the runtime
+            // refuses, and the reviewer could not tell by reading it.
+            let allowed = canonicalise_syntactic(path).ok().is_some_and(|canonical| {
+                check_path(&canonical, exceptions, Stage::CatalogLoad).is_ok()
+            });
+            if !allowed {
+                review.push(format!(
+                    "`{path}` was dropped: the deny-list refuses it. A driver there belongs in \
+                     `drivers = [...]` by file name, never as a path."
+                ));
+            }
+            allowed
+        })
         .map(|path| PathEntry {
             path: templated(&path),
             // Every path starts as `data`, which docs/04 says is unticked
@@ -262,13 +460,39 @@ fn path_entries(
 }
 
 /// Registry keys that were added, deduplicated to their shallowest ancestor.
-fn registry_entries(footprint: &Diff) -> Vec<RegistryEntry> {
+///
+/// Filtered the same way paths are: a key the deny-list refuses is dropped with
+/// a note, rather than proposed for a reviewer to discover later.
+fn registry_entries(
+    footprint: &Diff,
+    tokens: &BTreeSet<String>,
+    exceptions: &Exceptions,
+    review: &mut Vec<String>,
+) -> Vec<RegistryEntry> {
+    let mut unattributed = 0usize;
     let added: BTreeSet<String> = footprint
         .registry
         .iter()
         .filter(|change| change.kind == ChangeKind::Added)
         .map(|change| change.key.clone())
+        .filter(|key| {
+            // Registry needs the same attribution as the filesystem. Without
+            // it the first real draft carried a shell session key that had
+            // nothing to do with the anti-cheat.
+            let lowered = key.to_ascii_lowercase();
+            let attributed = tokens.iter().any(|token| lowered.contains(token.as_str()));
+            if !attributed {
+                unattributed += 1;
+            }
+            attributed
+        })
         .collect();
+
+    if unattributed > 0 {
+        review.push(format!(
+            "{unattributed} added registry key(s) could not be attributed to this anti-cheat              and were left out."
+        ));
+    }
 
     added
         .iter()
@@ -276,6 +500,15 @@ fn registry_entries(footprint: &Diff) -> Vec<RegistryEntry> {
             !added
                 .iter()
                 .any(|other| other != *candidate && candidate.starts_with(&format!("{other}\\")))
+        })
+        .filter(|key| {
+            let allowed = canonicalise_reg_key(key)
+                .ok()
+                .is_some_and(|canonical| check_registry_key(&canonical, exceptions).is_ok());
+            if !allowed {
+                review.push(format!("`{key}` was dropped: the deny-list refuses it."));
+            }
+            allowed
         })
         .map(|key| RegistryEntry {
             key: key.clone(),
@@ -461,15 +694,88 @@ mod tests {
         assert!(matches!(generated.entry.risk, Risk::Medium));
     }
 
+    /// `path_entries` with everything the caller would normally derive.
+    fn entries_for(
+        diff: &Diff,
+        attributable: &BTreeSet<String>,
+        services: &[String],
+        review: &mut Vec<String>,
+    ) -> Vec<PathEntry> {
+        let tokens = attribution_tokens(attributable, services);
+        let exceptions = Exceptions::new(Vec::<String>::new(), services.to_vec());
+        path_entries(diff, None, attributable, &tokens, &exceptions, review)
+    }
+
     #[test]
     fn a_nested_directory_collapses_into_its_parent() {
-        let mut review = Vec::new();
-        let diff = crate::diff::tests::diff_with_added_files(&[
+        let mut review: Vec<String> = Vec::new();
+        let files = [
             r"C:\Program Files\Riot Vanguard\vgk.sys",
             r"C:\Program Files\Riot Vanguard\Logs\a.log",
-        ]);
-        let paths = path_entries(&diff, None, &mut review);
+        ];
+        let diff = crate::diff::tests::diff_with_added_files(&files);
+        let attributable = files.iter().map(|p| p.to_ascii_lowercase()).collect();
+        let paths = entries_for(&diff, &attributable, &[], &mut review);
         assert_eq!(paths.len(), 1);
-        assert_eq!(paths[0].path, "%ProgramFiles%\\Riot Vanguard");
+        assert_eq!(paths[0].path, r"%ProgramFiles%\Riot Vanguard");
+    }
+
+    #[test]
+    fn a_path_the_deny_list_refuses_never_reaches_the_draft() {
+        // The first real run proposed `%SystemRoot%\System32\drivers`, because
+        // the drivers genuinely live there. The runtime would refuse that entry
+        // and a reviewer could not tell by reading it, so the generator is held
+        // to the same deny-list the broker enforces.
+        let mut review: Vec<String> = Vec::new();
+        let files = [r"C:\Windows\System32\drivers\vgk.sys"];
+        let diff = crate::diff::tests::diff_with_added_files(&files);
+        let attributable = files.iter().map(|p| p.to_ascii_lowercase()).collect();
+
+        let paths = entries_for(&diff, &attributable, &[], &mut review);
+
+        assert!(paths.is_empty(), "got {paths:?}");
+        assert!(
+            review
+                .iter()
+                .any(|note| note.contains("deny-list refuses it")),
+            "the drop must be explained: {review:?}"
+        );
+    }
+
+    #[test]
+    fn an_unattributable_file_is_dropped_and_counted() {
+        // Ordinary machine churn between two snapshots. The first real run swept
+        // a running application's leveldb directory into the entry.
+        let mut review: Vec<String> = Vec::new();
+        let diff = crate::diff::tests::diff_with_added_files(&[
+            r"C:\Program Files\Riot Vanguard\vgk.sys",
+            r"C:\Users\x\AppData\Roaming\SomeApp\Local Storage\leveldb\1.ldb",
+        ]);
+        let attributable =
+            std::iter::once(r"c:\program files\riot vanguard\vgk.sys".to_owned()).collect();
+
+        let paths = entries_for(&diff, &attributable, &[], &mut review);
+
+        assert_eq!(paths.len(), 1);
+        assert_eq!(paths[0].path, r"%ProgramFiles%\Riot Vanguard");
+        assert!(
+            review
+                .iter()
+                .any(|note| note.contains("could not be attributed"))
+        );
+    }
+
+    #[test]
+    fn a_service_image_is_attributable_even_when_the_vendor_did_not_sign_it() {
+        // Every .sys in the ACE footprint was attestation-signed by Microsoft,
+        // not by ACEVILLE. Signature alone would have dropped the kernel half.
+        assert_eq!(
+            normalise_image(r"\??\C:\WINDOWS\system32\drivers\ACE-BASE.sys"),
+            r"C:\WINDOWS\system32\drivers\ACE-BASE.sys"
+        );
+        assert_eq!(
+            normalise_image(r#""C:\Program Files\AntiCheatExpert\ACE-Service64.exe"  -autorun"#),
+            r"C:\Program Files\AntiCheatExpert\ACE-Service64.exe"
+        );
     }
 }
