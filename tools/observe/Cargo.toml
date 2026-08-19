@@ -19,4 +19,18 @@ name = "wardsweep-observe"
 path = "src/main.rs"
 
 [dependencies]
+anyhow.workspace = true
 clap.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+# Everything Win32 lives here, never behind a cargo feature: the CI lint job
+# runs `clippy --all-features` on ubuntu-latest. Only `snapshot` needs Windows —
+# the model, the differ and the draft generator are pure logic and are tested
+# on Linux, which is the point of keeping them apart.
+[target.'cfg(windows)'.dependencies]
+windows = { workspace = true, features = [
+    "Win32_Foundation",
+    "Win32_System_Services",
+    "Win32_Security",
+] }

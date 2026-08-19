@@ -1,0 +1,298 @@
+//! The snapshot data model.
+//!
+//! Mirrors `docs/16-OBSERVATION-HARNESS.md`. Pure logic: no Win32 here, so the
+//! model, the differ and the redactor are all testable on Linux, which is where
+//! the CI lint job builds this crate.
+//!
+//! # Why coverage is part of the file
+//!
+//! A snapshot that captured half the machine and did not say so is worse than
+//! no snapshot at all: the diff against it looks complete, and every domain it
+//! skipped reads as "nothing changed there". That is the same failure
+//! `docs/03-ARCHITECTURE.md` guards against when it insists an unelevated scan
+//! is marked `partial` — *never report "clean" from a scan that could not see
+//! everything.*
+//!
+//! So [`Coverage`] is mandatory, it names what was **not** captured as well as
+//! what was, and [`Diff`] carries the intersection forward. A catalog entry
+//! derived from a diff can therefore be traced back to whether the evidence for
+//! it was ever collected.
+
+use serde::{Deserialize, Serialize};
+
+/// Wire-format version of a snapshot file.
+///
+/// Bumped when the shape changes incompatibly. `diff` refuses a snapshot it
+/// does not implement rather than silently misreading it.
+pub const SNAPSHOT_FORMAT_VERSION: u32 = 1;
+
+/// One of the capture domains in `docs/16-OBSERVATION-HARNESS.md`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Domain {
+    /// Services and drivers, via the service control manager.
+    Services,
+    /// `HKLM\SOFTWARE` in both WOW64 views, the services key, `Run` keys,
+    /// uninstall keys, and `HKCU\SOFTWARE`.
+    Registry,
+    /// Program files, program data, per-user application data, `System32\drivers`,
+    /// and launcher libraries.
+    Filesystem,
+    /// Full XML export of every scheduled task.
+    ScheduledTasks,
+    /// Every firewall rule.
+    Firewall,
+    /// Event log sources registered under `EventLog\Application`.
+    EventSources,
+    /// Windows build, locale, and installed launchers.
+    Environment,
+}
+
+impl Domain {
+    /// Every domain `docs/16` specifies, in a stable order.
+    #[must_use]
+    pub const fn all() -> [Self; 7] {
+        [
+            Self::Services,
+            Self::Registry,
+            Self::Filesystem,
+            Self::ScheduledTasks,
+            Self::Firewall,
+            Self::EventSources,
+            Self::Environment,
+        ]
+    }
+}
+
+impl std::fmt::Display for Domain {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let name = match self {
+            Self::Services => "services",
+            Self::Registry => "registry",
+            Self::Filesystem => "filesystem",
+            Self::ScheduledTasks => "scheduled_tasks",
+            Self::Firewall => "firewall",
+            Self::EventSources => "event_sources",
+            Self::Environment => "environment",
+        };
+        f.write_str(name)
+    }
+}
+
+/// What a snapshot did and did not manage to look at.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Coverage {
+    /// Domains this snapshot captured.
+    pub captured: Vec<Domain>,
+    /// Domains it did not. Recorded explicitly so a diff cannot present their
+    /// absence as "nothing changed".
+    pub not_captured: Vec<Domain>,
+    /// Individual items that were refused, with the reason. A snapshot taken
+    /// without administrator rights will have entries here.
+    pub access_denied: Vec<AccessDenied>,
+}
+
+impl Coverage {
+    /// Whether a domain's evidence is present.
+    #[must_use]
+    pub fn covers(&self, domain: Domain) -> bool {
+        self.captured.contains(&domain)
+    }
+
+    /// The domains both snapshots captured.
+    ///
+    /// A diff can only speak about these. Anything captured by one side and not
+    /// the other would show every item as added or removed, which is an
+    /// artefact of the collection rather than a change on the machine.
+    #[must_use]
+    pub fn intersect(&self, other: &Self) -> Self {
+        let captured: Vec<Domain> = self
+            .captured
+            .iter()
+            .copied()
+            .filter(|domain| other.covers(*domain))
+            .collect();
+        let not_captured = Domain::all()
+            .into_iter()
+            .filter(|domain| !captured.contains(domain))
+            .collect();
+
+        let mut access_denied = self.access_denied.clone();
+        access_denied.extend(other.access_denied.iter().cloned());
+        access_denied.sort_by(|a, b| a.item.cmp(&b.item));
+        access_denied.dedup_by(|a, b| a.item == b.item);
+
+        Self {
+            captured,
+            not_captured,
+            access_denied,
+        }
+    }
+}
+
+/// Something the harness tried to read and could not.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AccessDenied {
+    /// Which domain the item belongs to.
+    pub domain: Domain,
+    /// What was refused — a service name, a key, a path.
+    pub item: String,
+    /// Why, in whatever terms the platform gave.
+    pub reason: String,
+}
+
+/// A point-in-time record of the machine.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Snapshot {
+    /// Wire-format version; see [`SNAPSHOT_FORMAT_VERSION`].
+    pub format_version: u32,
+    /// When it was taken, ISO-8601 UTC.
+    pub taken_utc: String,
+    /// Version of the harness that took it.
+    pub harness_version: String,
+    /// Free-text label, so a directory of snapshots is readable.
+    #[serde(default)]
+    pub label: String,
+    /// What was and was not looked at.
+    pub coverage: Coverage,
+    /// Service and driver configuration, keyed by service name.
+    #[serde(default)]
+    pub services: Vec<ServiceRecord>,
+}
+
+/// The configuration of one service or driver.
+///
+/// **Configuration, not state.** `docs/16` asks for `QueryServiceConfigW` and
+/// `QueryServiceConfig2W`, and deliberately not the current running state:
+/// whether a service happens to be running changes constantly and on an idle
+/// machine accounts for most of what a naive differ would report. Capturing
+/// only what an installer *wrote* removes that noise at the source rather than
+/// filtering it out afterwards.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ServiceRecord {
+    /// Service key name — the identity, and the diff key.
+    pub name: String,
+    /// Display name.
+    pub display_name: String,
+    /// `SERVICE_KERNEL_DRIVER`, `SERVICE_WIN32_OWN_PROCESS`, and so on, as text.
+    pub service_type: String,
+    /// `boot`, `system`, `auto`, `demand` or `disabled`.
+    pub start_type: String,
+    /// `ignore`, `normal`, `severe` or `critical`.
+    pub error_control: String,
+    /// Image path exactly as the SCM holds it, before any expansion.
+    pub binary_path: String,
+    /// Load-ordering group, when the service names one.
+    #[serde(default)]
+    pub load_order_group: String,
+    /// Account the service runs as.
+    #[serde(default)]
+    pub start_name: String,
+    /// Services and groups this one depends on.
+    #[serde(default)]
+    pub dependencies: Vec<String>,
+    /// Description text, when one is registered.
+    #[serde(default)]
+    pub description: String,
+    /// Whether an automatic-start service is delayed.
+    #[serde(default)]
+    pub delayed_auto_start: bool,
+}
+
+impl ServiceRecord {
+    /// Whether this record describes a kernel or filesystem driver.
+    ///
+    /// `observe suggest` infers `kind = "kernel"` from this, per the inference
+    /// table in `docs/16`.
+    #[must_use]
+    pub fn is_driver(&self) -> bool {
+        self.service_type.contains("driver")
+    }
+
+    /// Whether this driver loads at boot, which `docs/16` maps to
+    /// `risk = "critical"` and `docs/13` makes spike S1's whole subject.
+    #[must_use]
+    pub fn is_boot_start(&self) -> bool {
+        self.start_type == "boot"
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn coverage(captured: &[Domain]) -> Coverage {
+        Coverage {
+            captured: captured.to_vec(),
+            not_captured: Domain::all()
+                .into_iter()
+                .filter(|domain| !captured.contains(domain))
+                .collect(),
+            access_denied: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn intersecting_coverage_keeps_only_what_both_sides_saw() {
+        let before = coverage(&[Domain::Services, Domain::Registry]);
+        let after = coverage(&[Domain::Services, Domain::Filesystem]);
+
+        let both = before.intersect(&after);
+
+        assert_eq!(both.captured, vec![Domain::Services]);
+        assert!(both.not_captured.contains(&Domain::Registry));
+        assert!(both.not_captured.contains(&Domain::Filesystem));
+    }
+
+    #[test]
+    fn every_domain_is_accounted_for_after_intersecting() {
+        let both = coverage(&[Domain::Services]).intersect(&coverage(&[Domain::Services]));
+        assert_eq!(
+            both.captured.len() + both.not_captured.len(),
+            Domain::all().len()
+        );
+    }
+
+    #[test]
+    fn access_denied_entries_from_both_sides_survive_and_deduplicate() {
+        let denied = AccessDenied {
+            domain: Domain::Services,
+            item: "vgk".to_owned(),
+            reason: "access denied".to_owned(),
+        };
+        let mut before = coverage(&[Domain::Services]);
+        let mut after = coverage(&[Domain::Services]);
+        before.access_denied.push(denied.clone());
+        after.access_denied.push(denied);
+
+        let both = before.intersect(&after);
+
+        // Losing these would let a diff claim a service is absent when it was
+        // only unreadable.
+        assert_eq!(both.access_denied.len(), 1);
+    }
+
+    #[test]
+    fn a_kernel_driver_is_recognised_as_one() {
+        let record = ServiceRecord {
+            name: "example".to_owned(),
+            display_name: "Example".to_owned(),
+            service_type: "kernel_driver".to_owned(),
+            start_type: "boot".to_owned(),
+            error_control: "normal".to_owned(),
+            binary_path: "\\??\\C:\\Windows\\System32\\drivers\\example.sys".to_owned(),
+            load_order_group: String::new(),
+            start_name: String::new(),
+            dependencies: Vec::new(),
+            description: String::new(),
+            delayed_auto_start: false,
+        };
+
+        assert!(record.is_driver());
+        assert!(record.is_boot_start());
+    }
+}

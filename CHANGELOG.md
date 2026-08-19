@@ -38,6 +38,30 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
   the event stream resuming gapless, and job state is readable without it.
   Nothing found argues for the single-elevated-process fallback, and
   `docs/03-ARCHITECTURE.md` is unchanged as a result.
+- `tools/observe/` — the read-only observation harness, first increment.
+  `snapshot` captures every service and driver via the service control manager
+  and `diff` compares two snapshots; both run end to end against a real machine
+  (805 services, 471 drivers, 52 boot-start on the development machine).
+  `suggest`, `intersect` and `redact` are not written yet.
+  - A snapshot records **which domains it did not capture**, not only which it
+    did. A file that covered part of the machine and did not say so produces a
+    diff that looks complete, and every domain it skipped reads as "nothing
+    changed there" — the same failure `docs/03-ARCHITECTURE.md` guards against
+    by marking an unelevated scan `partial`.
+  - Configuration is captured, never running state. An idle machine then
+    produces a diff with **zero** entries rather than the thousands
+    `docs/16-OBSERVATION-HARNESS.md` warns about, because almost all of that
+    noise is state.
+  - The noise filter **relocates rather than discards**: a suppressed change
+    moves to `suppressed` with the name of the rule that moved it. Its failure
+    mode is a rule quietly eating the one service an anti-cheat installed, and a
+    filter nobody can audit is one nobody can catch doing it.
+  - Per-user service instances collapse to their template name. Measured on a
+    real machine: a simulated reboot produces 48 spurious changes unfiltered and
+    0 filtered.
+  - The service control manager is opened with `SC_MANAGER_ENUMERATE_SERVICE`
+    and each service with `SERVICE_QUERY_CONFIG`, so read-only is enforced by
+    the handles held rather than by the calls happening not to be made.
 - `spikes/Directory.Build.props` and `spikes/Directory.Packages.props`, which
   terminate the repository's MSBuild and NuGet inheritance chains. Without them
   a spike project inherits `TreatWarningsAsErrors`, the lock-file policy and the
