@@ -78,6 +78,25 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
   - `std::fs` rather than raw Win32 for metadata, deliberately: Safety Gate G3
     bans reading a hardware identifier even for reporting, and the Win32
     structures hand you a volume serial number whether you asked or not.
+- `tools/observe` registry domain: `HKLM\SOFTWARE`,
+  `HKLM\SYSTEM\CurrentControlSet\Services` and `HKCU\SOFTWARE`, in **both
+  WOW64 views**, with values but deliberately without timestamps.
+  - The view distinctness `docs/12-TESTING-STRATEGY.md` asks about is real: on
+    the development machine 2 676 keys exist only in the 32-bit view and 86 344
+    only in the 64-bit one, so the two are keyed separately in a diff.
+  - **Safety Gate G3 needed defence in depth, and finding that out required
+    running it.** Excluding `Microsoft\Cryptography` was not close to enough:
+    three unrelated applications had copied the machine identifier into their
+    own keys, one had also stored a disk serial, and a telemetry cache held the
+    motherboard and CPU model inside a URL. The refusal now matches on value
+    name and value data, not only on key path. Refused values are dropped
+    rather than masked, and each is recorded with its key and value name —
+    never its data — so the refusal is auditable. Result: 54 values refused,
+    and no hardware identifier anywhere in the snapshot.
+  - The G3 term list is shipped as data rather than as a Rust constant, because
+    `core/tests/no_destructive_code.rs` cannot tell a deny-list from a reader
+    and would reject the list along with its tests. Flagged in
+    `docs/PROGRESS.md` for a maintainer ruling.
 - `spikes/Directory.Build.props` and `spikes/Directory.Packages.props`, which
   terminate the repository's MSBuild and NuGet inheritance chains. Without them
   a spike project inherits `TreatWarningsAsErrors`, the lock-file policy and the

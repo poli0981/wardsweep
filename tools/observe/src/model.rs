@@ -164,6 +164,12 @@ pub struct Snapshot {
     /// Files under the roots named by [`Snapshot::filesystem_policy`].
     #[serde(default)]
     pub files: Vec<FileRecord>,
+    /// Registry keys under the roots named by [`Snapshot::registry_policy`].
+    #[serde(default)]
+    pub registry: Vec<RegistryRecord>,
+    /// What the registry walk was told to do, when it ran.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub registry_policy: Option<RegistryPolicy>,
     /// What the filesystem walk was told to do, when it ran.
     ///
     /// Recorded for the same reason [`Coverage`] is: a file list means nothing
@@ -187,6 +193,54 @@ pub struct FilesystemPolicy {
     pub hashed_extensions: Vec<String>,
     /// Files larger than this were not hashed, and say so individually.
     pub max_hash_bytes: u64,
+}
+
+/// What the registry walk covered.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RegistryPolicy {
+    /// Roots walked, as `HIVE\Subkey`.
+    pub roots: Vec<String>,
+    /// WOW64 views read, as `"32"` and `"64"`.
+    pub views: Vec<String>,
+    /// Key path fragments that stopped the walk, case-insensitively.
+    pub excluded: Vec<String>,
+    /// Values larger than this were skipped rather than truncated.
+    pub max_value_bytes: u64,
+}
+
+/// One registry key, in one WOW64 view, with the values it holds.
+///
+/// **No timestamp.** `docs/16-OBSERVATION-HARNESS.md` asks for
+/// `LastWriteTime`-only changes with unchanged values to be ignored; not
+/// reading it at all is the same answer arrived at earlier, and cannot be
+/// forgotten by a later noise rule.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RegistryRecord {
+    /// Full key path, as `HIVE\Sub\Key`.
+    pub key: String,
+    /// Which WOW64 view this was read through.
+    ///
+    /// `docs/05-DETECTION-ENGINE.md` treats the two views as distinct
+    /// artifacts: the same logical key can hold different values in each, and a
+    /// catalog entry has to say which one it meant.
+    pub view: String,
+    /// The values under this key, sorted by name.
+    pub values: Vec<RegistryValue>,
+}
+
+/// One registry value.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RegistryValue {
+    /// Value name. Empty for the key's default value.
+    pub name: String,
+    /// `sz`, `dword`, `binary`, `multi_sz`, and so on.
+    pub kind: String,
+    /// Data rendered as text — hex for binary, semicolon-joined for
+    /// `REG_MULTI_SZ` so ordering differences are visible.
+    pub data: String,
 }
 
 /// One file, as the walk found it.

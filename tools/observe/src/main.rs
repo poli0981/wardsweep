@@ -120,10 +120,11 @@ fn snapshot(output: &PathBuf, label: &str) -> Result<u8> {
     write_snapshot(output, &snapshot)?;
 
     eprintln!(
-        "snapshot written to {} — {} services, {} files, {} unreadable",
+        "snapshot written to {} — {} services, {} files, {} registry keys, {} unreadable",
         output.display(),
         snapshot.services.len(),
         snapshot.files.len(),
+        snapshot.registry.len(),
         snapshot.coverage.access_denied.len()
     );
     // Said every time, not only when it is inconvenient. A snapshot that
@@ -159,11 +160,19 @@ fn run_diff(before: &PathBuf, after: &PathBuf, output: &PathBuf, no_filter: bool
     write_diff(output, &diff)?;
 
     eprintln!(
-        "diff written to {} — {} service changes, {} file changes",
+        "diff written to {} — {} service changes, {} file changes, {} registry changes",
         output.display(),
         diff.services.len(),
-        diff.files.len()
+        diff.files.len(),
+        diff.registry.len()
     );
+    if diff.registry_policy_changed {
+        eprintln!(
+            "  WARNING: the two snapshots used different registry policies. \
+             Key differences may be an artefact of the policy rather than a \
+             change on the machine — compare `registry_policy` in both."
+        );
+    }
     if diff.filesystem_policy_changed {
         // Loud, and first. Every file difference below may be the policy rather
         // than the machine, and a reviewer who reads the list without knowing
@@ -193,7 +202,7 @@ fn run_diff(before: &PathBuf, after: &PathBuf, output: &PathBuf, no_filter: bool
         );
     }
 
-    if diff.services.is_empty() && diff.files.is_empty() {
+    if diff.services.is_empty() && diff.files.is_empty() && diff.registry.is_empty() {
         return Ok(exit::NOTHING);
     }
     Ok(exit::SUCCESS)
