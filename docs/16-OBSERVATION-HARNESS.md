@@ -254,3 +254,21 @@ Diffs are committed. Raw snapshots are not — they contain full path listings o
 a real machine and are large. If a raw snapshot must be shared for debugging,
 run it through `wardsweep observe redact` first, which replaces usernames and
 per-user paths with placeholders.
+
+`redact` removes **identity, not secrets**, and says so. Rewriting
+`\Users\name\` is not sufficient: on a development machine that left 213
+occurrences of the account name behind, in file names and registry keys that
+applications had written it into — `…\User Account Pictures\name.dat`,
+`…\ConnectedDevicesPlatform\L.name.cdp`. So it learns the account names from
+paths **rooted at a drive letter** and replaces them wherever else they appear.
+
+Two consequences worth knowing:
+
+- Names are learned only from a rooted profile path. Learning from any
+  `\Users\` segment taught it that `desktop.ini`, `guest` and `*` were people
+  — from a container layer, an Android source tree and an ASP.NET sample — and
+  it then replaced those tokens across the whole document.
+- Replacement is on token boundaries, so an account name inside a longer word
+  survives. `redact` counts what remains, reports it, and exits non-zero. It
+  does not claim to have produced a clean file, and `docs/16`'s checklist still
+  expects a person to read one before it is attached to anything.

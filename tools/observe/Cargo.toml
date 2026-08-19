@@ -19,12 +19,17 @@ name = "wardsweep-observe"
 path = "src/main.rs"
 
 [dependencies]
+# The draft generator builds a real schema::AntiCheat rather than writing
+# TOML by hand, so a draft cannot drift from the schema it has to satisfy.
+wardsweep-core.workspace = true
+
 anyhow.workspace = true
 clap.workspace = true
 rayon.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
+toml.workspace = true
 
 [dev-dependencies]
 # Cleans up its own temp trees on Drop. The inline test modules in src/ cannot
