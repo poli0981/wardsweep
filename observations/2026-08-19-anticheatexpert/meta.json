@@ -1,0 +1,54 @@
+{
+  "observation_id": "2026-08-19-anticheatexpert",
+  "date": "2026-08-19",
+  "kind": "uninstall-and-reinstall",
+  "note": "Machine where the game was installed before the harness existed, so there is no clean baseline. docs/16 section 'The uninstall-and-reinstall cycle' step 4 is what this recovers.",
+
+  "anticheat": {
+    "display": "AntiCheatExpert",
+    "vendor_cn": "ACEVILLE PTE LTD",
+    "version": "28.0.2604.938",
+    "driver_signer": "Microsoft Windows Hardware Compatibility Publisher",
+    "driver_signer_note": "Attestation-signed, so the drivers do NOT cluster with the vendor CN. Only ACE-Service64.exe and Uninstaller.exe carry it."
+  },
+
+  "referencing_games": {
+    "installed": [
+      {
+        "title": "Neverness To Everness",
+        "launcher": "steam",
+        "path": "D:/another/bbb/Neverness To Everness",
+        "size_gb": 68.6,
+        "carries_installer": "Client/WindowsNoEditor/HT/Binaries/Win64/AntiCheatExpert/ACE-Setup64.exe"
+      }
+    ],
+    "formerly_installed": [
+      {
+        "title": "Wuthering Waves",
+        "evidence": "the ACE uninstall entry's DisplayIcon still pointed at D:/SteamLibrary/steamapps/common/Wuthering Waves/Client/Binaries/Win64/AntiCheatExpert/ACE-Setup64.exe",
+        "state": "not installed; the path does not exist",
+        "note": "The value was never updated when the game was removed. Treating it as refcount evidence would over-count."
+      }
+    ],
+    "refcount_at_observation": 1
+  },
+
+  "machine": {
+    "os": "Windows 11 Pro 10.0.29648",
+    "note": "In ordinary use during capture rather than freshly booted and idle, contrary to docs/16 section 'Reducing noise'. The measured same-policy baseline for that condition is 18 unrelated file changes over five minutes."
+  },
+
+  "harness": {
+    "version": "0.0.1",
+    "domains_captured": ["services", "filesystem", "registry"],
+    "domains_not_captured": ["scheduled_tasks", "firewall", "event_sources", "environment"],
+    "filesystem_roots_note": "Other volumes are not walked, so anything ACE left on D:, E: or G: is invisible to this observation."
+  },
+
+  "snapshots": {
+    "00-current": "baseline, ACE installed, services stopped",
+    "01-uninstalled": "after C:/Program Files/AntiCheatExpert/Uninstaller.exe, no reboot required or performed",
+    "02-reinstalled": "pending - launch Neverness To Everness so it reinstalls ACE",
+    "storage": "%LOCALAPPDATA%/WardSweep/observations/ - raw snapshots are NOT committed; they list every file under the profile"
+  }
+}
