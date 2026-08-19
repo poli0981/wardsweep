@@ -25,7 +25,7 @@ mod collect;
 mod diff;
 mod model;
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 use anyhow::{Context, Result};
@@ -112,17 +112,18 @@ fn run(command: &Command) -> Result<u8> {
 }
 
 fn snapshot(output: &PathBuf, label: &str) -> Result<u8> {
-    let snapshot = collect::snapshot(label, clock::now_utc())?;
+    let snapshot = collect::snapshot(label, clock::now_utc(), collect::Request::default())?;
 
     let captured = snapshot.coverage.captured.len();
     let total = model::Domain::all().len();
 
-    write_json(output, &snapshot)?;
+    write_snapshot(output, &snapshot)?;
 
     eprintln!(
-        "snapshot written to {} — {} services, {} unreadable",
+        "snapshot written to {} — {} services, {} files, {} unreadable",
         output.display(),
         snapshot.services.len(),
+        snapshot.files.len(),
         snapshot.coverage.access_denied.len()
     );
     // Said every time, not only when it is inconvenient. A snapshot that
@@ -155,13 +156,27 @@ fn run_diff(before: &PathBuf, after: &PathBuf, output: &PathBuf, no_filter: bool
     let diff = diff::compare(&before_snapshot, &after_snapshot, &filter)
         .context("comparing the snapshots")?;
 
-    write_json(output, &diff)?;
+    write_diff(output, &diff)?;
 
     eprintln!(
-        "diff written to {} — {} service changes",
+        "diff written to {} — {} service changes, {} file changes",
         output.display(),
-        diff.services.len()
+        diff.services.len(),
+        diff.files.len()
     );
+    if diff.filesystem_policy_changed {
+        // Loud, and first. Every file difference below may be the policy rather
+        // than the machine, and a reviewer who reads the list without knowing
+        // that will attribute the harness's own settings to an installer.
+        eprintln!(
+            "  WARNING: the two snapshots used different filesystem policies. \
+             File differences may be an artefact of the policy rather than a \
+             change on the machine — compare `filesystem_policy` in both."
+        );
+    }
+    for (signer, count) in &diff.signers {
+        eprintln!("  {count} file(s) signed by `{signer}`");
+    }
     for (rule, count) in diff.suppression_counts() {
         // Never silent. A rule that hid something says so and names itself.
         eprintln!("  {count} change(s) suppressed by rule `{rule}` — see `suppressed` in the diff");
@@ -178,7 +193,7 @@ fn run_diff(before: &PathBuf, after: &PathBuf, output: &PathBuf, no_filter: bool
         );
     }
 
-    if diff.services.is_empty() {
+    if diff.services.is_empty() && diff.files.is_empty() {
         return Ok(exit::NOTHING);
     }
     Ok(exit::SUCCESS)
@@ -190,13 +205,31 @@ fn read_json<T: serde::de::DeserializeOwned>(path: &PathBuf) -> Result<T> {
     serde_json::from_str(&text).with_context(|| format!("parsing {}", path.display()))
 }
 
-fn write_json<T: serde::Serialize>(path: &PathBuf, value: &T) -> Result<()> {
+/// Write a snapshot: compact, because it is machine input.
+///
+/// A snapshot of this machine holds three quarters of a million file records.
+/// Pretty-printing costs roughly 40% of the file size to indent something
+/// nobody reads by hand — the diff is what a person looks at, and that stays
+/// indented.
+fn write_snapshot(path: &PathBuf, value: &model::Snapshot) -> Result<()> {
+    ensure_parent(path)?;
+    let text = serde_json::to_string(value).context("serialising")?;
+    std::fs::write(path, text).with_context(|| format!("writing {}", path.display()))
+}
+
+/// Write a diff: indented, because it is read by people and reviewed in a PR.
+fn write_diff(path: &PathBuf, value: &diff::Diff) -> Result<()> {
+    ensure_parent(path)?;
+    let text = serde_json::to_string_pretty(value).context("serialising")?;
+    std::fs::write(path, text).with_context(|| format!("writing {}", path.display()))
+}
+
+fn ensure_parent(path: &Path) -> Result<()> {
     if let Some(parent) = path.parent()
         && !parent.as_os_str().is_empty()
     {
         std::fs::create_dir_all(parent)
             .with_context(|| format!("creating {}", parent.display()))?;
     }
-    let text = serde_json::to_string_pretty(value).context("serialising")?;
-    std::fs::write(path, text).with_context(|| format!("writing {}", path.display()))
+    Ok(())
 }

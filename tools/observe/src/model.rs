@@ -161,6 +161,72 @@ pub struct Snapshot {
     /// Service and driver configuration, keyed by service name.
     #[serde(default)]
     pub services: Vec<ServiceRecord>,
+    /// Files under the roots named by [`Snapshot::filesystem_policy`].
+    #[serde(default)]
+    pub files: Vec<FileRecord>,
+    /// What the filesystem walk was told to do, when it ran.
+    ///
+    /// Recorded for the same reason [`Coverage`] is: a file list means nothing
+    /// without knowing which roots produced it, what was excluded, and which
+    /// files were hashed. Two snapshots taken under different policies are not
+    /// comparable, and only the file can say so.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub filesystem_policy: Option<FilesystemPolicy>,
+}
+
+/// What the filesystem walk covered.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct FilesystemPolicy {
+    /// Roots walked, already expanded from their environment variables.
+    pub roots: Vec<String>,
+    /// Path fragments that stopped the walk, case-insensitively.
+    pub excluded: Vec<String>,
+    /// Extensions whose contents were hashed. Everything else is recorded by
+    /// path, size and timestamp only.
+    pub hashed_extensions: Vec<String>,
+    /// Files larger than this were not hashed, and say so individually.
+    pub max_hash_bytes: u64,
+}
+
+/// One file, as the walk found it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct FileRecord {
+    /// Full path.
+    pub path: String,
+    /// Size in bytes.
+    pub size: u64,
+    /// Last-modified time, ISO-8601 UTC. Empty when the platform would not say.
+    #[serde(default)]
+    pub modified_utc: String,
+    /// SHA-256 of the contents, when the policy called for hashing it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sha256: Option<String>,
+    /// Authenticode signer common name, when the file carries an embedded
+    /// signature.
+    ///
+    /// `docs/16-OBSERVATION-HARNESS.md` calls signer clustering "the single
+    /// most useful signal": everything an installer dropped shares a publisher,
+    /// which separates it from Windows Update noise without an ignore list.
+    ///
+    /// Absent means *no embedded signature was found*, which is not the same as
+    /// unsigned — most Windows binaries are signed through a catalog file
+    /// instead. Anti-cheat binaries are embedded-signed in practice, which is
+    /// what makes this worth collecting.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub signer: Option<String>,
+    /// Why the contents were not hashed, when they were not.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub not_hashed: Option<String>,
+}
+
+impl FileRecord {
+    /// Whether this file is a kernel driver by extension.
+    #[must_use]
+    pub fn is_driver_image(&self) -> bool {
+        self.path.to_ascii_lowercase().ends_with(".sys")
+    }
 }
 
 /// The configuration of one service or driver.

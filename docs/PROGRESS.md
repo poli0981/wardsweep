@@ -37,7 +37,7 @@ architecture survived contact, its protocol did not survive it unamended.
 | `ui/` — WPF shell | Shell only, plus the architecture tests that assert the UI has no destructive code path |
 | CI — Rust, .NET, CodeQL, Catalog Verify | Done, inline in this repository, all green |
 | Spike S3 — split-privilege architecture | **PASS.** All six criteria measured — 23 checks, 0 failed. `spikes/S3-RESULT.md`. Throwaway code in `spikes/s3-split-privilege/`, unreachable from either build. |
-| `tools/observe/` — snapshot and diff | **Services domain only.** `snapshot` and `diff` work end to end against a real machine; every other domain is named as `not_captured` in the file rather than omitted. `suggest`, `intersect` and `redact` are not written. |
+| `tools/observe/` — snapshot and diff | **Services and filesystem.** Both work end to end against a real machine, including Authenticode signer clustering. Every other domain is named as `not_captured` in the file rather than omitted. `suggest`, `intersect` and `redact` are not written. |
 
 Enforced by tests rather than by review:
 
@@ -66,22 +66,24 @@ has seen fail is not a gate.
 because no catalog entry may ship without one. Until this exists the catalog
 cannot grow, and until the catalog grows there is nothing to detect.
 
-The services domain is done and works on a real machine. What is left, roughly
-in value order:
+Services and filesystem are done and work on a real machine. Signer clustering
+delivers what [`16`](16-OBSERVATION-HARNESS.md) promised: on the development
+machine it names the entire Riot Vanguard footprint — seven files, one
+publisher — without any path knowledge at all.
 
-1. **Filesystem** — path, size, SHA-256, and Authenticode signer. `docs/16`
-   calls signer clustering "the single most useful signal", and it is the one
-   thing that separates an installer's additions from Windows Update noise
-   without an ignore list at all.
-2. **Registry**, both WOW64 views. Needed before any catalog entry can name a
-   key, and `wow64_both_views_produce_distinct_artifacts` in
+What is left, roughly in value order:
+
+1. **Registry**, both WOW64 views. The last domain a catalog entry actually
+   needs, and `wow64_both_views_produce_distinct_artifacts` in
    [`12`](12-TESTING-STRATEGY.md) is waiting on it.
-3. **`suggest`** — the draft entry generator. It must build on
+2. **`suggest`** — the draft entry generator. It must build on
    `wardsweep_core::catalog::schema` rather than define the shape a second time,
    or drafts drift from the schema and only `catalog-verify` finds out.
+3. **`redact`** — [`16`](16-OBSERVATION-HARNESS.md) requires it before a raw
+   snapshot may be shared, and nothing should be shared until it exists. A
+   snapshot names every file under the user's profile.
 4. Scheduled tasks, firewall, event sources, environment.
-5. **`redact`** — `docs/16` requires it before a raw snapshot may be shared, and
-   nothing should be shared until it exists.
+5. **`intersect`** — needed by S2, which is now unblocked.
 
 On the spike gate in [`13`](13-P0-SPIKES.md): six spikes still have no verdict,
 and the gate says feature work waits for all seven. The harness is the exception
@@ -147,11 +149,16 @@ consequences that outlive the spike.
 
 ## Known gaps
 
-- `tools/observe` captures one of seven domains. This is visible in every
+- `tools/observe` captures two of seven domains. This is visible in every
   snapshot and every diff rather than implied, but it does mean **no diff from
   this build is yet sufficient for a catalog entry** — `docs/16`'s review
-  checklist asks for paths, registry keys and a verified signer CN, none of
-  which are collected.
+  checklist asks for registry keys, which are not collected.
+- A snapshot takes about three and a half minutes and 156 MB on a developer
+  machine, against [`16`](16-OBSERVATION-HARNESS.md)'s original 40–120 MB
+  estimate. The document now records the measurement. Hashing and the signer
+  lookup are parallel; the remaining cost is the walk itself.
+- **`redact` does not exist, and a snapshot is not safe to share without it.**
+  It names every file under `%LOCALAPPDATA%` and `%APPDATA%`.
 - The harness can describe a machine that already has an anti-cheat installed.
   That is a *detection*, not an observation: `CONTRIBUTING.md` requires a
   before/after cycle, and `docs/16` §"The uninstall-and-reinstall cycle" is the

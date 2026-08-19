@@ -1,61 +1,21 @@
-//! Capturing the machine.
-//!
-//! The only module here that touches Win32, and the only one that cannot be
-//! tested on Linux. Everything it produces is [`crate::model`] data, so the
-//! differ and the draft generator never see a handle.
+//! The services domain: every service and driver, via the service control
+//! manager.
 //!
 //! # Read-only, structurally
 //!
-//! `docs/16-OBSERVATION-HARNESS.md`: "Snapshots are **read-only**. The harness
-//! has no removal code path at all — it is a separate binary from the broker
-//! for exactly this reason."
-//!
-//! The service control manager is opened with `SC_MANAGER_ENUMERATE_SERVICE`
-//! and each service with `SERVICE_QUERY_CONFIG`. Neither grants the rights that
-//! would let this binary change or delete anything, so the read-only claim is
-//! enforced by the handles it holds rather than by the calls it happens to
-//! make. `core/tests/no_destructive_code.rs` covers this directory too.
+//! The manager is opened with `SC_MANAGER_ENUMERATE_SERVICE` and each service
+//! with `SERVICE_QUERY_CONFIG`. Neither grants the rights that would let this
+//! binary change or delete anything, so the read-only claim is enforced by the
+//! handles it holds rather than by the calls it happens to make.
 
-use crate::model::{AccessDenied, Coverage, Domain, ServiceRecord, Snapshot};
+use crate::model::{AccessDenied, ServiceRecord};
 
-/// Everything one domain's collector returns.
+/// Everything this collector returns.
 pub struct Captured {
     /// The records themselves.
     pub services: Vec<ServiceRecord>,
     /// Items that could not be read, with the platform's reason.
     pub access_denied: Vec<AccessDenied>,
-}
-
-/// Take a snapshot of every domain this build can capture.
-///
-/// # Errors
-/// If the platform refuses the enumeration outright. Individual items that
-/// cannot be read are recorded in [`Coverage::access_denied`] rather than
-/// failing the snapshot: a machine where three services are unreadable is still
-/// worth capturing, provided the file says which three.
-pub fn snapshot(label: &str, taken_utc: String) -> anyhow::Result<Snapshot> {
-    let captured = services()?;
-
-    // Exactly one domain so far. The others are named as not captured rather
-    // than omitted, so a diff cannot present their absence as "nothing changed
-    // there" — see the module comment on `crate::model`.
-    let coverage = Coverage {
-        captured: vec![Domain::Services],
-        not_captured: Domain::all()
-            .into_iter()
-            .filter(|domain| *domain != Domain::Services)
-            .collect(),
-        access_denied: captured.access_denied,
-    };
-
-    Ok(Snapshot {
-        format_version: crate::model::SNAPSHOT_FORMAT_VERSION,
-        taken_utc,
-        harness_version: env!("CARGO_PKG_VERSION").to_owned(),
-        label: label.to_owned(),
-        coverage,
-        services: captured.services,
-    })
 }
 
 #[cfg(not(windows))]
