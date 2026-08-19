@@ -120,6 +120,38 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
   - Matching is on token boundaries, so an account name inside a longer word
     survives by construction. The tool counts what remains, says so, and exits
     non-zero; it does not claim to have produced a clean file.
+- `tools/observe` now records **which boot a snapshot belongs to** and **which
+  directories hold no file beneath them**. Both gaps were found by the Riot
+  Vanguard observation, and both hid evidence in the direction that reads as
+  good news.
+  - `boot_session`, derived as wall clock minus `GetTickCount64`, with
+    `diff` reporting `rebooted_between`. A restart is the loudest cause of
+    change a diff will ever see — drivers load and unload, per-user service
+    instances are recreated, pending file renames are carried out — and it
+    appears as churn rather than as a restart. The Vanguard start-type finding
+    was first recorded with the wrong cause for exactly this reason: the
+    machine had rebooted between two snapshots and neither file said so. Two
+    derived instants are compared with a two-minute tolerance, because both
+    halves of the subtraction drift. Not a G3 concern: a boot instant changes
+    at every start and distinguishes no machine from any other.
+  - `file_empty_directories`, topmost only, with `diff` reporting
+    `emptied_directories`. `files` describes files, so a directory left
+    standing and empty produced no record on either side and the diff could not
+    mention it. Riot Vanguard's uninstaller removed all twelve of its files,
+    both services and every registry key it owned, and left
+    `C:\Program Files\Riot Vanguard` and its `Logs` child on disk — **the
+    clearest residue on the machine was the one thing the harness could not
+    report.**
+  - Both fields are optional, and both diff answers are `null` rather than
+    `false` or `[]` when either snapshot predates them. An empty list would
+    read as "nothing was left behind", which is the one wrong answer this tool
+    must never give.
+  - Measured before being believed, on two captures seven minutes apart: 18 216
+    empty directories exist on the development machine, costing 0.93 % of a
+    snapshot, and the **noise floor is zero** in both directions — so no
+    suppression rule was added. The derived boot instant matched the Windows
+    event log to the second, and two derived instants drifted by 7 ms against a
+    120 000 ms tolerance that exists for clock steps rather than for drift.
 - `spikes/Directory.Build.props` and `spikes/Directory.Packages.props`, which
   terminate the repository's MSBuild and NuGet inheritance chains. Without them
   a spike project inherits `TreatWarningsAsErrors`, the lock-file policy and the

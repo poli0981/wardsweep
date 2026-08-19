@@ -23,6 +23,15 @@ and the root of the dependency graph. It changed `docs/08-IPC-PROTOCOL.md` in
 five places and left `docs/03-ARCHITECTURE.md` untouched: the split-privilege
 architecture survived contact, its protocol did not survive it unamended.
 
+Two anti-cheats have since been observed through their own uninstallers.
+AntiCheatExpert left **nothing of its own**; Riot Vanguard left two files and
+two empty directories. That is the honest scale of the residue problem so far,
+and it is a long way from what the subject is usually claimed to be. What the
+observations produced instead was method: a detection API that reports a driver
+as present after it is gone, an anti-cheat that rewrites its own driver's start
+type, a registry value the observation itself wrote and nearly attributed to its
+subject, and two harness blind spots that hid evidence.
+
 ## What exists and is verified
 
 | Area | State |
@@ -74,13 +83,23 @@ The half that already exists is the one [`16`](16-OBSERVATION-HARNESS.md) says
 leaves nothing of its own**. A project that sweeps residue has to report that as
 readily as the opposite.
 
-**2. A second observation, on a different anti-cheat.**
-One observation is a data point. `shared` cannot be lowered from `true` without
-at least two titles ([`04`](04-CATALOG-SCHEMA.md)), and `observe intersect` —
-which S2 needs — has nothing to intersect until there are several. Riot Vanguard
-is the obvious next target and is installed on the development machine; note
-that Valorant is installed too, so its refcount is 1 and uninstalling costs a
-reboot and an automatic reinstall.
+**2. Finish the Riot Vanguard observation — one game launch.**
+The uninstall half is done and committed at
+`observations/2026-08-19-riot-vanguard/`. To finish it: start VALORANT so it
+reinstalls Vanguard, snapshot, and diff for the install footprint. No catalog
+draft is committed until then — the removal footprint is known and the install
+footprint is not, and [`16`](16-OBSERVATION-HARNESS.md) requires an entry to
+come from an observation rather than from half of one.
+
+Vanguard is **the first anti-cheat observed here that leaves anything behind**:
+two files under `%LOCALAPPDATA%` and two empty directories under
+`%ProgramFiles%`, against a tidy removal of 207 MB, two services and every
+registry key it owned. It also cost the harness two blind spots, both fixed in
+that observation — a snapshot did not record which boot it belonged to, and an
+emptied directory produced no record at all.
+
+Note that no reboot was required, contrary to expectation, because the client
+was closed and `vgk` was therefore not loaded.
 
 **3. `observe intersect`.**
 The last unwritten subcommand. The intersection of the same anti-cheat observed
@@ -198,6 +217,27 @@ consequences that outlive the spike.
   `Anonymous` rather than the account. The tool reports the residue and exits
   non-zero so a script cannot publish the result by accident; a person still
   reads the file.
+- **The harness has been wrong twice about what it could see, and both times
+  the wrong answer looked like a clean result.** A directory left standing and
+  empty produced no record at all, so the clearest residue Riot Vanguard left
+  was the one thing the diff could not mention; and a snapshot did not record
+  which boot it belonged to, so a reboot between two captures was invisible and
+  a driver's start-type change went into the record with the wrong cause. Both
+  are fixed, both are reported as `null` rather than `false`/`[]` when a
+  snapshot predates them, and the general lesson is the one worth keeping: a
+  domain this harness does not model is not a domain where nothing happened.
+  Scheduled tasks, firewall rules, event sources and environment are still
+  unmodelled.
+- **`suggest` cannot read the first diff an observation produces.** It consumes
+  only `added` changes, so it needs an install diff — clean → installed. But
+  `docs/16` §"The uninstall-and-reinstall cycle" exists precisely because the
+  machines available have the game installed already, so the first artefact of
+  every observation so far has been a *removal* diff, in which everything is
+  `removed`. The AntiCheatExpert draft was produced by inverting one with an
+  ad-hoc script that was never committed, which means **that draft is not
+  reproducible from the committed artefacts.** Either `suggest` should accept a
+  removal diff directly or the inversion should be a subcommand; deciding which
+  is worth doing before the second draft is written.
 - The harness can describe a machine that already has an anti-cheat installed.
   That is a *detection*, not an observation: `CONTRIBUTING.md` requires a
   before/after cycle, and `docs/16` §"The uninstall-and-reinstall cycle" is the
@@ -250,6 +290,15 @@ it ever fails with a `cc` error, a C-backed crate has escaped
   and fail on every fresh checkout.
 - **Windows dependencies belong under `[target.'cfg(windows)'.dependencies]`,
   never behind a cargo feature.** CI lints with `--all-features` on ubuntu.
+- **A `cfg(windows)` split can make a shared helper dead code off Windows**, and
+  Windows clippy will never say so. `#[cfg(not(windows))]` on the *public*
+  function leaves anything only its Windows twin called unreachable, and
+  `-D warnings` turns that into a build failure on the ubuntu job alone. Put the
+  `cfg` on the smallest thing that genuinely differs — "can this platform answer
+  at all?" — and let the shared code stay shared. `collect/boot.rs` is the
+  worked example: the split is on `uptime_ms`, not on `boot_session`.
+  **Run the ubuntu lint below before pushing**, not after CI says so; it takes
+  seconds and this failure mode has cost a round trip.
 - **The .NET ignore pattern in `.gitignore` is scoped to `ui/`** rather than
   matching `bin/` anywhere. Cargo puts binary crate roots in `src/bin/`, so the
   conventional pattern silently excludes `cli/src/bin/` — both Rust

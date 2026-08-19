@@ -49,6 +49,12 @@ human review, never a finished entry — see "Review before submitting" below.
 | Event log sources | Registered sources under `EventLog\Application` |
 | Environment | Windows build, locale, installed launchers and versions |
 
+Alongside the domains, every snapshot records **when each domain started**, the
+**boot session** it belongs to, and the **directories holding no file beneath
+them**. The three exist for the same reason and are covered below: a file list
+and a service list, on their own, answered three questions wrongly on a real
+machine.
+
 Snapshots are **read-only**. The harness has no removal code path at all — it
 ships as `wardsweep-observe.exe`, built from `tools/observe/`, for exactly
 this reason. `wardsweep observe …` in [`11`](11-CLI-REFERENCE.md) forwards to
@@ -59,6 +65,12 @@ Size and time, measured rather than estimated. On the development machine —
 is **156 MB uncompressed** and takes **about three and a half minutes**, with
 hashing and the signer lookup running in parallel. The earlier estimate of
 40–120 MB was optimistic for a machine with games and toolchains installed.
+
+It also needs memory: the walk holds every record before serialising, and
+resident set was observed at **around 550 MB** part-way through a capture on
+that machine. That is a harness number, not a product one — `docs/10` budgets
+the broker, which streams — but anyone running `observe` on a small machine
+should know it before starting.
 
 The resulting diff is small: **0.1 MB and under three seconds**, because
 almost nothing changes between two snapshots. That asymmetry is the design
@@ -100,15 +112,79 @@ inconsistently *across domains, within one file*.
 
 Measured: a Riot Vanguard baseline recorded `vgk start_type = system` in the
 services domain and `Start = 3` (demand) on that same service's registry key
-four minutes later, because the anti-cheat raised its own driver's start type
-while its client ran and lowered it again. Both readings were correct. The file
-implied they were simultaneous.
+four minutes later, because the driver came up at `SYSTEM_START` after a reboot
+and was lowered to `demand` about ten minutes in. Both readings were correct.
+The file implied they were simultaneous.
 
 Every snapshot therefore records `domain_started_utc` per domain and prints the
 span it covered. That does not remove the skew — nothing short of a
 transactional capture would, and Windows offers none across these three
 domains — but it stops the file making a promise it cannot keep, and it tells a
 reviewer which cross-domain comparisons are safe.
+
+### A snapshot records which boot it belongs to
+
+A restart changes more than anything else a diff will see: drivers load and
+unload, per-user service instances are recreated with fresh suffixes, and
+`PendingFileRenameOperations` is executed and cleared. None of that is visible
+as a restart in the diff — it is visible as churn, and a reviewer attributes
+churn to whatever the observation was about.
+
+That is not hypothetical either. The Vanguard start-type finding above was
+first written down with the wrong cause, because the machine had restarted
+between two snapshots and neither file said so.
+
+`boot_session` is therefore recorded on every snapshot, derived as wall clock
+minus `GetTickCount64`, and `diff` reports `rebooted_between`. Both halves of
+that subtraction drift, so two boot instants are compared with a **two-minute
+tolerance** rather than for equality.
+
+Measured: across two captures seven minutes apart the derived instants differed
+by **7 ms**, and the one derived from `GetTickCount64` matched the boot time in
+the Windows event log **to the second**. The tolerance is not sized for that
+drift; it is sized for a clock step such as a time sync. It cannot hide a
+restart, because a reboot moves the boot instant forward by the machine's
+uptime at that moment — which had to cover the whole of the earlier capture, so
+it is always minutes.
+
+This is not a Safety Gate G3 concern. A boot instant changes every time the
+machine starts and is shared by every machine started at the same moment, so it
+distinguishes nothing. G3 is about identity; this is state.
+
+### A directory that survives with nothing in it
+
+`files` describes files, so a directory left standing and empty produces no
+record on either side of a diff, and the diff cannot mention it.
+
+Measured: Riot Vanguard's uninstaller removed all twelve of its files, both
+services and every one of its registry keys, and left
+`C:\Program Files\Riot Vanguard` and its `Logs` subdirectory on disk. **The
+clearest residue on the machine was the one thing the harness was structurally
+unable to report.**
+
+`file_empty_directories` records directories holding no file anywhere beneath
+them, topmost only — an empty `Logs` inside an empty `Riot Vanguard` is one
+finding, not two — and `diff` reports `emptied_directories`.
+
+Measured, because a list this long has to justify itself: **18 216** such
+directories exist on the development machine, costing 2.46 MB, or **0.93 % of a
+snapshot**. 84 % of them are one tool's metadata cache. And the noise floor is
+**zero** — two captures seven minutes apart on a machine in ordinary use
+produced 0 newly empty and 0 newly occupied, in both directions. So no
+suppression rule is needed here, and none has been added. If one ever is, it
+belongs in the noise filter where it can be named and audited, not in the
+exclusion list where the directory would never be walked at all.
+
+### Absence and emptiness are different answers
+
+`boot_session`, `file_empty_directories`, `rebooted_between` and
+`emptied_directories` are all optional, and a diff answers `null` rather than
+`false` or `[]` when either snapshot predates the field.
+
+An empty list would read as *nothing was left behind*. That is the one wrong
+answer this tool must never give, and it is the same rule `coverage` has
+enforced since the first snapshot: a harness that could not see something says
+so, and never lets silence stand in for a clean result.
 
 ## Reducing noise
 

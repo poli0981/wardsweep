@@ -170,6 +170,12 @@ pub struct Snapshot {
     /// Recording the skew does not remove it. It lets a reader see it.
     #[serde(default)]
     pub domain_started_utc: std::collections::BTreeMap<String, String>,
+    /// Which boot the machine was in when this was captured.
+    ///
+    /// See [`BootSession`]. `None` for a snapshot taken before this field
+    /// existed, and off Windows.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub boot_session: Option<BootSession>,
     /// Version of the harness that took it.
     pub harness_version: String,
     /// Free-text label, so a directory of snapshots is readable.
@@ -197,6 +203,57 @@ pub struct Snapshot {
     /// comparable, and only the file can say so.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub filesystem_policy: Option<FilesystemPolicy>,
+    /// Directories that exist and hold no file anywhere beneath them.
+    ///
+    /// Only the topmost such directory in a chain is listed: an empty
+    /// `Riot Vanguard\Logs` inside an empty `Riot Vanguard` is one entry, not
+    /// two.
+    ///
+    /// # Why a file list is not enough
+    ///
+    /// [`FileRecord`] describes files. A directory that survives an uninstall
+    /// with nothing in it produces no record, so it is invisible to the diff —
+    /// and that is precisely the shape of residue an uninstaller leaves when it
+    /// deletes what it installed and not the folder it installed into.
+    ///
+    /// Measured: Riot Vanguard's own uninstaller removed all twelve of its
+    /// files, both services, and every one of its registry keys, and left
+    /// `C:\Program Files\Riot Vanguard` and its `Logs` subdirectory standing.
+    /// Nothing in the file diff could say so.
+    /// `None` for a snapshot taken before the walk recorded directories at all,
+    /// which is not the same as `Some(vec![])` and must not be read as it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub file_empty_directories: Option<Vec<String>>,
+}
+
+/// Which boot the machine was in.
+///
+/// # What this answers
+///
+/// A diff reports what changed between two snapshots and cannot report why. One
+/// cause changes more than any other: a restart. Drivers load and unload,
+/// per-user service instances are recreated with fresh suffixes, and
+/// `PendingFileRenameOperations` is executed and cleared. Without this field all
+/// of it reads as ordinary churn.
+///
+/// # Not a hardware identifier
+///
+/// Safety Gate G3 forbids reading hardware identity even for reporting. A boot
+/// instant is not identity: it changes at every start and is shared by every
+/// machine started at the same moment. See `crate::collect::boot`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BootSession {
+    /// Approximate boot instant, ISO-8601 UTC, for a person reading the file.
+    ///
+    /// **Derived**, as wall clock minus uptime, so it drifts by milliseconds
+    /// between calls and by more than that if the clock is adjusted. Compare
+    /// two of them with a tolerance, never for equality.
+    pub started_utc: String,
+    /// The same instant in Unix milliseconds, for the differ, which has to
+    /// compare two of these and has no date parser.
+    pub started_unix_ms: u64,
+    /// Milliseconds since boot when the capture began.
+    pub uptime_ms: u64,
 }
 
 /// What the filesystem walk covered.

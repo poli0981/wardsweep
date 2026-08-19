@@ -333,6 +333,36 @@ fn run_diff(before: &PathBuf, after: &PathBuf, output: &PathBuf, no_filter: bool
              change on the machine — compare `filesystem_policy` in both."
         );
     }
+    match diff.rebooted_between {
+        // Loud, because it is the loudest cause of change there is and it is
+        // invisible in the lists below.
+        Some(true) => eprintln!(
+            "  WARNING: the machine restarted between these two snapshots. \
+             Drivers loaded and unloaded, per-user service instances were \
+             recreated, and any pending file renames were carried out — none \
+             of that was the subject of the observation."
+        ),
+        Some(false) => {}
+        None => eprintln!(
+            "  whether the machine restarted between these snapshots is not \
+             known: one of them predates `boot_session`"
+        ),
+    }
+    match &diff.emptied_directories {
+        Some(directories) if !directories.is_empty() => {
+            eprintln!(
+                "  {} director(ies) left standing with nothing in them:",
+                directories.len()
+            );
+            for directory in directories {
+                eprintln!("    {directory}");
+            }
+        }
+        Some(_) => {}
+        None => eprintln!(
+            "  emptied directories are not known: one of these snapshots did not record them"
+        ),
+    }
     for (signer, count) in &diff.signers {
         eprintln!("  {count} file(s) signed by `{signer}`");
     }

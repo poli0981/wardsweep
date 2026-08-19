@@ -10,10 +10,20 @@ use std::time::{SystemTime, UNIX_EPOCH};
 /// The current time as `YYYY-MM-DDTHH:MM:SS.mmmZ`.
 #[must_use]
 pub fn now_utc() -> String {
-    let since_epoch = SystemTime::now()
+    from_unix_millis(now_unix_millis())
+}
+
+/// The current time in Unix milliseconds.
+///
+/// Wanted separately from [`now_utc`] because the boot instant is derived by
+/// subtracting an uptime from it, and a rendered string cannot be subtracted
+/// from without a parser this module deliberately does not have.
+#[must_use]
+pub fn now_unix_millis() -> u128 {
+    SystemTime::now()
         .duration_since(UNIX_EPOCH)
-        .unwrap_or_default();
-    from_unix_millis(since_epoch.as_millis())
+        .unwrap_or_default()
+        .as_millis()
 }
 
 /// Render Unix milliseconds as an ISO-8601 UTC timestamp.
