@@ -15,7 +15,7 @@ deliberately unambiguous, and `ls spikes/*-RESULT.md` is the gate check.
 |---|---|---|
 | S1 | Boot-start driver removal across a reboot | — |
 | S2 | Shared anti-cheat reference counting | — |
-| S3 | Split-privilege architecture | **PARTIAL** — [`S3-RESULT.md`](S3-RESULT.md). Five of six criteria pass; the UAC prompt count needs a person, per [`RUNBOOK.md`](s3-split-privilege/RUNBOOK.md). Nothing found argues for the fallback. |
+| S3 | Split-privilege architecture | **PASS** — [`S3-RESULT.md`](S3-RESULT.md). All six criteria measured; 23 checks, 0 failed. No design change to `docs/03` implied; `docs/08` amended in five places. |
 | S4 | Performance on a genuinely messy machine | — |
 | S5 | Rollback fidelity | — |
 | S6 | Antivirus false-positive rate | — |
