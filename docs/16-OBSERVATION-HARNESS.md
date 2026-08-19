@@ -127,6 +127,35 @@ Set-MpPreference -SignatureScheduleDay Never    # test machine only
 Take snapshots at a consistent point: freshly booted, idle for two minutes, all
 launchers closed.
 
+### Safety Gate G3 constrains what the registry walk may record
+
+`docs/02-SAFETY-GATE.md` G3 forbids reading a hardware identifier **including
+for reporting**, and a walk of `HKLM\SOFTWARE` passes straight through
+`Microsoft\Cryptography` on its way.
+
+Excluding that key was the obvious first answer and is nowhere near sufficient.
+Measured on a development machine, the machine identifier had been copied by
+three unrelated applications into their own keys — a Visual Studio installation
+key, a developer-tools hardware cache, and a cloud-storage client — all holding
+the same value. A separate telemetry cache held the motherboard and CPU model
+inside a URL query string, under a value whose name gave no clue. One of those
+keys also held a disk serial.
+
+So the refusal matches on the **value name and the value data**, not only on the
+key path. The term list is shipped as data
+(`tools/observe/src/collect/g3-identity-terms.txt`), refused values are dropped
+entirely rather than masked, and each refusal is recorded in `access_denied`
+with its key and value name — never its data — so the refusal is auditable.
+
+On that machine the result is 54 values refused out of 217 522 keys, and no
+hardware identifier anywhere in the snapshot.
+
+One narrowing is worth knowing about, because it looks like a loophole and is
+not: a value whose data begins with `prop:` is a Windows shell *property
+schema* — it names properties, it does not hold one — and the data check skips
+it. Without that, 184 of 243 refusals were schema lists. The name check still
+applies to them.
+
 ## Draft entry generation
 
 `observe suggest` produces:

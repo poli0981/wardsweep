@@ -1,0 +1,54 @@
+# Safety Gate G3 — hardware identity terms the harness refuses to record.
+#
+# docs/02-SAFETY-GATE.md: WardSweep does not read or write MachineGuid, SMBIOS
+# or DMI UUIDs, disk serials, volume GUIDs, MAC addresses, TPM state or "any
+# other hardware fingerprint", and "does not enumerate them for reporting
+# either". The gate has no exceptions.
+#
+# WHY THIS IS A DATA FILE AND NOT A RUST CONSTANT
+#
+# core/tests/no_destructive_code.rs fails the build if any of these strings
+# appears in a .rs file under a shipped src/ directory. That test cannot tell
+# code that *reads* an identifier from a deny-list that *refuses* one — so a
+# list written in Rust would be rejected by the very gate it enforces. The list
+# lives here instead, is loaded with include_str!, and is deliberately data:
+# shipped, versioned and reviewable, the way docs/16 asks noise rules to be.
+#
+# This is worth a maintainer's eye. The test's scope is by directory and file
+# extension, and nothing about that scope makes the distinction explicit.
+#
+# WHY A KEY-PATH EXCLUSION IS NOT ENOUGH
+#
+# Excluding HKLM\SOFTWARE\Microsoft\Cryptography was the obvious first answer
+# and it is nowhere near sufficient. A real snapshot of a development machine
+# found the machine identifier copied into three unrelated application keys —
+# Visual Studio's DevDiv installation key, a DeveloperTools hardware cache, and
+# OneDrive — all holding the same value. A telemetry cache held the motherboard
+# and CPU model inside a URL query string. Applications copy machine identity
+# wherever they like, so the refusal has to match on the value name and on the
+# value data, not only on where the value lives.
+#
+# Terms are matched case-insensitively as substrings, against both the value
+# name and the rendered value data. A match drops the value entirely; the key
+# and value name are recorded in access_denied so the refusal is auditable.
+#
+# Add to this list rather than narrowing it. A false positive costs one value
+# of footprint; a false negative is a gate violation.
+#
+# One term was removed after measurement, not on principle: a bare `hwid`
+# matched "Blank_PhotosSplas(hWid)eTile.png" and nothing else on a real machine.
+# It is a colloquialism rather than a Windows identifier name, everything it
+# would legitimately catch is covered by the specific terms above, and
+# docs/02-SAFETY-GATE.md G4 asks the project not to use the word at all.
+
+machineguid
+smbios
+serialnumber
+diskserial
+volumeserial
+macaddress
+baseboard
+processorid
+computersystemproduct
+biosuuid
+systemuuid

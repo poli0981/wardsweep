@@ -14,6 +14,7 @@
 
 pub mod authenticode;
 pub mod filesystem;
+pub mod registry;
 pub mod services;
 
 use std::path::PathBuf;
@@ -27,6 +28,8 @@ pub struct Request {
     pub services: bool,
     /// Files under the roots in `docs/16`.
     pub filesystem: bool,
+    /// Registry keys under the roots in `docs/16`, in both WOW64 views.
+    pub registry: bool,
 }
 
 impl Default for Request {
@@ -34,6 +37,7 @@ impl Default for Request {
         Self {
             services: true,
             filesystem: true,
+            registry: true,
         }
     }
 }
@@ -76,6 +80,8 @@ pub fn snapshot(label: &str, taken_utc: String, request: Request) -> anyhow::Res
     let mut services = Vec::new();
     let mut files = Vec::new();
     let mut filesystem_policy = None;
+    let mut registry_keys = Vec::new();
+    let mut registry_policy = None;
 
     if request.services {
         let result = services::services()?;
@@ -90,6 +96,14 @@ pub fn snapshot(label: &str, taken_utc: String, request: Request) -> anyhow::Res
         access_denied.extend(result.access_denied);
         filesystem_policy = Some(result.policy);
         captured.push(Domain::Filesystem);
+    }
+
+    if request.registry {
+        let result = registry::registry()?;
+        registry_keys = result.keys;
+        access_denied.extend(result.access_denied);
+        registry_policy = Some(result.policy);
+        captured.push(Domain::Registry);
     }
 
     // Domains this build cannot capture at all, and domains the caller turned
@@ -113,5 +127,7 @@ pub fn snapshot(label: &str, taken_utc: String, request: Request) -> anyhow::Res
         services,
         files,
         filesystem_policy,
+        registry: registry_keys,
+        registry_policy,
     })
 }

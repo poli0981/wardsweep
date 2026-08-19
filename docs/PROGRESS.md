@@ -37,7 +37,7 @@ architecture survived contact, its protocol did not survive it unamended.
 | `ui/` — WPF shell | Shell only, plus the architecture tests that assert the UI has no destructive code path |
 | CI — Rust, .NET, CodeQL, Catalog Verify | Done, inline in this repository, all green |
 | Spike S3 — split-privilege architecture | **PASS.** All six criteria measured — 23 checks, 0 failed. `spikes/S3-RESULT.md`. Throwaway code in `spikes/s3-split-privilege/`, unreachable from either build. |
-| `tools/observe/` — snapshot and diff | **Services and filesystem.** Both work end to end against a real machine, including Authenticode signer clustering. Every other domain is named as `not_captured` in the file rather than omitted. `suggest`, `intersect` and `redact` are not written. |
+| `tools/observe/` — snapshot and diff | **Services, filesystem and registry.** All three work end to end against a real machine, including Authenticode signer clustering and both WOW64 views. Every other domain is named as `not_captured` in the file rather than omitted. `suggest`, `intersect` and `redact` are not written. |
 
 Enforced by tests rather than by review:
 
@@ -71,19 +71,21 @@ delivers what [`16`](16-OBSERVATION-HARNESS.md) promised: on the development
 machine it names the entire Riot Vanguard footprint — seven files, one
 publisher — without any path knowledge at all.
 
+Registry is done too, in both WOW64 views. The distinctness
+[`12`](12-TESTING-STRATEGY.md) asks about is real and measured: on the
+development machine 2 676 keys exist only in the 32-bit view and 86 344 only in
+the 64-bit one.
+
 What is left, roughly in value order:
 
-1. **Registry**, both WOW64 views. The last domain a catalog entry actually
-   needs, and `wow64_both_views_produce_distinct_artifacts` in
-   [`12`](12-TESTING-STRATEGY.md) is waiting on it.
-2. **`suggest`** — the draft entry generator. It must build on
+1. **`suggest`** — the draft entry generator. It must build on
    `wardsweep_core::catalog::schema` rather than define the shape a second time,
    or drafts drift from the schema and only `catalog-verify` finds out.
-3. **`redact`** — [`16`](16-OBSERVATION-HARNESS.md) requires it before a raw
+2. **`redact`** — [`16`](16-OBSERVATION-HARNESS.md) requires it before a raw
    snapshot may be shared, and nothing should be shared until it exists. A
    snapshot names every file under the user's profile.
-4. Scheduled tasks, firewall, event sources, environment.
-5. **`intersect`** — needed by S2, which is now unblocked.
+3. Scheduled tasks, firewall, event sources, environment.
+4. **`intersect`** — needed by S2, which is now unblocked.
 
 On the spike gate in [`13`](13-P0-SPIKES.md): six spikes still have no verdict,
 and the gate says feature work waits for all seven. The harness is the exception
@@ -123,6 +125,21 @@ code that does not exist yet.
   every change narrowed the contract to what the platform actually does. If any
   of the five is contentious, `spikes/S3-RESULT.md` records the measurement
   behind it.
+- **The G3 test cannot tell a reader from a refuser, and this now matters.**
+  `core/tests/no_destructive_code.rs` fails the build if a hardware-identity
+  string appears in any `.rs` file under a shipped `src/`. That is the right
+  rule for code that *reads* an identifier and the wrong one for a deny-list
+  that *refuses* one — a G3 deny-list written in Rust is rejected by the gate it
+  enforces, and so are its tests.
+
+  The registry collector works within the rule rather than around it: the list
+  lives in `tools/observe/src/collect/g3-identity-terms.txt`, is loaded with
+  `include_str!`, and its tests are driven from the file instead of naming
+  terms. That is arguably better — a deny-list is data, shipped and reviewable,
+  the way [`16`](16-OBSERVATION-HARNESS.md) asks noise rules to be — but it
+  also means a reviewer reading the test would not expect the terms to exist
+  anywhere. **Worth a maintainer's ruling on whether the test should make the
+  distinction explicit.**
 
 ## What S3 changed, in one place
 
@@ -149,10 +166,11 @@ consequences that outlive the spike.
 
 ## Known gaps
 
-- `tools/observe` captures two of seven domains. This is visible in every
-  snapshot and every diff rather than implied, but it does mean **no diff from
-  this build is yet sufficient for a catalog entry** — `docs/16`'s review
-  checklist asks for registry keys, which are not collected.
+- `tools/observe` captures three of seven domains. This is visible in every
+  snapshot and every diff rather than implied. A diff from this build now covers
+  what `docs/16`'s review checklist asks about — services, paths, registry keys
+  and a signer CN — but **`suggest` does not exist, so a draft entry still has
+  to be written by hand.**
 - A snapshot takes about three and a half minutes and 156 MB on a developer
   machine, against [`16`](16-OBSERVATION-HARNESS.md)'s original 40–120 MB
   estimate. The document now records the measurement. Hashing and the signer

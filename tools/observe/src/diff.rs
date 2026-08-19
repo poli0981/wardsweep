@@ -23,7 +23,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use serde::{Deserialize, Serialize};
 
-use crate::model::{Coverage, FileRecord, ServiceRecord, Snapshot};
+use crate::model::{Coverage, FileRecord, RegistryRecord, ServiceRecord, Snapshot};
 
 /// Wire-format version of a diff file.
 pub const DIFF_FORMAT_VERSION: u32 = 1;
@@ -98,6 +98,26 @@ pub struct FileChange {
     pub fields: Vec<FieldChange>,
 }
 
+/// A registry key that differs between two snapshots.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RegistryChange {
+    /// Full key path.
+    pub key: String,
+    /// Which WOW64 view. The same logical key can differ between the two, and
+    /// `docs/05-DETECTION-ENGINE.md` treats them as distinct artifacts.
+    pub view: String,
+    /// Added, removed, or modified.
+    pub kind: ChangeKind,
+    /// The record as it was, when there was one.
+    pub before: Option<RegistryRecord>,
+    /// The record as it is, when there is one.
+    pub after: Option<RegistryRecord>,
+    /// Value-level differences, for a modification.
+    #[serde(default)]
+    pub fields: Vec<FieldChange>,
+}
+
 /// A change the noise filter moved out of the way, and why.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -140,6 +160,12 @@ pub struct Diff {
     /// File changes the noise filter moved aside.
     #[serde(default)]
     pub suppressed_files: Vec<SuppressedFile>,
+    /// Registry changes.
+    #[serde(default)]
+    pub registry: Vec<RegistryChange>,
+    /// Whether the two snapshots walked the registry under different rules.
+    #[serde(default)]
+    pub registry_policy_changed: bool,
     /// Whether the two snapshots walked the filesystem under different rules.
     ///
     /// When this is true every file difference below is suspect, because a
@@ -249,6 +275,13 @@ pub fn compare(
     // Compared before the changes are read, because it decides whether they
     // mean anything.
     let filesystem_policy_changed = before.filesystem_policy != after.filesystem_policy;
+    let registry_policy_changed = before.registry_policy != after.registry_policy;
+
+    let registry = if coverage.covers(crate::model::Domain::Registry) {
+        compare_registry(&before.registry, &after.registry)
+    } else {
+        Vec::new()
+    };
 
     let mut signers: BTreeMap<String, usize> = BTreeMap::new();
     for change in &files {
@@ -267,8 +300,109 @@ pub fn compare(
         files,
         suppressed_files,
         filesystem_policy_changed,
+        registry,
+        registry_policy_changed,
         signers,
     })
+}
+
+fn compare_registry(before: &[RegistryRecord], after: &[RegistryRecord]) -> Vec<RegistryChange> {
+    // Keyed by path *and* view: the same logical key read through the 32-bit
+    // and 64-bit views is two artifacts, and collapsing them would report a
+    // value present in one view and absent in the other as no change at all.
+    let index = |records: &[RegistryRecord]| -> BTreeMap<(String, String), RegistryRecord> {
+        records
+            .iter()
+            .map(|record| {
+                (
+                    (record.key.to_ascii_lowercase(), record.view.clone()),
+                    record.clone(),
+                )
+            })
+            .collect()
+    };
+
+    let before_index = index(before);
+    let after_index = index(after);
+    let identities: BTreeSet<&(String, String)> =
+        before_index.keys().chain(after_index.keys()).collect();
+
+    identities
+        .into_iter()
+        .filter_map(|identity| {
+            let old = before_index.get(identity);
+            let new = after_index.get(identity);
+            match (old, new) {
+                (None, Some(record)) => Some(RegistryChange {
+                    key: record.key.clone(),
+                    view: record.view.clone(),
+                    kind: ChangeKind::Added,
+                    before: None,
+                    after: Some(record.clone()),
+                    fields: Vec::new(),
+                }),
+                (Some(record), None) => Some(RegistryChange {
+                    key: record.key.clone(),
+                    view: record.view.clone(),
+                    kind: ChangeKind::Removed,
+                    before: Some(record.clone()),
+                    after: None,
+                    fields: Vec::new(),
+                }),
+                (Some(old), Some(new)) => {
+                    let fields = value_changes(old, new);
+                    if fields.is_empty() {
+                        return None;
+                    }
+                    Some(RegistryChange {
+                        key: new.key.clone(),
+                        view: new.view.clone(),
+                        kind: ChangeKind::Modified,
+                        before: Some(old.clone()),
+                        after: Some(new.clone()),
+                        fields,
+                    })
+                }
+                (None, None) => None,
+            }
+        })
+        .collect()
+}
+
+fn value_changes(before: &RegistryRecord, after: &RegistryRecord) -> Vec<FieldChange> {
+    let map = |record: &RegistryRecord| -> BTreeMap<String, String> {
+        record
+            .values
+            .iter()
+            .map(|value| (value.name.clone(), format!("{}:{}", value.kind, value.data)))
+            .collect()
+    };
+
+    let old = map(before);
+    let new = map(after);
+    let names: BTreeSet<&String> = old.keys().chain(new.keys()).collect();
+
+    names
+        .into_iter()
+        .filter_map(|name| {
+            let was = old.get(name);
+            let now = new.get(name);
+            if was == now {
+                return None;
+            }
+            Some(FieldChange {
+                // Rendered as the value name so a reviewer sees which value
+                // moved, not merely that the key did.
+                field: if name.is_empty() {
+                    "(default)".to_owned()
+                } else {
+                    name.clone()
+                },
+                before: was.cloned().unwrap_or_default(),
+                after: now.cloned().unwrap_or_default(),
+            })
+        })
+        .collect()
 }
 
 fn compare_files(
@@ -648,6 +782,8 @@ mod tests {
             services,
             files: Vec::new(),
             filesystem_policy: None,
+            registry: Vec::new(),
+            registry_policy: None,
         }
     }
 
