@@ -1,0 +1,37 @@
+<Project>
+
+  <!--
+    Deliberately does NOT import ../Directory.Build.props.
+
+    MSBuild resolves the *nearest* Directory.Build.props walking up from the
+    project directory, so this file terminates the chain for everything under
+    spikes/. That is the point: the root file imposes TreatWarningsAsErrors,
+    EnforceCodeStyleInBuild, RestorePackagesWithLockFile and the product's
+    version/provenance metadata on every project in the repository, and none of
+    that belongs on throwaway spike code.
+
+    docs/13-P0-SPIKES.md: "Each spike is throwaway code. The deliverable is a
+    written finding in spikes/SXX-RESULT.md, not a merged implementation."
+
+    Spike projects are also absent from WardSweep.sln, and no CI workflow path-
+    filters on spikes/**, so nothing here is built by the product build or by
+    the pipeline.
+  -->
+
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- A spike that cannot be compiled off-Windows is fine; it is Win32 by nature. -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+
+    <!--
+      No lock file. The root sets RestorePackagesWithLockFile for reproducible
+      release builds (docs/14-DISTRIBUTION-TRUST.md); a spike ships nothing, so
+      a committed lock file here would only be noise to maintain.
+    -->
+    <RestorePackagesWithLockFile>false</RestorePackagesWithLockFile>
+  </PropertyGroup>
+
+</Project>

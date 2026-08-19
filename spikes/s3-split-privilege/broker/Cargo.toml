@@ -1,0 +1,46 @@
+# Spike S3 broker — throwaway. NOT a workspace member: the root Cargo.toml has
+# `exclude = ["spikes"]`, so `cargo build --workspace` provably cannot reach it
+# and this crate's dependencies never enter THIRD-PARTY-NOTICES.md.
+[package]
+name = "s3-broker"
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.94"
+license = "GPL-3.0-or-later"
+publish = false
+
+[[bin]]
+name = "s3-broker"
+path = "src/main.rs"
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "forbid"
+
+[dependencies]
+anyhow = "1.0.104"
+clap = { version = "4.6.6", features = ["derive"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
+
+# `bundled` compiles SQLite from source with the cc crate, so the spike does not
+# depend on a system SQLite. Needs MSVC, which is present (VS 18 BuildTools).
+rusqlite = { version = "0.40", features = ["bundled"] }
+
+[target.'cfg(windows)'.dependencies]
+# Only the feature sets this spike actually needs. Win32_System_Services and
+# Win32_System_Registry are deliberately absent: the SCM and registry-write APIs
+# are not compiled in, so the binary could not perform a destructive operation
+# even if the code asked for one. That is part of the evidence, not decoration.
+windows = { version = "0.62.2", features = [
+    "Win32_Foundation",
+    "Win32_System_Pipes",
+    "Win32_System_IO",
+    "Win32_System_Threading",
+    "Win32_System_LibraryLoader",
+    "Win32_System_Memory",
+    "Win32_Storage_FileSystem",
+    "Win32_Security",
+    "Win32_Security_Authorization",
+] }
