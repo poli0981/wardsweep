@@ -97,6 +97,29 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
     `core/tests/no_destructive_code.rs` cannot tell a deny-list from a reader
     and would reject the list along with its tests. Flagged in
     `docs/PROGRESS.md` for a maintainer ruling.
+- `wardsweep-observe suggest` — a draft catalog entry from an observation diff,
+  with the conservative inference table from `docs/16-OBSERVATION-HARNESS.md`.
+  - Built as a `wardsweep_core::catalog::schema::AntiCheat` and serialised from
+    it, never as hand-written TOML, and a test parses a generated draft back
+    through the shipped parser. A draft that does not load would otherwise be
+    discovered by a contributor when `catalog-verify` fails on their pull
+    request, long after the diff that produced it was forgotten.
+  - `shared` is always `true`, `kind` follows the observed driver, and an
+    unknown start type resolves to `high` rather than `low`. Every note the
+    generator could not decide is printed and written into the file header.
+- `wardsweep-observe redact` — replaces account names, machine-local SIDs and
+  UNC host names with placeholders.
+  - Two passes, because rewriting `\Users\name\` is not enough: on a real
+    snapshot that left 213 occurrences behind, in file names and registry keys
+    applications had written the account name into. The first pass learns the
+    names from profile-rooted paths, the second replaces them elsewhere.
+  - Names are learned only from paths rooted at a drive letter. Learning from
+    any `\Users\` segment taught it that `desktop.ini`, `guest` and `*` were
+    people — from a container layer, an Android source tree and an ASP.NET
+    sample — and it then replaced those tokens across the document.
+  - Matching is on token boundaries, so an account name inside a longer word
+    survives by construction. The tool counts what remains, says so, and exits
+    non-zero; it does not claim to have produced a clean file.
 - `spikes/Directory.Build.props` and `spikes/Directory.Packages.props`, which
   terminate the repository's MSBuild and NuGet inheritance chains. Without them
   a spike project inherits `TreatWarningsAsErrors`, the lock-file policy and the

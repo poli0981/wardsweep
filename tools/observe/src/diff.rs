@@ -748,7 +748,7 @@ impl NoiseFilter {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use crate::model::{Coverage, Domain, SNAPSHOT_FORMAT_VERSION};
 
@@ -785,6 +785,26 @@ mod tests {
             registry: Vec::new(),
             registry_policy: None,
         }
+    }
+
+    /// A diff carrying nothing but a set of added files, for other modules.
+    pub(crate) fn diff_with_added_files(paths: &[&str]) -> Diff {
+        let mut before = snapshot(vec![]);
+        let mut after = snapshot(vec![]);
+        before.coverage.captured.push(Domain::Filesystem);
+        after.coverage.captured.push(Domain::Filesystem);
+        after.files = paths
+            .iter()
+            .map(|path| crate::model::FileRecord {
+                path: (*path).to_owned(),
+                size: 1,
+                modified_utc: String::new(),
+                sha256: None,
+                signer: None,
+                not_hashed: None,
+            })
+            .collect();
+        compare(&before, &after, &NoiseFilter::permissive()).expect("fixture diffs cleanly")
     }
 
     #[test]

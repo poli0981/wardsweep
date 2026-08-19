@@ -37,7 +37,7 @@ architecture survived contact, its protocol did not survive it unamended.
 | `ui/` — WPF shell | Shell only, plus the architecture tests that assert the UI has no destructive code path |
 | CI — Rust, .NET, CodeQL, Catalog Verify | Done, inline in this repository, all green |
 | Spike S3 — split-privilege architecture | **PASS.** All six criteria measured — 23 checks, 0 failed. `spikes/S3-RESULT.md`. Throwaway code in `spikes/s3-split-privilege/`, unreachable from either build. |
-| `tools/observe/` — snapshot and diff | **Services, filesystem and registry.** All three work end to end against a real machine, including Authenticode signer clustering and both WOW64 views. Every other domain is named as `not_captured` in the file rather than omitted. `suggest`, `intersect` and `redact` are not written. |
+| `tools/observe/` — the observation harness | **`snapshot`, `diff`, `suggest`, `redact`.** Services, filesystem and registry, with Authenticode signer clustering and both WOW64 views. A draft entry is generated from the shipped schema and is proven to load through the real parser. Scheduled tasks, firewall, event sources and environment are named as `not_captured` rather than omitted; `intersect` is not written. |
 
 Enforced by tests rather than by review:
 
@@ -167,16 +167,22 @@ consequences that outlive the spike.
 ## Known gaps
 
 - `tools/observe` captures three of seven domains. This is visible in every
-  snapshot and every diff rather than implied. A diff from this build now covers
+  snapshot and every diff rather than implied. A diff from this build covers
   what `docs/16`'s review checklist asks about — services, paths, registry keys
-  and a signer CN — but **`suggest` does not exist, so a draft entry still has
-  to be written by hand.**
+  and a signer CN — and `suggest` turns one into a draft entry that is proven
+  to load through the shipped parser.
 - A snapshot takes about three and a half minutes and 156 MB on a developer
   machine, against [`16`](16-OBSERVATION-HARNESS.md)'s original 40–120 MB
   estimate. The document now records the measurement. Hashing and the signer
   lookup are parallel; the remaining cost is the walk itself.
-- **`redact` does not exist, and a snapshot is not safe to share without it.**
-  It names every file under `%LOCALAPPDATA%` and `%APPDATA%`.
+- **`redact` removes identity, not secrets, and cannot promise completeness.**
+  It learns account names from profile-rooted paths and replaces them
+  everywhere, but only on token boundaries — so a name embedded in a longer
+  word survives. On the development machine 284 446 substitutions were applied
+  and 83 occurrences remained, every one of them the English word
+  `Anonymous` rather than the account. The tool reports the residue and exits
+  non-zero so a script cannot publish the result by accident; a person still
+  reads the file.
 - The harness can describe a machine that already has an anti-cheat installed.
   That is a *detection*, not an observation: `CONTRIBUTING.md` requires a
   before/after cycle, and `docs/16` §"The uninstall-and-reinstall cycle" is the

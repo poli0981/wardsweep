@@ -24,6 +24,8 @@ mod clock;
 mod collect;
 mod diff;
 mod model;
+mod redact;
+mod suggest;
 
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
@@ -85,6 +87,42 @@ enum Command {
         #[arg(long)]
         no_filter: bool,
     },
+
+    /// Emit a draft catalog entry from a diff.
+    ///
+    /// A starting point requiring human review, never a finished entry.
+    Suggest {
+        /// The install diff: clean → installed.
+        #[arg(long, value_name = "PATH")]
+        diff: PathBuf,
+        /// The residue diff: after the official uninstaller → clean.
+        ///
+        /// The more valuable of the two. `docs/16` calls it "the exact set of
+        /// things the vendor's own uninstaller leaves behind — which is the
+        /// entire reason WardSweep exists".
+        #[arg(long, value_name = "PATH")]
+        residue: Option<PathBuf>,
+        /// Attribute the footprint to this publisher rather than the commonest.
+        #[arg(long, value_name = "CN")]
+        signer: Option<String>,
+        /// Where to write the draft.
+        #[arg(short, long, value_name = "PATH")]
+        output: PathBuf,
+    },
+
+    /// Replace usernames, machine-local SIDs and host names with placeholders.
+    ///
+    /// Required before a raw snapshot may be shared, per `docs/16`. It removes
+    /// identity, not secrets — a person still reads the file before it is
+    /// attached to anything.
+    Redact {
+        /// The snapshot or diff to redact.
+        #[arg(long = "in", value_name = "PATH")]
+        input: PathBuf,
+        /// Where to write the redacted copy.
+        #[arg(short, long, value_name = "PATH")]
+        output: PathBuf,
+    },
 }
 
 fn main() -> ExitCode {
@@ -108,6 +146,108 @@ fn run(command: &Command) -> Result<u8> {
             output,
             no_filter,
         } => run_diff(before, after, output, *no_filter),
+        Command::Suggest {
+            diff,
+            residue,
+            signer,
+            output,
+        } => run_suggest(diff, residue.as_ref(), signer.as_deref(), output),
+        Command::Redact { input, output } => run_redact(input, output),
+    }
+}
+
+fn run_suggest(
+    diff_path: &PathBuf,
+    residue_path: Option<&PathBuf>,
+    signer: Option<&str>,
+    output: &PathBuf,
+) -> Result<u8> {
+    let footprint: diff::Diff = read_json(diff_path)?;
+    let residue: Option<diff::Diff> = residue_path.map(read_json).transpose()?;
+
+    if footprint.filesystem_policy_changed || footprint.registry_policy_changed {
+        eprintln!(
+            "  WARNING: this diff was produced from snapshots taken under different \
+             policies. A draft built from it may name footprint that is an artefact of \
+             the harness rather than of an installer."
+        );
+    }
+
+    let draft = suggest::draft(&footprint, residue.as_ref(), signer);
+    let toml = suggest::to_toml(&draft, &clock::now_utc()).context("rendering the draft")?;
+
+    ensure_parent(output)?;
+    std::fs::write(output, &toml).with_context(|| format!("writing {}", output.display()))?;
+
+    eprintln!(
+        "draft written to {} — {} service(s), {} driver(s), {} path(s), {} key(s)",
+        output.display(),
+        draft.entry.services.len(),
+        draft.entry.drivers.len(),
+        draft.entry.paths.len(),
+        draft.entry.registry.len()
+    );
+    // Said every time. A draft that reads as finished is the failure mode.
+    eprintln!(
+        "this is a DRAFT — {} item(s) need review before submitting:",
+        draft.review.len()
+    );
+    for note in &draft.review {
+        eprintln!("  - {note}");
+    }
+
+    if draft.entry.services.is_empty()
+        && draft.entry.paths.is_empty()
+        && draft.entry.registry.is_empty()
+    {
+        eprintln!("nothing was added between these snapshots; there is no footprint to describe");
+        return Ok(exit::NOTHING);
+    }
+    Ok(exit::SUCCESS)
+}
+
+fn run_redact(input: &PathBuf, output: &PathBuf) -> Result<u8> {
+    let mut document: serde_json::Value = read_json(input)?;
+    let report = redact::redact_document(&mut document);
+
+    ensure_parent(output)?;
+    let text = serde_json::to_string(&document).context("serialising")?;
+    std::fs::write(output, text).with_context(|| format!("writing {}", output.display()))?;
+
+    eprintln!("redacted copy written to {}", output.display());
+    if !report.names.is_empty() {
+        eprintln!("  account name(s) found: {}", report.names.join(", "));
+    }
+    if report.applied.is_empty() {
+        eprintln!("  no identifying strings were found");
+    }
+    for (placeholder, count) in &report.applied {
+        eprintln!("  {count} substitution(s) → {placeholder}");
+    }
+
+    // Never claim more than was done.
+    if report.residual.is_empty() {
+        eprintln!("  no occurrence of a discovered account name remains");
+    } else {
+        for (name, count) in &report.residual {
+            // Deliberately not "this file still identifies someone". On a real
+            // snapshot all 83 residual hits were the English word "Anonymous",
+            // and a warning that cries wolf is one people learn to skip past.
+            // Say what is there and let the reader judge.
+            eprintln!(
+                "  CHECK: `{name}` still appears {count} time(s), inside longer words where \
+                 replacing it would corrupt unrelated text (`Anonymous` and the like). \
+                 Confirm none of them is the account name before sharing."
+            );
+        }
+    }
+    eprintln!("  this removes identity, not secrets — read the file before sharing it (docs/16)");
+
+    if report.residual.is_empty() {
+        Ok(exit::SUCCESS)
+    } else {
+        // Exit non-zero so a script cannot publish the result by accident.
+        Ok(exit::NOTHING)
     }
 }
 
