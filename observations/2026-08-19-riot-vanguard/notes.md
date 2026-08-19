@@ -302,10 +302,32 @@ observation records the later reading and calls it the fact.
 >
 > What is safe to say is the narrow version: **the value differs between a
 > freshly installed or freshly booted machine and one that has been running for
-> hours, and a single reading cannot tell you which you have.** The mechanism —
-> whether `vgc` lowers it, whether a game launch raises it, whether it depends
-> on the client running — is not established, and this note should not be read
-> as claiming it is.
+> hours, and a single reading cannot tell you which you have.**
+
+**The maintainer's account, which fits every reading taken so far:** Vanguard
+re-evaluates and rewrites its state **on a reboot**, and not otherwise.
+
+That is not measured here — it is domain knowledge from the person who runs
+these machines, recorded as such — but it is the only explanation offered so far
+that accounts for all three observations at once:
+
+| Observation | Under "it only changes at a reboot" |
+|---|---|
+| `demand` on a machine up for hours | a past boot's re-evaluation, long settled |
+| `SYSTEM_START` at 13:20, `demand` by 13:35, after a 13:17 boot | the re-evaluation running, caught either side of it |
+| `SYSTEM_START` for 35 minutes after a fresh install, no reboot since | nothing triggered a re-evaluation, so nothing moved |
+
+It also makes a prediction the next session can check in one step: **reboot, and
+`vgk` should read `SYSTEM_START` immediately afterwards and `demand` some
+minutes later.** If it does not, the account is wrong and the endpoint readings
+still stand on their own.
+
+Two consequences hold either way. `docs/06` Stage 3 sets
+`Start = SERVICE_DISABLED` and then reboots — straight into the moment an
+anti-cheat rewrites its own start type — which is exactly why `docs/03` requires
+the broker to re-verify the gate invariants against current machine state on
+resume rather than trusting the plan it built. And a catalog entry that fixes
+`risk` from one reading has fixed a reading.
 
 Two things follow for the catalog, and they pull in opposite directions:
 

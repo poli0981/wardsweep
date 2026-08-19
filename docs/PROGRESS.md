@@ -23,14 +23,32 @@ and the root of the dependency graph. It changed `docs/08-IPC-PROTOCOL.md` in
 five places and left `docs/03-ARCHITECTURE.md` untouched: the split-privilege
 architecture survived contact, its protocol did not survive it unamended.
 
-Two anti-cheats have since been observed through their own uninstallers.
-AntiCheatExpert left **nothing of its own**; Riot Vanguard left two files and
-two empty directories. That is the honest scale of the residue problem so far,
-and it is a long way from what the subject is usually claimed to be. What the
-observations produced instead was method: a detection API that reports a driver
-as present after it is gone, an anti-cheat that rewrites its own driver's start
-type, a registry value the observation itself wrote and nearly attributed to its
-subject, and two harness blind spots that hid evidence.
+Two anti-cheats have since been observed through their own uninstallers, one of
+them through a full uninstall-and-reinstall cycle. AntiCheatExpert left
+**nothing of its own**; Riot Vanguard left two files and two empty directories,
+which its own reinstall did not reset either. **That is the honest scale of the
+residue problem so far**, and it is a long way from what the subject is usually
+claimed to be. Anyone picking this up should know that before deciding how loud
+the product's claims are allowed to be.
+
+What the observations produced instead was method, and most of it came from
+tools being wrong rather than from anti-cheats being interesting:
+
+- **WMI reports a driver as present after it is gone.** SCM is the authority.
+- **A snapshot spans five minutes and is not an instant**, and one anti-cheat's
+  start type changed inside that window, so two domains of one file disagreed.
+- **A reboot between two snapshots was invisible**, which put the wrong cause in
+  the record until the uptime was checked by hand.
+- **A directory left standing and empty produced no record at all** — the
+  clearest residue on the machine was the one thing the diff could not mention.
+- **`suggest` claimed `view = "both"` for every registry key**, including one
+  that exists in a single WOW64 view, on grounds that were never true of this
+  harness.
+- **The observation writes to the machine it observes**: an Explorer
+  `TypedPaths` value named the anti-cheat and survived the uninstall.
+
+Five of those six were only visible because there was a *second* anti-cheat to
+compare against. A third would probably be worth more than the next feature.
 
 ## What exists and is verified
 
@@ -70,6 +88,20 @@ has seen fail is not a gate.
 - **The scanner**, the plan builder, refcount, IPC, and the observation harness.
 
 ## Next, in order
+
+**0. One reboot settles an open question, and costs nothing.**
+The maintainer's account is that **Vanguard rewrites its state on a reboot and
+not otherwise**, which fits all three readings of `vgk`'s start type taken on
+2026-08-19 and is the only offered explanation that does. It predicts:
+immediately after a reboot `vgk` reads `SYSTEM_START`, and some minutes later
+`demand`. Check it the next time the machine restarts for any reason — no
+uninstall, no game launch, two `sc qc vgk` calls. If it holds, the observation
+note stops carrying an unverified mechanism; if it does not, the endpoint
+readings still stand and the mechanism is still open.
+
+Note that Vanguard is **installed and running** on this machine again: the Riot
+Client autostarts at logon and reinstalled it unprompted at 21:21 on 2026-08-19.
+It cannot be kept uninstalled across a reboot.
 
 **1. Finish the AntiCheatExpert observation — one game launch.**
 The uninstall half is done and committed at
