@@ -83,23 +83,28 @@ The half that already exists is the one [`16`](16-OBSERVATION-HARNESS.md) says
 leaves nothing of its own**. A project that sweeps residue has to report that as
 readily as the opposite.
 
-**2. Finish the Riot Vanguard observation — one game launch.**
-The uninstall half is done and committed at
-`observations/2026-08-19-riot-vanguard/`. To finish it: start VALORANT so it
-reinstalls Vanguard, snapshot, and diff for the install footprint. No catalog
-draft is committed until then — the removal footprint is known and the install
-footprint is not, and [`16`](16-OBSERVATION-HARNESS.md) requires an entry to
-come from an observation rather than from half of one.
+**2. A second title carrying Riot Vanguard.**
+The Vanguard cycle is complete — both halves — and committed at
+`observations/2026-08-19-riot-vanguard/` with a `draft.toml`. What the draft
+cannot have is `shared = false`, and it must not get it from one title:
+[`04`](04-CATALOG-SCHEMA.md) is explicit that a wrong `shared = false` is the G1
+violation this project exists to prevent. Only a second observed title changes
+that, and the same holds for AntiCheatExpert.
 
 Vanguard is **the first anti-cheat observed here that leaves anything behind**:
 two files under `%LOCALAPPDATA%` and two empty directories under
-`%ProgramFiles%`, against a tidy removal of 207 MB, two services and every
-registry key it owned. It also cost the harness two blind spots, both fixed in
-that observation — a snapshot did not record which boot it belonged to, and an
-emptied directory produced no record at all.
+`%ProgramFiles%`, against a removal of 207 MB, two services and every registry
+key it owned — and its own reinstall does not reset those two files either. It
+cost the tooling three defects, all fixed there: a snapshot did not record which
+boot it belonged to, an emptied directory produced no record at all, and
+`suggest` claimed `view = "both"` for every registry key on the false grounds
+that the observation could not tell.
 
-Note that no reboot was required, contrary to expectation, because the client
-was closed and `vgk` was therefore not loaded.
+Two facts worth carrying forward. No reboot was required, contrary to
+expectation, because the client was closed and `vgk` was not loaded. And **`vgk`
+is installed at `SYSTEM_START` but reads `demand` hours later** — `docs/16`
+infers `risk` from a value that settles, so a late observation records the
+settled reading and calls it the fact.
 
 **3. `observe intersect`.**
 The last unwritten subcommand. The intersection of the same anti-cheat observed
@@ -228,16 +233,20 @@ consequences that outlive the spike.
   domain this harness does not model is not a domain where nothing happened.
   Scheduled tasks, firewall rules, event sources and environment are still
   unmodelled.
-- **`suggest` cannot read the first diff an observation produces.** It consumes
-  only `added` changes, so it needs an install diff — clean → installed. But
-  `docs/16` §"The uninstall-and-reinstall cycle" exists precisely because the
-  machines available have the game installed already, so the first artefact of
-  every observation so far has been a *removal* diff, in which everything is
-  `removed`. The AntiCheatExpert draft was produced by inverting one with an
-  ad-hoc script that was never committed, which means **that draft is not
-  reproducible from the committed artefacts.** Either `suggest` should accept a
-  removal diff directly or the inversion should be a subcommand; deciding which
-  is worth doing before the second draft is written.
+- **`suggest` has no way to be told what survived an uninstall.** Residue is by
+  definition *unchanged* between the two snapshots, so it appears in a diff as
+  nothing at all — not added, not removed — and can only be recovered by
+  comparing against a clean baseline. `docs/16` §"The uninstall-and-reinstall
+  cycle" exists precisely because the available machines have the game installed
+  already and therefore have no clean baseline. So the `--residue` input, which
+  `docs/16` calls the more valuable of the two, is unfillable on exactly the
+  machines the document contemplates. Riot Vanguard's residue is known to the
+  byte and its committed draft cannot carry it.
+  Related, and cheaper to fix: `suggest` consumes only `added` changes, so the
+  AntiCheatExpert draft was produced by inverting a removal diff with an ad-hoc
+  script that was never committed — **that draft is not reproducible from the
+  committed artefacts.** The Vanguard draft is, because a real install diff
+  exists for it.
 - The harness can describe a machine that already has an anti-cheat installed.
   That is a *detection*, not an observation: `CONTRIBUTING.md` requires a
   before/after cycle, and `docs/16` §"The uninstall-and-reinstall cycle" is the

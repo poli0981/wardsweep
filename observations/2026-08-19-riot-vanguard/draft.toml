@@ -1,0 +1,72 @@
+# DRAFT — generated 2026-08-19T14:39:27.251Z
+# REVIEW EVERY FIELD BEFORE SUBMITTING.
+#
+# This is a hypothesis produced from an observation diff, not an entry.
+# CONTRIBUTING.md rejects entries that are not derived from a diff; it does
+# not accept one that was derived from a diff and never read.
+#
+# Publishers seen in this diff:
+#       9 file(s)  Malwarebytes Corporation
+#       7 file(s)  Riot Games, Inc.
+#       6 file(s)  Malwarebytes Inc
+#
+# Before submitting:
+#   - a driver was observed but not at boot start. Vanguard has been seen
+#     configured either way, so confirm the start type rather than assuming this
+#     one generalises.
+#   - 66 added file(s) could not be attributed to this publisher and were left
+#     out. That is ordinary machine churn between the two snapshots; check the
+#     diff if the footprint looks short.
+#   - 14 added registry key(s) could not be attributed to this anti-cheat and
+#     were left out.
+#   - 1 key(s) were seen in one WOW64 view only and are recorded that way rather
+#     than as `both`:
+#     `HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Riot Vanguard`
+#     (64-bit view only). `HKLM\SOFTWARE` is redirected and `HKLM\SYSTEM` is
+#     not, so a single view is usually a fact about redirection — but confirm
+#     it, because widening to `both` claims a key the observation never saw.
+#   - no residue diff was given, so every path is classified from the install
+#     diff alone. docs/16 calls the residue diff the more valuable of the two
+#     — it is the exact set of things the vendor's uninstaller leaves behind.
+#   - `shared` is `true` and must stay so until at least two titles have been
+#     observed. docs/04: a wrong `shared = false` is the G1 violation this
+#     project exists to prevent.
+#   - verify every signer with `signtool verify /v /pa <file>` and paste the
+#     output into the pull request, per the docs/16 checklist.
+
+[[anticheat]]
+id = "REVIEW-me"
+display = "REVIEW: Riot Games, Inc."
+vendor = "Riot Games, Inc."
+kind = "kernel"
+shared = true
+risk = "high"
+authenticode_cn = ["Riot Games, Inc."]
+file_hashes = []
+services = [
+    "vgc",
+    "vgk",
+]
+drivers = ["vgk.sys"]
+tasks = []
+firewall_rules = []
+event_sources = []
+
+[[anticheat.paths]]
+path = '%ProgramFiles%\Riot Vanguard'
+class = "data"
+
+[[anticheat.registry]]
+key = 'HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Riot Vanguard'
+view = "64"
+class = "config"
+
+[[anticheat.registry]]
+key = 'HKLM\SYSTEM\CurrentControlSet\Services\vgc'
+view = "both"
+class = "config"
+
+[[anticheat.registry]]
+key = 'HKLM\SYSTEM\CurrentControlSet\Services\vgk'
+view = "both"
+class = "config"

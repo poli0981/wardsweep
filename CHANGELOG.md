@@ -152,6 +152,15 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
     suppression rule was added. The derived boot instant matched the Windows
     event log to the second, and two derived instants drifted by 7 ms against a
     120 000 ms tolerance that exists for clock steps rather than for drift.
+- `wardsweep-observe suggest` now **derives a registry key's WOW64 view from the
+  observation** instead of emitting `both` for everything. The old comment said
+  the observation "cannot distinguish *only in one view* from *we only looked
+  once*", which was never true of this harness: it opens both views explicitly
+  and stamps every record with the one it came from. Riot Vanguard is the
+  counter-example — `HKLM\SYSTEM` is not redirected so its two service keys
+  really are in both views, while `HKLM\SOFTWARE` is, so its uninstall entry
+  exists only in the 64-bit one and the draft was claiming a key nobody
+  observed. Narrowing is named in the review notes rather than done quietly.
 - `spikes/Directory.Build.props` and `spikes/Directory.Packages.props`, which
   terminate the repository's MSBuild and NuGet inheritance chains. Without them
   a spike project inherits `TreatWarningsAsErrors`, the lock-file policy and the
