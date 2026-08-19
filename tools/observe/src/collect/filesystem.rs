@@ -23,7 +23,7 @@
 //! rule from `crate::diff` applies here too: a snapshot that quietly omitted
 //! something is worse than one that says what it left out.
 
-use std::collections::VecDeque;
+use std::collections::{HashSet, VecDeque};
 use std::path::{Path, PathBuf};
 
 use rayon::prelude::*;
@@ -109,6 +109,11 @@ pub struct Captured {
     pub access_denied: Vec<AccessDenied>,
     /// What the walk was told to do.
     pub policy: FilesystemPolicy,
+    /// Directories holding no file anywhere beneath them, topmost only.
+    ///
+    /// See [`crate::model::Snapshot::file_empty_directories`] for why a file
+    /// list alone cannot see the residue this catches.
+    pub file_empty_directories: Vec<String>,
 }
 
 /// Walk a set of roots.
@@ -138,6 +143,12 @@ pub fn walk(roots: &[PathBuf], signer: SignerLookup) -> Captured {
     let mut pending: Vec<(PathBuf, std::fs::Metadata)> = Vec::new();
     let mut access_denied = Vec::new();
     let mut queue: VecDeque<PathBuf> = roots.iter().cloned().collect();
+    // Every directory the walk actually read, and the subset that turned out to
+    // hold a file. A directory that could not be read enters neither: an
+    // unreadable directory is not an empty one, and reporting it as emptied
+    // residue would be inventing evidence.
+    let mut read_directories: Vec<PathBuf> = Vec::new();
+    let mut holds_a_file: HashSet<PathBuf> = HashSet::new();
 
     while let Some(directory) = queue.pop_front() {
         let entries = match std::fs::read_dir(&directory) {
@@ -155,6 +166,7 @@ pub fn walk(roots: &[PathBuf], signer: SignerLookup) -> Captured {
             }
         };
 
+        let mut holds_any_file = false;
         for entry in entries.flatten() {
             let path = entry.path();
             if is_excluded(&path) {
@@ -191,9 +203,20 @@ pub fn walk(roots: &[PathBuf], signer: SignerLookup) -> Captured {
                 continue;
             }
 
+            holds_any_file = true;
             pending.push((path, metadata));
         }
+
+        // Once per directory rather than once per file: this loop runs 714 000
+        // times on the development machine and the set only needs to know that
+        // the answer is yes.
+        if holds_any_file {
+            holds_a_file.insert(directory.clone());
+        }
+        read_directories.push(directory);
     }
+
+    let file_empty_directories = file_empty_roots(&read_directories, &holds_a_file);
 
     // Directory enumeration stays serial — it is a work queue, and the cost is
     // in the leaves rather than the walk. Hashing and the signer lookup are
@@ -211,7 +234,44 @@ pub fn walk(roots: &[PathBuf], signer: SignerLookup) -> Captured {
         files,
         access_denied,
         policy,
+        file_empty_directories,
     }
+}
+
+/// The topmost directories that hold no file anywhere beneath them.
+///
+/// `holds_a_file` names directories with a file directly in them. Marking every
+/// ancestor of each turns that into "has a file somewhere below", and what is
+/// left over is empty scaffolding. Only the top of each such chain is returned:
+/// an empty `Logs` inside an empty `Riot Vanguard` is one finding, not two.
+fn file_empty_roots(read: &[PathBuf], holds_a_file: &HashSet<PathBuf>) -> Vec<String> {
+    let mut has_files_below: HashSet<&Path> = HashSet::new();
+    for directory in holds_a_file {
+        let mut current = Some(directory.as_path());
+        while let Some(path) = current {
+            if !has_files_below.insert(path) {
+                // Already marked, so its ancestors were marked at the same time
+                // by whichever descendant got here first. Nothing above is left
+                // to do.
+                break;
+            }
+            current = path.parent();
+        }
+    }
+
+    let read_set: HashSet<&Path> = read.iter().map(PathBuf::as_path).collect();
+    let mut roots: Vec<String> = read
+        .iter()
+        .filter(|directory| !has_files_below.contains(directory.as_path()))
+        .filter(|directory| {
+            directory
+                .parent()
+                .is_none_or(|parent| !read_set.contains(parent) || has_files_below.contains(parent))
+        })
+        .map(|directory| directory.to_string_lossy().into_owned())
+        .collect();
+    roots.sort();
+    roots
 }
 
 fn record(
@@ -398,6 +458,44 @@ mod tests {
 
         assert_eq!(captured.policy.max_hash_bytes, MAX_HASH_BYTES);
         assert!(!captured.policy.excluded.is_empty());
+    }
+
+    #[test]
+    fn an_emptied_directory_is_reported_and_only_its_topmost() {
+        // The shape Riot Vanguard's uninstaller leaves: the files are gone, the
+        // directory that held them and its `Logs` child are not.
+        let temporary = tempfile::Builder::new()
+            .prefix("ws-observe-")
+            .tempdir_in(std::env::current_dir().unwrap())
+            .unwrap();
+        let root = temporary.path().to_path_buf();
+        let leftover = root.join("Riot Vanguard");
+        std::fs::create_dir_all(leftover.join("Logs")).unwrap();
+        let occupied = root.join("Something Else");
+        std::fs::create_dir_all(&occupied).unwrap();
+        std::fs::write(occupied.join("still-here.sys"), b"contents").unwrap();
+
+        let captured = walk(std::slice::from_ref(&root), no_signer);
+
+        let empty = &captured.file_empty_directories;
+        assert!(
+            empty.iter().any(|d| d.ends_with("Riot Vanguard")),
+            "the emptied directory should be reported: {empty:?}"
+        );
+        assert!(
+            !empty.iter().any(|d| d.ends_with("Logs")),
+            "an empty child of an empty parent is one finding, not two: {empty:?}"
+        );
+        assert!(
+            !empty.iter().any(|d| d.ends_with("Something Else")),
+            "a directory with a file in it is not empty: {empty:?}"
+        );
+        // The root has a file below it, through `Something Else`, so it is not
+        // itself scaffolding.
+        assert!(
+            !empty.iter().any(|d| d.as_str() == root.to_string_lossy()),
+            "a root with files somewhere below it is not empty: {empty:?}"
+        );
     }
 
     #[test]

@@ -148,6 +148,31 @@ pub struct Diff {
     pub before_taken_utc: String,
     /// When the later snapshot was taken.
     pub after_taken_utc: String,
+    /// Whether the machine restarted between the two snapshots.
+    ///
+    /// `None` when either side predates [`crate::model::BootSession`] or was
+    /// taken off Windows — *unknown*, which is not the same as `Some(false)`
+    /// and must not be read as it.
+    ///
+    /// A restart is the single loudest cause of change in a diff: drivers load
+    /// and unload, per-user service instances are recreated with fresh
+    /// suffixes, and `PendingFileRenameOperations` is executed and cleared.
+    /// Reading those as ordinary churn attributes them to whatever the
+    /// observation happened to be about.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rebooted_between: Option<bool>,
+    /// Directories that hold no file in the later snapshot and did in the
+    /// earlier one, or that appeared already empty.
+    ///
+    /// This is how a diff sees an uninstaller that deleted everything it
+    /// installed and left the folder it installed into. Riot Vanguard's does
+    /// exactly that.
+    ///
+    /// `None` when either snapshot did not record directories — *not known*. An
+    /// empty list would otherwise be read as "nothing was left behind", which
+    /// is the one wrong answer this tool must never give.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub emptied_directories: Option<Vec<String>>,
     /// What both snapshots covered. A diff can speak only about these domains.
     pub coverage: Coverage,
     /// Service and driver changes that survived the noise filter.
@@ -283,6 +308,10 @@ pub fn compare(
         Vec::new()
     };
 
+    // Directories are part of the filesystem domain, so they answer to the same
+    // coverage rule the file list does.
+    let emptied_directories = emptied_directories(before, after, &coverage);
+
     let mut signers: BTreeMap<String, usize> = BTreeMap::new();
     for change in &files {
         if let Some(signer) = &change.signer {
@@ -294,6 +323,8 @@ pub fn compare(
         format_version: DIFF_FORMAT_VERSION,
         before_taken_utc: before.taken_utc.clone(),
         after_taken_utc: after.taken_utc.clone(),
+        rebooted_between: rebooted_between(before, after),
+        emptied_directories,
         coverage,
         services: kept,
         suppressed,
@@ -304,6 +335,60 @@ pub fn compare(
         registry_policy_changed,
         signers,
     })
+}
+
+/// Directories that hold no file now and held one before.
+///
+/// `None` unless both snapshots walked the filesystem *and* both recorded
+/// directories. Comparing a snapshot that recorded them against one that did
+/// not would report every empty directory on the machine as freshly emptied —
+/// the same class of artefact `filesystem_policy_changed` exists to catch, and
+/// just as convincing to a reader who does not know to look.
+fn emptied_directories(
+    before: &Snapshot,
+    after: &Snapshot,
+    coverage: &Coverage,
+) -> Option<Vec<String>> {
+    if !coverage.covers(crate::model::Domain::Filesystem) {
+        return None;
+    }
+    let was: BTreeSet<&String> = before.file_empty_directories.as_ref()?.iter().collect();
+    Some(
+        after
+            .file_empty_directories
+            .as_ref()?
+            .iter()
+            .filter(|directory| !was.contains(directory))
+            .cloned()
+            .collect(),
+    )
+}
+
+/// How far two derived boot instants may differ and still be the same boot.
+///
+/// The instant is wall clock minus uptime and both halves drift: the tick count
+/// against the system clock, and the system clock whenever it is adjusted.
+/// Measured across two real captures seven minutes apart, the drift was **7
+/// ms** — so the tolerance is not there for drift, it is there for a clock
+/// step such as a time sync, which can move the derived instant by seconds or
+/// minutes at once.
+///
+/// It cannot hide a restart, and that is provable rather than hopeful. If a
+/// machine reboots between two snapshots, the boot instant moves forward by
+/// exactly its uptime at the moment it rebooted — and it had to survive the
+/// whole of the earlier capture, which takes minutes. So a genuine restart
+/// always shows a difference larger than a snapshot's own duration, and the
+/// tolerance sits an order of magnitude below that.
+const SAME_BOOT_TOLERANCE_MS: u64 = 120_000;
+
+/// Whether the machine restarted between two snapshots.
+///
+/// `None` means *not known* — one of the snapshots does not carry a boot
+/// session. Callers must not collapse that into "no".
+fn rebooted_between(before: &Snapshot, after: &Snapshot) -> Option<bool> {
+    let earlier = before.boot_session.as_ref()?;
+    let later = after.boot_session.as_ref()?;
+    Some(earlier.started_unix_ms.abs_diff(later.started_unix_ms) > SAME_BOOT_TOLERANCE_MS)
 }
 
 fn compare_registry(before: &[RegistryRecord], after: &[RegistryRecord]) -> Vec<RegistryChange> {
@@ -780,9 +865,11 @@ pub(crate) mod tests {
                 access_denied: Vec::new(),
             },
             domain_started_utc: std::collections::BTreeMap::new(),
+            boot_session: None,
             services,
             files: Vec::new(),
             filesystem_policy: None,
+            file_empty_directories: None,
             registry: Vec::new(),
             registry_policy: None,
         }
@@ -806,6 +893,108 @@ pub(crate) mod tests {
             })
             .collect();
         compare(&before, &after, &NoiseFilter::permissive()).expect("fixture diffs cleanly")
+    }
+
+    fn boot(started_unix_ms: u64) -> crate::model::BootSession {
+        crate::model::BootSession {
+            started_utc: crate::clock::from_unix_millis(u128::from(started_unix_ms)),
+            started_unix_ms,
+            uptime_ms: 0,
+        }
+    }
+
+    #[test]
+    fn an_unknown_restart_is_not_reported_as_no_restart() {
+        let before = snapshot(vec![]);
+        let after = snapshot(vec![]);
+
+        let diff = compare(&before, &after, &NoiseFilter::permissive()).unwrap();
+
+        // The distinction the whole field exists for. A snapshot taken before
+        // `boot_session` existed cannot say the machine stayed up, and a reader
+        // who takes `None` for `false` will attribute a reboot's churn to
+        // whatever the observation was about.
+        assert_eq!(diff.rebooted_between, None);
+    }
+
+    #[test]
+    fn a_restart_between_snapshots_is_reported() {
+        let mut before = snapshot(vec![]);
+        let mut after = snapshot(vec![]);
+        before.boot_session = Some(boot(1_787_126_327_000));
+        after.boot_session = Some(boot(1_787_145_469_000));
+
+        let diff = compare(&before, &after, &NoiseFilter::permissive()).unwrap();
+
+        assert_eq!(diff.rebooted_between, Some(true));
+    }
+
+    #[test]
+    fn a_derived_boot_instant_drifting_by_a_second_is_still_the_same_boot() {
+        let mut before = snapshot(vec![]);
+        let mut after = snapshot(vec![]);
+        before.boot_session = Some(boot(1_787_126_327_000));
+        // Wall clock minus uptime, computed twice, never lands on the same
+        // millisecond. Equality would report a reboot on every diff.
+        after.boot_session = Some(boot(1_787_126_328_000));
+
+        let diff = compare(&before, &after, &NoiseFilter::permissive()).unwrap();
+
+        assert_eq!(diff.rebooted_between, Some(false));
+    }
+
+    #[test]
+    fn a_directory_left_standing_with_nothing_in_it_is_reported() {
+        let mut before = snapshot(vec![]);
+        let mut after = snapshot(vec![]);
+        for side in [&mut before, &mut after] {
+            side.coverage.captured.push(Domain::Filesystem);
+        }
+        // Present in both, so it was already empty and is not news.
+        before.file_empty_directories = Some(vec![r"C:\ProgramData\Packages".to_owned()]);
+        // Held files before, holds none now, still exists.
+        after.file_empty_directories = Some(vec![
+            r"C:\ProgramData\Packages".to_owned(),
+            r"C:\Program Files\Riot Vanguard".to_owned(),
+        ]);
+
+        let diff = compare(&before, &after, &NoiseFilter::permissive()).unwrap();
+
+        assert_eq!(
+            diff.emptied_directories,
+            Some(vec![r"C:\Program Files\Riot Vanguard".to_owned()])
+        );
+    }
+
+    #[test]
+    fn an_emptied_directory_is_not_reported_when_the_filesystem_was_not_walked() {
+        let before = snapshot(vec![]);
+        let mut after = snapshot(vec![]);
+        after.file_empty_directories = Some(vec![r"C:\Program Files\Riot Vanguard".to_owned()]);
+
+        let diff = compare(&before, &after, &NoiseFilter::permissive()).unwrap();
+
+        // Neither side captured the filesystem, so the difference is an
+        // artefact of what was collected rather than of the machine — the same
+        // rule the file list answers to.
+        assert_eq!(diff.emptied_directories, None);
+    }
+
+    #[test]
+    fn an_older_snapshot_without_directories_makes_the_answer_unknown_not_empty() {
+        let mut before = snapshot(vec![]);
+        let mut after = snapshot(vec![]);
+        for side in [&mut before, &mut after] {
+            side.coverage.captured.push(Domain::Filesystem);
+        }
+        // The earlier snapshot predates directory recording, so every empty
+        // directory on the machine is new to the later one and none of them is
+        // news. Reporting them would be inventing residue.
+        after.file_empty_directories = Some(vec![r"C:\ProgramData\Packages".to_owned()]);
+
+        let diff = compare(&before, &after, &NoiseFilter::permissive()).unwrap();
+
+        assert_eq!(diff.emptied_directories, None);
     }
 
     #[test]

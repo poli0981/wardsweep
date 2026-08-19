@@ -13,6 +13,7 @@
 //! for its own domain.
 
 pub mod authenticode;
+pub mod boot;
 pub mod filesystem;
 pub mod registry;
 pub mod services;
@@ -75,12 +76,16 @@ pub fn default_roots() -> Vec<PathBuf> {
 /// services are unreadable is still worth capturing, provided the file says
 /// which three.
 pub fn snapshot(label: &str, taken_utc: String, request: Request) -> anyhow::Result<Snapshot> {
+    // Before any domain: the answer to "did the machine restart between these
+    // two snapshots?" is worth nothing if it is itself minutes stale.
+    let boot_session = boot::boot_session(crate::clock::now_unix_millis());
     let mut domain_started_utc = std::collections::BTreeMap::new();
     let mut captured = Vec::new();
     let mut access_denied = Vec::new();
     let mut services = Vec::new();
     let mut files = Vec::new();
     let mut filesystem_policy = None;
+    let mut file_empty_directories = None;
     let mut registry_keys = Vec::new();
     let mut registry_policy = None;
 
@@ -98,6 +103,7 @@ pub fn snapshot(label: &str, taken_utc: String, request: Request) -> anyhow::Res
         files = result.files;
         access_denied.extend(result.access_denied);
         filesystem_policy = Some(result.policy);
+        file_empty_directories = Some(result.file_empty_directories);
         captured.push(Domain::Filesystem);
     }
 
@@ -122,6 +128,7 @@ pub fn snapshot(label: &str, taken_utc: String, request: Request) -> anyhow::Res
         format_version: crate::model::SNAPSHOT_FORMAT_VERSION,
         taken_utc,
         domain_started_utc,
+        boot_session,
         harness_version: env!("CARGO_PKG_VERSION").to_owned(),
         label: label.to_owned(),
         coverage: Coverage {
@@ -132,6 +139,7 @@ pub fn snapshot(label: &str, taken_utc: String, request: Request) -> anyhow::Res
         services,
         files,
         filesystem_policy,
+        file_empty_directories,
         registry: registry_keys,
         registry_policy,
     })

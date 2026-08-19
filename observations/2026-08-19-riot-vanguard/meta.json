@@ -1,0 +1,84 @@
+{
+  "observation_id": "2026-08-19-riot-vanguard",
+  "date": "2026-08-19",
+  "kind": "uninstall-and-reinstall",
+  "note": "Machine where the game was installed before the harness existed, so there is no clean baseline. docs/16 section 'The uninstall-and-reinstall cycle' step 4 is what this recovers. The reinstall half is not done.",
+
+  "anticheat": {
+    "display": "Riot Vanguard",
+    "vendor_cn": "Riot Games, Inc.",
+    "version": "1.18.5-11+20260805.032431",
+    "driver_signer": "Riot Games, Inc.",
+    "driver_signer_note": "Unlike AntiCheatExpert, every binary including the kernel driver carries the vendor's own CN, so signer clustering names the whole footprint on its own."
+  },
+
+  "referencing_games": {
+    "installed": [
+      {
+        "title": "VALORANT",
+        "launcher": "riot",
+        "path": "G:/Riot Games/VALORANT/live"
+      }
+    ],
+    "refcount_at_observation": 1
+  },
+
+  "machine": {
+    "os": "Windows 11 Pro 10.0.29648",
+    "note": "In ordinary use during capture rather than freshly booted and idle, contrary to docs/16 section 'Reducing noise'. The machine also restarted at 13:16:58Z, between the vg-00-current and 10-vanguard-baseline captures; neither file recorded it, which is what motivated Snapshot::boot_session."
+  },
+
+  "harness": {
+    "version": "0.0.1",
+    "domains_captured": ["services", "filesystem", "registry"],
+    "domains_not_captured": ["scheduled_tasks", "firewall", "event_sources", "environment"],
+    "note": "Snapshots 10 to 12 predate Snapshot::boot_session and Snapshot::file_empty_directories, so the committed diff reports neither. The empty directories Vanguard left were established by hand and by snapshot 13, not by the diff."
+  },
+
+  "uninstall": {
+    "ran": "C:/Program Files/Riot Vanguard/uninstall.exe",
+    "by": "the maintainer, with the Riot Client closed",
+    "reboot_required": false,
+    "reboot_note": "Expected to be required and was not. With the client closed, vgk was not loaded, so nothing had to be deleted across a reboot and PendingFileRenameOperations was untouched.",
+    "removed": {
+      "services": ["vgc", "vgk"],
+      "registry_keys": [
+        "HKLM/SYSTEM/CurrentControlSet/Services/vgc (both WOW64 views)",
+        "HKLM/SYSTEM/CurrentControlSet/Services/vgk (both WOW64 views)",
+        "HKLM/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall/Riot Vanguard"
+      ],
+      "registry_values": [
+        "HKLM/SOFTWARE/Microsoft/Windows/CurrentVersion/Run/Riot Vanguard",
+        "HKLM/SOFTWARE/Microsoft/Windows/CurrentVersion/UFH/ARP/0"
+      ],
+      "file_count": 12,
+      "file_count_note": "Eight stable files (seven signed, plus vgc.ico) totalling 207097451 bytes, and four log files totalling 10308 bytes that existed at that moment. A catalog entry needs the eight; the log count moves.",
+      "total_bytes": 207107759
+    },
+    "left_behind": {
+      "by_vanguard": [
+        "C:/Program Files/Riot Vanguard/ (empty directory)",
+        "C:/Program Files/Riot Vanguard/Logs/ (empty directory)",
+        "%LOCALAPPDATA%/Riot Games/Riot Vanguard/vgtray-settings.json (607 B)",
+        "%LOCALAPPDATA%/Riot Games/Riot Vanguard/vgtray.log (2073 B)"
+      ],
+      "by_windows": [
+        "HKCU/.../AppCompatFlags/Compatibility Assistant/Store, keyed by the path of the deleted uninstall.exe"
+      ],
+      "by_the_observation_itself": [
+        "HKCU/.../Explorer/TypedPaths/url1 = C:/Program Files/Riot Vanguard, written because somebody navigated there in Explorer during the cycle. It names the anti-cheat and survives the uninstall, and a name-matching residue scanner would report it as Vanguard's."
+      ]
+    }
+  },
+
+  "snapshots": {
+    "vg-00-current": "Vanguard installed, before the restart",
+    "10-vanguard-baseline": "Vanguard installed, after the restart; vgk read as system in services and demand in registry, four minutes apart",
+    "11-vanguard-baseline-2": "Vanguard installed; the baseline the committed diff is taken against",
+    "12-vanguard-uninstalled": "after uninstall.exe; the after side of the committed diff",
+    "13-vanguard-uninstalled-dirs": "after uninstall.exe, first capture recording directories and boot session",
+    "14-noise-floor": "idle machine minutes after 13, to measure how much the new empty-directory list churns on its own",
+    "15-reinstalled": "pending - launch VALORANT so it reinstalls Vanguard",
+    "storage": "%LOCALAPPDATA%/WardSweep/observations/ - raw snapshots are NOT committed; they list every file under the profile"
+  }
+}
