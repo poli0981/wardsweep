@@ -79,6 +79,18 @@ exclusion-list change produced 109 differences, of which 86 were the list. A
 later pair, across a second change, produced 31 579. A diff that cannot notice
 that is a diff that invents evidence.
 
+For contrast, the same machine under an **unchanged** policy, five minutes
+apart and in use the whole time: **18 file differences**, all of them Electron
+application state — a desktop app's `leveldb` and `IndexedDB` directories, and
+a vendor tray application's log.
+
+That number is the one to judge a new noise rule against. Eighteen is already
+low enough that adding rules to reduce it costs more than it saves: every
+exclusion is a directory that is never read again, and the `	emp\` mistake
+above shows how that fails. If residual noise ever does need addressing, prefer
+a *suppression* rule — which relocates a change and keeps it recoverable — over
+an *exclusion*, which does not.
+
 ## Reducing noise
 
 A snapshot pair taken minutes apart on an idle machine still differs in
