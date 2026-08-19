@@ -75,6 +75,7 @@ pub fn default_roots() -> Vec<PathBuf> {
 /// services are unreadable is still worth capturing, provided the file says
 /// which three.
 pub fn snapshot(label: &str, taken_utc: String, request: Request) -> anyhow::Result<Snapshot> {
+    let mut domain_started_utc = std::collections::BTreeMap::new();
     let mut captured = Vec::new();
     let mut access_denied = Vec::new();
     let mut services = Vec::new();
@@ -84,6 +85,7 @@ pub fn snapshot(label: &str, taken_utc: String, request: Request) -> anyhow::Res
     let mut registry_policy = None;
 
     if request.services {
+        domain_started_utc.insert(Domain::Services.to_string(), crate::clock::now_utc());
         let result = services::services()?;
         services = result.services;
         access_denied.extend(result.access_denied);
@@ -91,6 +93,7 @@ pub fn snapshot(label: &str, taken_utc: String, request: Request) -> anyhow::Res
     }
 
     if request.filesystem {
+        domain_started_utc.insert(Domain::Filesystem.to_string(), crate::clock::now_utc());
         let result = filesystem::walk(&default_roots(), authenticode::signer_of);
         files = result.files;
         access_denied.extend(result.access_denied);
@@ -99,6 +102,7 @@ pub fn snapshot(label: &str, taken_utc: String, request: Request) -> anyhow::Res
     }
 
     if request.registry {
+        domain_started_utc.insert(Domain::Registry.to_string(), crate::clock::now_utc());
         let result = registry::registry()?;
         registry_keys = result.keys;
         access_denied.extend(result.access_denied);
@@ -117,6 +121,7 @@ pub fn snapshot(label: &str, taken_utc: String, request: Request) -> anyhow::Res
     Ok(Snapshot {
         format_version: crate::model::SNAPSHOT_FORMAT_VERSION,
         taken_utc,
+        domain_started_utc,
         harness_version: env!("CARGO_PKG_VERSION").to_owned(),
         label: label.to_owned(),
         coverage: Coverage {

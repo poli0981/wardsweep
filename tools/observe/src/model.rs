@@ -149,8 +149,27 @@ pub struct AccessDenied {
 pub struct Snapshot {
     /// Wire-format version; see [`SNAPSHOT_FORMAT_VERSION`].
     pub format_version: u32,
-    /// When it was taken, ISO-8601 UTC.
+    /// When the capture started, ISO-8601 UTC.
+    ///
+    /// **Not an instant.** See [`Snapshot::domain_started_utc`].
     pub taken_utc: String,
+    /// When each domain's capture began, ISO-8601 UTC.
+    ///
+    /// A snapshot is not atomic: the services are enumerated, then the
+    /// filesystem is walked for minutes, then the registry. A value that
+    /// changes during the walk is captured inconsistently *across domains, in
+    /// one file*.
+    ///
+    /// That is not hypothetical. A Vanguard baseline recorded
+    /// `vgk start_type = system` in the services domain and `Start = 3`
+    /// (demand) on the same service's registry key four minutes later, because
+    /// the anti-cheat raised its own driver's start type while its client ran
+    /// and lowered it again. Both readings were correct; the file implied they
+    /// were simultaneous.
+    ///
+    /// Recording the skew does not remove it. It lets a reader see it.
+    #[serde(default)]
+    pub domain_started_utc: std::collections::BTreeMap<String, String>,
     /// Version of the harness that took it.
     pub harness_version: String,
     /// Free-text label, so a directory of snapshots is readable.

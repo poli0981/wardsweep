@@ -267,6 +267,16 @@ fn snapshot(output: &PathBuf, label: &str) -> Result<u8> {
         snapshot.registry.len(),
         snapshot.coverage.access_denied.len()
     );
+    // A snapshot spans minutes, so say how many. A reader who assumes it is an
+    // instant will eventually compare two domains that were read far enough
+    // apart for the machine to have changed between them.
+    if snapshot.domain_started_utc.len() > 1 {
+        let starts: Vec<&String> = snapshot.domain_started_utc.values().collect();
+        if let (Some(first), Some(last)) = (starts.iter().min(), starts.iter().max()) {
+            eprintln!("capture spanned {first} to {last} — a snapshot is not an instant");
+        }
+    }
+
     // Said every time, not only when it is inconvenient. A snapshot that
     // covered part of the machine and did not say so produces a diff that looks
     // complete, and every domain it skipped reads as "nothing changed there".
