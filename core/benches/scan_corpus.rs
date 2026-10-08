@@ -1,8 +1,10 @@
 //! `scan_corpus` — the benchmark `.github/workflows/rust-ci.yml` requires.
 //!
-//! The `bench` job runs on every push to `main` with `fail-on-regression: true`
-//! and a 15 % threshold, so this target must exist and must be stable from the
-//! first commit.
+//! The `bench` job runs on every push to `main` and fails the build when a
+//! hard-fail budget from `docs/10-PERF-BUDGET.md` is exceeded
+//! (`.github/scripts/check_bench_budget.py`), so this target must exist and
+//! must be stable from the first commit. Regression against a previous run is
+//! deliberately not gated yet; the script says why.
 //!
 //! There is no scanner yet, so it measures what does exist — and every group
 //! maps to a real budget in `docs/10-PERF-BUDGET.md`:

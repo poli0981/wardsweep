@@ -1,0 +1,41 @@
+# Version updates. Security updates are enabled in the repository settings and
+# do not depend on this file.
+#
+# Grouped and infrequent on purpose: every update here is a pull request that
+# runs the full CI, and a lock file that moves weekly in twenty pull requests
+# is one nobody reads. Actions are weekly because they run with repository
+# tokens; the third-party ones are pinned to commit SHAs, and this is what keeps
+# those pins current.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
+    groups:
+      actions:
+        patterns: ['*']
+
+  - package-ecosystem: cargo
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: chore(deps)
+    groups:
+      cargo:
+        update-types: [minor, patch]
+
+  # Directory.Packages.props, the lock files restored with --locked-mode, and
+  # the tool manifest in .config/dotnet-tools.json.
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: chore(deps)
+    groups:
+      nuget:
+        update-types: [minor, patch]

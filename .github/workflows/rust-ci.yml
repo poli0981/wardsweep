@@ -7,6 +7,11 @@
 #
 # NOTE: `permissions:` are declared explicitly — standing rule across the
 # portfolio, and they are not reliably inherited.
+#
+# Every checkout sets `persist-credentials: false`: nothing here pushes, and a
+# token left in .git/config is readable by every later step. Third-party actions
+# are pinned to commit SHAs, which Dependabot keeps current; GitHub's own are
+# referenced by tag.
 name: Rust CI
 
 # observations/** is here because a test rebuilds a committed draft catalog
@@ -14,7 +19,9 @@ name: Rust CI
 on:
   push:
     branches: [main]
-    paths: ['core/**', 'cli/**', 'tools/**', 'Cargo.*', 'catalog/**', 'rust-toolchain.toml', 'clippy.toml', 'rustfmt.toml', 'deny.toml', 'observations/**', '.github/workflows/rust-ci.yml']
+    # .github/scripts/** too: the bench job runs check_bench_budget.py on push
+    # only, so a change to the script alone was never executed anywhere.
+    paths: ['core/**', 'cli/**', 'tools/**', 'Cargo.*', 'catalog/**', 'rust-toolchain.toml', 'clippy.toml', 'rustfmt.toml', 'deny.toml', 'observations/**', '.github/workflows/rust-ci.yml', '.github/scripts/**']
   pull_request:
     paths: ['core/**', 'cli/**', 'tools/**', 'Cargo.*', 'catalog/**', 'rust-toolchain.toml', 'clippy.toml', 'rustfmt.toml', 'deny.toml', 'observations/**', '.github/workflows/rust-ci.yml', '.github/scripts/**']
   workflow_dispatch:
@@ -40,13 +47,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Install the pinned toolchain
         # rust-toolchain.toml is the single source of truth for the version and
         # the components; `rustup show` installs whatever it names.
         run: rustup show
 
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
 
       - run: cargo fmt --all --check
 
@@ -60,11 +69,13 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Install the pinned toolchain
         run: rustup show
 
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
 
       - run: cargo clippy --all-targets --all-features -- -D warnings -W clippy::pedantic
 
@@ -75,8 +86,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
-      - uses: EmbarkStudios/cargo-deny-action@v2
+      - uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2.1.1
         with:
           command: check advisories bans licenses sources
 
@@ -87,11 +100,13 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Install the pinned toolchain
         run: rustup show
 
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
 
       - run: cargo bench --bench scan_corpus
 
