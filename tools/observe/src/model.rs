@@ -118,10 +118,13 @@ impl Coverage {
             .filter(|domain| !captured.contains(domain))
             .collect();
 
+        // Deduplicated on domain *and* item: the same string can name an
+        // unreadable service and an unreadable registry key, and dropping one
+        // of them would let a diff claim the other was merely absent.
         let mut access_denied = self.access_denied.clone();
         access_denied.extend(other.access_denied.iter().cloned());
-        access_denied.sort_by(|a, b| a.item.cmp(&b.item));
-        access_denied.dedup_by(|a, b| a.item == b.item);
+        access_denied.sort_by(|a, b| (a.domain, &a.item).cmp(&(b.domain, &b.item)));
+        access_denied.dedup_by(|a, b| a.domain == b.domain && a.item == b.item);
 
         Self {
             captured,
@@ -470,6 +473,23 @@ mod tests {
         // Losing these would let a diff claim a service is absent when it was
         // only unreadable.
         assert_eq!(both.access_denied.len(), 1);
+    }
+
+    #[test]
+    fn the_same_item_in_two_domains_is_two_entries() {
+        let denied = |domain| AccessDenied {
+            domain,
+            item: "vgk".to_owned(),
+            reason: "access denied".to_owned(),
+        };
+        let mut before = coverage(&[Domain::Services, Domain::Registry]);
+        let after = coverage(&[Domain::Services, Domain::Registry]);
+        before.access_denied.push(denied(Domain::Services));
+        before.access_denied.push(denied(Domain::Registry));
+
+        let both = before.intersect(&after);
+
+        assert_eq!(both.access_denied.len(), 2);
     }
 
     #[test]

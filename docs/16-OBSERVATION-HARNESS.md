@@ -32,6 +32,9 @@ wardsweep observe snapshot -o 03-uninstalled.json
 wardsweep observe diff --before 01-clean.json --after 02-installed.json -o footprint.json
 wardsweep observe diff --before 03-uninstalled.json --after 01-clean.json -o residue.json
 wardsweep observe suggest --diff footprint.json --residue residue.json -o draft.toml
+
+# a diff written by an older build: apply the current privacy rules to it
+wardsweep observe refilter --in footprint.json -o footprint.json
 ```
 
 `suggest` emits a **draft** catalog entry. It is a starting point requiring
@@ -250,6 +253,44 @@ not: a value whose data begins with `prop:` is a Windows shell *property
 schema* — it names properties, it does not hold one — and the data check skips
 it. Without that, 184 of 243 refusals were schema lists. The name check still
 applies to them.
+
+Reading what the walk actually reaches turned up four more, all now excluded by
+key: TPM state under `Services\TPM`, paired Bluetooth devices keyed by MAC
+address under `BTHPORT\Parameters`, `MountPoints2` keyed by volume GUID, and
+network signatures holding the default gateway's MAC address. The DHCPv6 unique
+identifier under `Services\Tcpip6\Parameters` embeds a MAC address under a name
+no MAC-address term matches, so the term list names it directly.
+
+### Personal identity and activity history are not recorded either
+
+Diffs are committed to a public repository, and two of them carried the
+contributor's Microsoft-account e-mail address — as the *name* of a key under
+`IdentityCRL` — along with the account's identifiers, the machine's host name
+and OneDrive's record of host and user names. `redact` caught none of it. They
+also carried the contributor's activity history: Program Compatibility
+Assistant's list of every program run, `FeatureUsage`, `TypedPaths`, jump lists
+and open-window records, all of which churn between any two snapshots and so
+reach every diff.
+
+None of that is footprint an installer wrote, so the walk no longer reads it:
+the account cache, OneDrive's keys, Office's user name, network names, the
+activity stores above and the background-activity timestamps under
+`Services\bam`. Values named `HostName`, `NV HostName`, `ComputerName`,
+`RegisteredOwner`, `RegisteredOrganization` and `UserEmail` are refused wherever
+they appear. The rules live in one place, `tools/observe/src/policy.rs`.
+
+Two consequences:
+
+- **The differ applies the rules to both snapshots before comparing them**, so a
+  snapshot taken by an older build cannot carry what the current build refuses
+  into a new diff. What was removed is counted in the diff's `refiltered`
+  field and printed, never dropped silently. `observe refilter` applies the same
+  rules to a diff that already exists.
+- **One class of evidence is now out of view by design.** An observation once
+  found that the harness itself had left the anti-cheat's directory in
+  Explorer's `TypedPaths`, which a name-matching residue scanner would have
+  attributed to the anti-cheat. The harness can no longer see that; the note
+  that recorded it stands.
 
 ## Draft entry generation
 

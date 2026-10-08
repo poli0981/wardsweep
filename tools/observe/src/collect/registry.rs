@@ -18,6 +18,10 @@
 //! name the value — `core/tests/no_destructive_code.rs` scans this directory
 //! for exactly that string.
 //!
+//! The same walk also refuses personal identity and activity history. What is
+//! refused, and why, lives in [`crate::policy`], because the differ applies the
+//! same rules again to snapshots an older build took.
+//!
 //! # No timestamps
 //!
 //! `docs/16` §"Reducing noise" asks for `LastWriteTime`-only changes with
@@ -28,81 +32,13 @@
 
 use crate::model::{AccessDenied, RegistryPolicy, RegistryRecord};
 
-/// Safety Gate G3 terms, loaded as data rather than written as a constant.
+/// Value data longer than this is skipped rather than recorded.
 ///
-/// See the file itself for why. In short: `core/tests/no_destructive_code.rs`
-/// fails the build if any of these strings appears in a `.rs` file under a
-/// shipped `src/`, and it cannot tell code that *reads* an identifier from a
-/// deny-list that *refuses* one — so a list written in Rust would be rejected
-/// by the very gate it enforces.
-#[cfg(any(windows, test))]
-const G3_TERMS_FILE: &str = include_str!("g3-identity-terms.txt");
-
-/// The G3 terms, lower-cased, comments and blanks removed.
-#[cfg(any(windows, test))]
-#[must_use]
-pub fn identity_terms() -> Vec<String> {
-    G3_TERMS_FILE
-        .lines()
-        .map(str::trim)
-        .filter(|line| !line.is_empty() && !line.starts_with('#'))
-        .map(str::to_ascii_lowercase)
-        .collect()
-}
-
-/// Whether a value must be refused under Safety Gate G3.
-///
-/// Matched against the value **name and the rendered data**, not only against
-/// the key it lives under. A real snapshot found the machine identifier copied
-/// into three unrelated application keys, and a motherboard model inside a
-/// telemetry URL — neither of which any key-path exclusion would have caught.
-#[cfg(any(windows, test))]
-#[must_use]
-pub fn is_identity(terms: &[String], name: &str, data: &str) -> bool {
-    let name = name.to_ascii_lowercase();
-    let data = data.to_ascii_lowercase();
-
-    if terms.iter().any(|term| name.contains(term.as_str())) {
-        return true;
-    }
-
-    // A shell property list is a schema, not a value: `prop:System.ItemTypeText;
-    // System.Devices.SerialNumber;…` names properties, it does not hold one.
-    // Measured on a real machine, 184 of 243 refusals were these — three
-    // quarters of the list, none of them an identifier. Skipping the data check
-    // for them is precise rather than a loosening: the *name* check still
-    // applies, and a genuine identifier is never stored under a `prop:` list.
-    if data.starts_with("prop:") {
-        return false;
-    }
-
-    terms.iter().any(|term| data.contains(term.as_str()))
-}
-
-/// Value data longer than this is recorded by length and digest, not verbatim.
+/// Skipped, not truncated: half a `REG_BINARY` blob compared against another
+/// half is worse than an honest gap. The cap is recorded in
+/// [`RegistryPolicy::max_value_bytes`].
 #[cfg(windows)]
 pub const MAX_VALUE_BYTES: usize = 4096;
-
-/// Key path fragments that stop the walk, matched case-insensitively.
-///
-/// The first two are Safety Gate G3. The rest are volume and churn.
-#[cfg(any(windows, test))]
-pub const EXCLUDED_FRAGMENTS: &[&str] = &[
-    // G3. Machine identity, not footprint. Excluded as a whole key so the
-    // individual value never has to be named here.
-    "\\microsoft\\cryptography\\",
-    // G3. PnP device instance data, which carries device and disk serials.
-    "\\enum\\",
-    // Volume without information: component servicing manifests and the
-    // installer database are enormous and describe Windows, not an install.
-    "\\microsoft\\windows\\currentversion\\component based servicing\\",
-    "\\classes\\clsid\\",
-    "\\classes\\interface\\",
-    "\\classes\\typelib\\",
-    "\\classes\\wow6432node\\clsid\\",
-    "\\classes\\wow6432node\\interface\\",
-    "\\installer\\",
-];
 
 /// Everything the registry collector returns.
 pub struct Captured {
@@ -112,16 +48,6 @@ pub struct Captured {
     pub access_denied: Vec<AccessDenied>,
     /// What the walk was told to do.
     pub policy: RegistryPolicy,
-}
-
-/// Whether a key path falls inside an excluded fragment.
-#[must_use]
-#[cfg(any(windows, test))]
-pub fn is_excluded(key: &str) -> bool {
-    let lowered = format!("{}\\", key.to_ascii_lowercase());
-    EXCLUDED_FRAGMENTS
-        .iter()
-        .any(|fragment| lowered.contains(fragment))
 }
 
 #[cfg(not(windows))]
@@ -146,8 +72,9 @@ mod win32 {
     };
     use windows::core::{PCWSTR, PWSTR};
 
-    use super::{Captured, EXCLUDED_FRAGMENTS, MAX_VALUE_BYTES, is_excluded};
+    use super::{Captured, MAX_VALUE_BYTES};
     use crate::model::{AccessDenied, Domain, RegistryPolicy, RegistryRecord, RegistryValue};
+    use crate::policy::{EXCLUDED_FRAGMENTS, Policy, Refusal, is_excluded};
 
     /// The roots `docs/16-OBSERVATION-HARNESS.md` names.
     ///
@@ -197,7 +124,7 @@ mod win32 {
     pub fn registry() -> Result<Captured> {
         let mut keys = Vec::new();
         let mut access_denied = Vec::new();
-        let terms = super::identity_terms();
+        let policy = Policy::current();
 
         for (hive_name, root) in ROOTS {
             for (view_name, view) in [("64", KEY_WOW64_64KEY), ("32", KEY_WOW64_32KEY)] {
@@ -210,7 +137,7 @@ mod win32 {
                         hive,
                         view,
                         view_name,
-                        terms: &terms,
+                        policy: &policy,
                     },
                     &format!("{hive_name}\\{root}"),
                     root,
@@ -246,7 +173,7 @@ mod win32 {
         hive: HKEY,
         view: REG_SAM_FLAGS,
         view_name: &'a str,
-        terms: &'a [String],
+        policy: &'a Policy,
     }
 
     fn walk(
@@ -260,7 +187,7 @@ mod win32 {
             hive,
             view,
             view_name,
-            terms,
+            policy,
         } = *context;
         // An explicit stack rather than recursion: the registry is deep, hostile
         // trees exist, and a stack overflow in a read-only tool would still be a
@@ -297,14 +224,14 @@ mod win32 {
             }
             let handle = Key(handle);
 
-            let (values, refused) = read_values(handle.0, terms);
-            for name in refused {
+            let (values, refused) = read_values(handle.0, policy);
+            for (name, refusal) in refused {
                 // Recorded, so the refusal is auditable — the key and the value
                 // name, never the data. The name is not the fingerprint.
                 access_denied.push(AccessDenied {
                     domain: Domain::Registry,
                     item: format!("{display} :: {name} [view {view_name}]"),
-                    reason: "refused by Safety Gate G3 (hardware identity)".to_owned(),
+                    reason: reason(refusal).to_owned(),
                 });
             }
             if !values.is_empty() {
@@ -318,6 +245,17 @@ mod win32 {
             for child in child_names(handle.0) {
                 queue.push((format!("{display}\\{child}"), format!("{path}\\{child}")));
             }
+        }
+    }
+
+    /// The reason recorded in `access_denied`, so a refusal is auditable.
+    ///
+    /// Here rather than on [`Refusal`] because the collector is the only thing
+    /// that writes one, and it only exists on Windows.
+    fn reason(refusal: Refusal) -> &'static str {
+        match refusal {
+            Refusal::HardwareIdentity => "refused by Safety Gate G3 (hardware identity)",
+            Refusal::PersonalIdentity => "refused: personal identity",
         }
     }
 
@@ -350,7 +288,7 @@ mod win32 {
         names
     }
 
-    fn read_values(handle: HKEY, terms: &[String]) -> (Vec<RegistryValue>, Vec<String>) {
+    fn read_values(handle: HKEY, policy: &Policy) -> (Vec<RegistryValue>, Vec<(String, Refusal)>) {
         let mut values = Vec::new();
         let mut refused = Vec::new();
         let mut index = 0u32;
@@ -397,11 +335,12 @@ mod win32 {
             let value_name = text(&name, name_length);
             let rendered = render(kind, &data);
 
-            if super::is_identity(terms, &value_name, &rendered) {
+            if let Some(refusal) = policy.refusal(&value_name, &rendered) {
                 // Dropped entirely. G3 bans enumerating a hardware identifier
-                // even for reporting, so the data is never stored, not stored
-                // and masked.
-                refused.push(value_name);
+                // even for reporting, and personal identity has no business in
+                // a file meant for a public repository, so the data is never
+                // stored — not stored and masked.
+                refused.push((value_name, refusal));
             } else {
                 values.push(RegistryValue {
                     name: value_name,
@@ -413,7 +352,7 @@ mod win32 {
         }
 
         values.sort_by(|a, b| a.name.cmp(&b.name));
-        refused.sort();
+        refused.sort_by(|a, b| a.0.cmp(&b.0));
         (values, refused)
     }
 
@@ -475,110 +414,5 @@ mod win32 {
             .map(|pair| u16::from_le_bytes([pair[0], pair[1]]))
             .collect();
         String::from_utf16_lossy(&units)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::is_excluded;
-
-    #[test]
-    fn the_cryptography_key_is_excluded_because_g3_forbids_reading_it() {
-        // Safety Gate G3 names the machine identifier under this key first.
-        // Excluding the parent means the walk never reaches it, and means this
-        // file never has to name the value.
-        assert!(is_excluded("HKLM\\SOFTWARE\\Microsoft\\Cryptography"));
-        assert!(is_excluded(
-            "HKLM\\SOFTWARE\\Microsoft\\Cryptography\\Defaults"
-        ));
-    }
-
-    #[test]
-    fn device_enumeration_keys_are_excluded() {
-        // PnP instance data carries device and disk serials.
-        assert!(is_excluded(
-            "HKLM\\SYSTEM\\CurrentControlSet\\Services\\disk\\Enum"
-        ));
-    }
-
-    #[test]
-    fn an_anti_cheat_key_is_never_excluded() {
-        // The failure that matters, again: a volume rule swallowing the thing
-        // we came for.
-        assert!(!is_excluded(
-            "HKLM\\SYSTEM\\CurrentControlSet\\Services\\vgk"
-        ));
-        assert!(!is_excluded("HKLM\\SOFTWARE\\EasyAntiCheat"));
-        assert!(!is_excluded("HKLM\\SOFTWARE\\Riot Vanguard"));
-        assert!(!is_excluded(
-            "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Valorant"
-        ));
-    }
-
-    #[test]
-    fn the_g3_term_list_loads_and_is_not_empty() {
-        let terms = super::identity_terms();
-        assert!(terms.len() >= 10, "the G3 list looks truncated: {terms:?}");
-        assert!(terms.iter().all(|term| !term.starts_with('#')));
-        assert!(terms.iter().all(|term| term == &term.to_ascii_lowercase()));
-    }
-
-    #[test]
-    fn every_listed_term_is_refused_in_both_a_value_name_and_value_data() {
-        // Driven from the list rather than from spelled-out examples, for two
-        // reasons. It covers every term instead of the one someone thought to
-        // write, and this file cannot name them: the G3 check in
-        // core/tests/no_destructive_code.rs scans it, and cannot tell a
-        // deny-list from a reader.
-        let terms = super::identity_terms();
-        for term in &terms {
-            assert!(
-                super::is_identity(&terms, term, ""),
-                "a value named after {term} must be refused"
-            );
-            assert!(
-                super::is_identity(&terms, "SomeName", term),
-                "{term} appearing in value data must be refused"
-            );
-            // Real cases from a development machine: the identifier reached the
-            // snapshot as a *suffixed* value name in one application key, and
-            // buried mid-string in a telemetry URL in another. Substring
-            // matching on both name and data is what catches those.
-            assert!(super::is_identity(&terms, &format!("{term}Collection"), ""));
-            assert!(super::is_identity(
-                &terms,
-                "RequestUri",
-                &format!("https://example.invalid/?a=1&{term}dm=X&b=2")
-            ));
-        }
-    }
-
-    #[test]
-    fn a_shell_property_schema_is_not_mistaken_for_an_identifier() {
-        // These name properties rather than holding one, and on a real machine
-        // they were three quarters of every refusal.
-        let terms = super::identity_terms();
-        let schema = format!("prop:System.ItemTypeText;System.Devices.{}", terms[2]);
-        assert!(!super::is_identity(&terms, "FullDetails", &schema));
-        // But a value *named* after an identifier is still refused, whatever
-        // its data looks like.
-        assert!(super::is_identity(&terms, &terms[0], &schema));
-    }
-
-    #[test]
-    fn ordinary_footprint_is_not_refused_as_identity() {
-        let terms = super::identity_terms();
-        assert!(!super::is_identity(
-            &terms,
-            "ImagePath",
-            "C:\\Program Files\\Riot Vanguard\\vgk.sys"
-        ));
-        assert!(!super::is_identity(&terms, "DisplayName", "Riot Vanguard"));
-        assert!(!super::is_identity(&terms, "Start", "3"));
-    }
-
-    #[test]
-    fn matching_is_case_insensitive() {
-        assert!(is_excluded("HKLM\\software\\MICROSOFT\\CRYPTOGRAPHY\\x"));
     }
 }
