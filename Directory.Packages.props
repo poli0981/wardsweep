@@ -31,7 +31,7 @@
       Applied to every project. CLAUDE.md requires Roslynator and
       Meziantou.Analyzer alongside TreatWarningsAsErrors.
     -->
-    <GlobalPackageReference Include="Roslynator.Analyzers" Version="4.14.0" />
+    <GlobalPackageReference Include="Roslynator.Analyzers" Version="5.0.1" />
     <GlobalPackageReference Include="Meziantou.Analyzer" Version="2.0.242" />
   </ItemGroup>
 
