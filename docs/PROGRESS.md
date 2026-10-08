@@ -144,11 +144,13 @@ Pull requests #38–#43, once the maintainer approved the proposals:
   regression from the dependency refresh was ruled out by running the older
   build back to back with the new one.
 - **The hardened deny-list costs more and still fits.** Measured with
-  `scan_corpus` after #38: canonicalising a path takes about 1 µs and checking
-  it about 70 ns — roughly half a second for half a million paths, against the
-  15 s audit budget in [`10`](10-PERF-BUDGET.md). Criterion reported ×2.7 and
-  ×12, but against a local baseline from 2026-08-12 that predates both the
-  canonicalisation rules and the containers, so the ratios say little.
+  `scan_corpus` after #38: canonicalising a path takes about 0.4 µs, much as it
+  did on 2026-08-12, and checking it against the deny-list about 35 ns, five to
+  six times the August figure — together about a fifth of a second for half a
+  million paths, against the 15 s audit budget in
+  [`10`](10-PERF-BUDGET.md). A first run on a busy machine measured twice as
+  long and was briefly recorded here; criterion's ratios are only as good as
+  the moment their baseline was taken.
 
 ## Next, in order
 
