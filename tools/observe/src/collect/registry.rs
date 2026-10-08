@@ -175,6 +175,11 @@ mod win32 {
     /// distinct artifacts, and so does this — the same logical key read through
     /// the 32-bit and 64-bit views can hold different values, and a catalog
     /// entry has to name which one it meant.
+    ///
+    /// Roots WOW64 does not redirect are read through both views as well, so
+    /// their keys are recorded twice. Kept on purpose (2026-10-08,
+    /// `docs/PROGRESS.md`): it costs seconds of a walk measured in minutes, and
+    /// reading them once would change what `suggest` says about their view.
     #[allow(
         clippy::unnecessary_wraps,
         reason = "matches the other collectors and the non-Windows stub, which does fail"
