@@ -188,6 +188,8 @@ fn run(command: &Command) -> Result<u8> {
 
 fn run_refilter(input: &PathBuf, output: &PathBuf) -> Result<u8> {
     let mut diff: diff::Diff = read_json(input)?;
+    ensure_readable_diff(input, &diff)?;
+    let format = diff.format_version;
     let report = diff::refilter(&mut diff, &policy::Policy::current());
 
     write_diff(output, &diff)?;
@@ -198,7 +200,29 @@ fn run_refilter(input: &PathBuf, output: &PathBuf) -> Result<u8> {
     } else {
         report_refiltered(&report);
     }
+    if format != diff.format_version {
+        eprintln!(
+            "  upgraded from diff format {format} to {}: a modified key now carries only the \
+             values that changed. Its snapshots stay format {}, and nothing they did not \
+             record can be added.",
+            diff.format_version, diff.snapshot_format_version
+        );
+    }
     Ok(exit::SUCCESS)
+}
+
+/// Refuse a diff whose shape this build does not know. Without this it would
+/// be read, not refused, whenever its fields happened to line up.
+fn ensure_readable_diff(path: &Path, read: &diff::Diff) -> Result<()> {
+    anyhow::ensure!(
+        (diff::OLDEST_DIFF_FORMAT..=diff::DIFF_FORMAT_VERSION).contains(&read.format_version),
+        "{} is diff format version {}, and this build reads {} to {}",
+        path.display(),
+        read.format_version,
+        diff::OLDEST_DIFF_FORMAT,
+        diff::DIFF_FORMAT_VERSION
+    );
+    Ok(())
 }
 
 /// Say what the privacy policy removed. Never silent: a diff that lost records
@@ -209,8 +233,9 @@ fn report_refiltered(report: &diff::Refiltered) {
     }
     eprintln!(
         "  removed by this build's privacy policy (identity, hardware identifiers, activity \
-         history): {} registry record(s), {} value(s), {} unreadable-item record(s)",
-        report.registry_records, report.registry_values, report.access_denied
+         history): {} registry record(s), {} value(s), {} unreadable-item record(s), {} empty \
+         key(s)",
+        report.registry_records, report.registry_values, report.access_denied, report.emptied_keys
     );
 }
 
@@ -223,19 +248,11 @@ fn run_suggest(
     let footprint: diff::Diff = read_json(diff_path)?;
     let residue: Option<diff::Diff> = residue_path.map(read_json).transpose()?;
 
-    // The same refusal `diff` applies to a snapshot it does not implement: a
-    // diff whose shape this build does not know would be read, not refused,
-    // whenever its fields happened to line up.
+    // The same refusal `diff` applies to a snapshot it does not implement.
     for (path, read) in
         std::iter::once((diff_path, &footprint)).chain(residue_path.zip(residue.as_ref()))
     {
-        anyhow::ensure!(
-            read.format_version == diff::DIFF_FORMAT_VERSION,
-            "{} is diff format version {}, and this build implements {}",
-            path.display(),
-            read.format_version,
-            diff::DIFF_FORMAT_VERSION
-        );
+        ensure_readable_diff(path, read)?;
     }
 
     if footprint.filesystem_policy_changed || footprint.registry_policy_changed {
@@ -365,11 +382,13 @@ fn snapshot(output: &PathBuf, label: &str) -> Result<u8> {
     write_snapshot(output, &snapshot)?;
 
     eprintln!(
-        "snapshot written to {} — {} services, {} files, {} registry keys, {} unreadable",
+        "snapshot written to {} — {} services, {} files, {} registry keys ({} more standing \
+         empty), {} unreadable",
         output.display(),
         snapshot.services.len(),
         snapshot.files.len(),
         snapshot.registry.len(),
+        snapshot.registry_empty_keys.as_ref().map_or(0, Vec::len),
         snapshot.coverage.access_denied.len()
     );
     // A snapshot spans minutes, so say how many. A reader who assumes it is an
@@ -467,6 +486,21 @@ fn run_diff(before: &PathBuf, after: &PathBuf, output: &PathBuf, no_filter: bool
         Some(_) => {}
         None => eprintln!(
             "  emptied directories are not known: one of these snapshots did not record them"
+        ),
+    }
+    match &diff.emptied_keys {
+        Some(keys) if !keys.is_empty() => {
+            eprintln!(
+                "  {} registry key(s) left standing with no value in them:",
+                keys.len()
+            );
+            for key in keys {
+                eprintln!("    {} [view {}]", key.key, key.view);
+            }
+        }
+        Some(_) => {}
+        None => eprintln!(
+            "  emptied registry keys are not known: these snapshots did not both record them"
         ),
     }
     for (signer, count) in &diff.signers {

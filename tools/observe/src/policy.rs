@@ -319,6 +319,7 @@ mod tests {
                     name: (*name).to_owned(),
                     kind: "sz".to_owned(),
                     data: (*data).to_owned(),
+                    oversized_bytes: None,
                 })
                 .collect(),
         }

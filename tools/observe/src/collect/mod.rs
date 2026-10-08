@@ -88,6 +88,7 @@ pub fn snapshot(label: &str, taken_utc: String, request: Request) -> anyhow::Res
     let mut file_empty_directories = None;
     let mut registry_keys = Vec::new();
     let mut registry_policy = None;
+    let mut registry_empty_keys = None;
 
     if request.services {
         domain_started_utc.insert(Domain::Services.to_string(), crate::clock::now_utc());
@@ -113,6 +114,7 @@ pub fn snapshot(label: &str, taken_utc: String, request: Request) -> anyhow::Res
         registry_keys = result.keys;
         access_denied.extend(result.access_denied);
         registry_policy = Some(result.policy);
+        registry_empty_keys = Some(result.empty_keys);
         captured.push(Domain::Registry);
     }
 
@@ -142,5 +144,6 @@ pub fn snapshot(label: &str, taken_utc: String, request: Request) -> anyhow::Res
         file_empty_directories,
         registry: registry_keys,
         registry_policy,
+        registry_empty_keys,
     })
 }

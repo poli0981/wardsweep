@@ -85,7 +85,9 @@ pub const EXCLUDED_FRAGMENTS: &[&str] = &[
     "\\pip\\cache\\",
     "\\nuget\\packages\\",
     // Store app data, which is large and churns without an installer involved.
-    "\\packages\\",
+    // Named in full: a bare `\packages\` fragment also excluded every game's
+    // own `Packages` directory, which is footprint.
+    "\\appdata\\local\\packages\\",
 ];
 
 /// How the walk finds a file's Authenticode signer.
@@ -532,6 +534,16 @@ mod tests {
             "{:?}",
             captured.file_empty_directories
         );
+    }
+
+    #[test]
+    fn only_store_app_data_is_excluded_as_packages() {
+        assert!(is_excluded(Path::new(
+            "C:\\Users\\x\\AppData\\Local\\Packages\\Microsoft.Windows.Photos\\x"
+        )));
+        assert!(!is_excluded(Path::new(
+            "C:\\Program Files\\SomeGame\\Packages\\level1.pak"
+        )));
     }
 
     #[test]

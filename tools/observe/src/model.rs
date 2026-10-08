@@ -23,8 +23,19 @@ use serde::{Deserialize, Serialize};
 /// Wire-format version of a snapshot file.
 ///
 /// Bumped when the shape changes incompatibly. `diff` refuses a snapshot it
-/// does not implement rather than silently misreading it.
-pub const SNAPSHOT_FORMAT_VERSION: u32 = 1;
+/// does not implement rather than silently misreading it, and refuses to
+/// compare two snapshots of different versions.
+///
+/// Format 2 added [`Snapshot::registry_empty_keys`], records a value too large
+/// to keep by name, type and size instead of skipping it, labels per-user
+/// service types correctly, walks `HKLM\SOFTWARE\WOW6432Node` once instead of
+/// twice, and narrowed the `\Packages\` exclusion to `%LOCALAPPDATA%\Packages`.
+/// Each of those changes what a snapshot holds without anything on the machine
+/// changing, so a format 1 and a format 2 snapshot are not comparable.
+pub const SNAPSHOT_FORMAT_VERSION: u32 = 2;
+
+/// The oldest snapshot format this build still reads.
+pub const OLDEST_SNAPSHOT_FORMAT: u32 = 1;
 
 /// One of the capture domains in `docs/16-OBSERVATION-HARNESS.md`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -227,6 +238,26 @@ pub struct Snapshot {
     /// which is not the same as `Some(vec![])` and must not be read as it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub file_empty_directories: Option<Vec<String>>,
+    /// Registry keys that exist and hold no value anywhere beneath them, each
+    /// in the view it was read through. Topmost only, as with directories.
+    ///
+    /// The registry twin of [`Snapshot::file_empty_directories`]. A
+    /// [`RegistryRecord`] is written only for a key with values, so a key an
+    /// uninstaller emptied and left standing produced no record at all and was
+    /// invisible to every diff — the same blind spot the empty-directory list
+    /// closed for the filesystem. `None` for a snapshot older than format 2.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub registry_empty_keys: Option<Vec<RegistryKeyRef>>,
+}
+
+/// A registry key in one WOW64 view, without its values.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RegistryKeyRef {
+    /// Full key path, as `HIVE\Sub\Key`.
+    pub key: String,
+    /// Which WOW64 view it was read through, `"32"` or `"64"`.
+    pub view: String,
 }
 
 /// Which boot the machine was in.
@@ -284,7 +315,8 @@ pub struct RegistryPolicy {
     pub views: Vec<String>,
     /// Key path fragments that stopped the walk, case-insensitively.
     pub excluded: Vec<String>,
-    /// Values larger than this were skipped rather than truncated.
+    /// Values larger than this are recorded by name, type and size, never
+    /// truncated. A format 1 snapshot skipped them entirely.
     pub max_value_bytes: u64,
 }
 
@@ -318,8 +350,28 @@ pub struct RegistryValue {
     /// `sz`, `dword`, `binary`, `multi_sz`, and so on.
     pub kind: String,
     /// Data rendered as text — hex for binary, semicolon-joined for
-    /// `REG_MULTI_SZ` so ordering differences are visible.
+    /// `REG_MULTI_SZ` so ordering differences are visible. Empty when the value
+    /// was too large to record; see [`RegistryValue::oversized_bytes`].
     pub data: String,
+    /// The size of a value too large to record, in bytes.
+    ///
+    /// Recorded rather than skipped, so a diff can say a large value appeared,
+    /// vanished or changed size. Never its data, and never a digest of it: a
+    /// hash of a blob holding an identifier is itself a fingerprint.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub oversized_bytes: Option<u64>,
+}
+
+impl RegistryValue {
+    /// What a diff compares: type and data, or type and size for a value too
+    /// large to record.
+    #[must_use]
+    pub fn comparable(&self) -> String {
+        match self.oversized_bytes {
+            Some(bytes) => format!("{}:<{bytes} bytes, not recorded>", self.kind),
+            None => format!("{}:{}", self.kind, self.data),
+        }
+    }
 }
 
 /// One file, as the walk found it.
