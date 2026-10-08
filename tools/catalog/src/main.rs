@@ -220,19 +220,37 @@ fn verify_signature(toml: &Path, sig: &Path, pubkey: &Path) -> Result<u8> {
 }
 
 fn keygen(out_secret: &Path, out_public: &Path) -> Result<u8> {
-    if out_secret.exists() {
-        bail!(
-            "{} already exists; refusing to overwrite a signing key",
-            out_secret.display()
-        );
-    }
+    use std::io::Write as _;
+
     let mut seed = [0u8; 32];
     getrandom::fill(&mut seed).context("cannot read OS randomness")?;
 
     let signing = SigningKey::from_bytes(&seed);
     let public_hex = hex::encode(signing.verifying_key().to_bytes());
 
-    std::fs::write(out_secret, format!("{}\n", hex::encode(seed)))
+    // Created, never overwritten, in one step: checking for the file and then
+    // writing it left a window in which a key could be replaced. On Unix the
+    // file is readable by its owner alone; on Windows it inherits its
+    // directory's ACL, which is one more reason it lives outside the repository.
+    let mut options = std::fs::OpenOptions::new();
+    options.write(true).create_new(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt as _;
+        options.mode(0o600);
+    }
+    let mut secret = match options.open(out_secret) {
+        Ok(file) => file,
+        Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => bail!(
+            "{} already exists; refusing to overwrite a signing key",
+            out_secret.display()
+        ),
+        Err(error) => {
+            return Err(error).with_context(|| format!("cannot create {}", out_secret.display()));
+        }
+    };
+    secret
+        .write_all(format!("{}\n", hex::encode(seed)).as_bytes())
         .with_context(|| format!("cannot write {}", out_secret.display()))?;
     std::fs::write(out_public, format!("{public_hex}\n"))
         .with_context(|| format!("cannot write {}", out_public.display()))?;
@@ -250,15 +268,22 @@ fn keygen(out_secret: &Path, out_public: &Path) -> Result<u8> {
 fn sign(toml: &Path, secret: &Path, out: &Path) -> Result<u8> {
     let body = std::fs::read(toml).with_context(|| format!("cannot read {}", toml.display()))?;
 
-    // Signing something that does not parse would produce a catalog that is
-    // authentically broken.
+    // Signing something that fails any check catalog-verify.yml runs would
+    // produce a catalog that is authentically broken: it verifies, and CI and
+    // the runtime both refuse it. Schema validation alone let a catalog naming
+    // a protected path, or claiming `shared = false` on no evidence, be signed.
     let parsed = catalog::parse_bytes(&body)?;
-    let problems = validate::validate(&parsed);
+    let problems: Vec<validate::Problem> = validate::validate(&parsed)
+        .into_iter()
+        .chain(validate::check_refs(&parsed))
+        .chain(validate::check_denylist(&parsed))
+        .chain(validate::audit_shared(&parsed, true))
+        .collect();
     if !problems.is_empty() {
         for problem in &problems {
             eprintln!("  {problem}");
         }
-        bail!("refusing to sign a catalog that fails validation");
+        bail!("refusing to sign a catalog that fails the checks catalog-verify.yml runs");
     }
 
     let seed_hex = std::fs::read_to_string(secret)
