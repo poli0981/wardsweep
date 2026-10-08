@@ -328,6 +328,18 @@ Inference rules, all deliberately conservative:
 across multiple observed titles — a wrong `shared = false` is the G1 failure
 mode.
 
+The table applies to what can be **attributed** to the publisher, and services
+and drivers are attributed before anything else, because an attributed service's
+image and name become evidence for paths and keys. A service or `.sys` file
+counts when the publisher signed it, when it lives where the publisher's own
+files live, when it carries the same file name as one of them, or when its name
+is one of the directory names they live in. Anything added between the two
+snapshots that meets none of those — a driver Windows Update dropped, a second
+program installed at the same time — is left out of the draft and **named** in
+its review notes, one note each, so a reviewer can put back what is genuinely
+the anti-cheat's. Names are matched as whole words, so a three-letter service
+name does not claim every path that happens to contain it.
+
 ## Review before submitting
 
 The generated draft is a hypothesis. Before it becomes a catalog entry:
