@@ -209,6 +209,37 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
   key, where it meant `WOW6432Node`.
 - `docs/06-REMOVAL-PIPELINE.md` said "six stages" while defining seven (0–6).
 - The Authenticode cache key differed between `docs/05` and `docs/10`.
+- **Personal data in committed observation diffs.** Two Riot Vanguard diffs
+  carried the contributor's Microsoft-account identity and the machine's name,
+  and all three committed diffs carried activity history. The harness no longer
+  records account identity, activity history or the G3 material it was reading
+  (a MAC-bearing DHCPv6 identifier, TPM state, Bluetooth device addresses,
+  volume GUIDs); the differ applies the same policy to older snapshots; a new
+  `observe refilter` applies it to an existing diff; `redact` now catches e-mail
+  addresses and the local machine's names, matches names in any case, and
+  shows what it could not remove instead of calling it "`Anonymous` and the
+  like". The three diffs were cleaned with those tools, and nothing in them
+  that names an anti-cheat changed.
+- `observe diff` compared services whether or not both snapshots captured them,
+  collapsed two per-user service instances into one record and dropped the
+  other, and cloned every record of both snapshots to build its indexes.
+- `observe suggest` drafted every added service and driver, attributed or not,
+  matched tokens as substrings, wrote `%LOCALAPPDATA%Low\…` for LocalLow paths
+  and kept profile names in others, and listed a 32-bit key twice under two
+  names. Each is fixed; the committed Vanguard draft is pinned by a test to its
+  committed diff.
+- `observe snapshot` aborted on `ERROR_MORE_DATA` from the service control
+  manager, zeroed 36 KB per registry value read, ended a key's listing silently
+  on any enumeration error, and reported directories as empty that it had
+  chosen not to look inside.
+- `wardsweep` used a catalog after checking its signature only, and looked for
+  the signature at the wrong path for any file not named `*.toml`;
+  `wardsweep-catalog sign` signed catalogs that failed the deny-list; `keygen`
+  could replace a key between its check and its write; the shared-flag audit
+  counted one title listed twice as two observations.
+- `core/tests/no_destructive_code.rs` exempted any `src/**/tests/` path and
+  missed the ordinary Win32 ways to delete a file or key, several G2 calls, and
+  several G3 reads.
 
 ### Notes
 - Still no removal code. Nothing in this repository can delete anything: the
@@ -300,10 +331,24 @@ maintainer decision with rationale before it changes.
 - `dotnet list package --vulnerable` exits 0 even when it finds something, so
   the job parses its output instead of trusting the exit code.
 
+- **CodeQL now analyses Rust and the workflows, not only C#**, Rust on Windows
+  because every Win32 call and `unsafe` block is behind `cfg(windows)`. A
+  weekly `audit.yml` runs `cargo deny check advisories` and the NuGet
+  vulnerability gate, which previously ran only when matching files changed.
+  Dependabot version updates are configured.
+- **Least privilege.** `catalog-verify.yml` dropped an unused
+  `pull-requests: write`; `release.yml` grants write access to the one job that
+  writes and attestation rights to the one that attests, takes its dispatch
+  input through the environment and validates it; every checkout drops its
+  credentials; third-party actions are pinned to commit SHAs.
+- `vpk` and XamlStyler are pinned in `.config/dotnet-tools.json` instead of
+  installed as whatever was newest. `deny.toml` bans the HTTP and TLS crates
+  its own comment called a review event.
+
 ### Handover
 - `docs/PROGRESS.md` records what is true now, what is deliberately absent,
   and the next four pieces of work in order. `CHANGELOG.md` is history;
-  that file is state.
+  that file is state. Updated after the 2026-10-08 audit.
 
 ### Known gaps
 - `THIRD-PARTY-NOTICES.md` staleness is not checked by CI, although both that
