@@ -323,11 +323,13 @@ consequences that outlive the spike.
   `docs/16` calls the more valuable of the two, is unfillable on exactly the
   machines the document contemplates. Riot Vanguard's residue is known to the
   byte and its committed draft cannot carry it.
-  Related, and cheaper to fix: `suggest` consumes only `added` changes, so the
-  AntiCheatExpert draft was produced by inverting a removal diff with an ad-hoc
-  script that was never committed — **that draft is not reproducible from the
-  committed artefacts.** The Vanguard draft is, because a real install diff
-  exists for it.
+  The related and cheaper problem is fixed: `suggest` consumed only `added`
+  changes, so the AntiCheatExpert draft came from a removal diff reversed by a
+  script nobody kept. `suggest --removed` (2026-10-08) reads such a diff the
+  other way round, and both committed drafts are now rebuilt from their
+  committed diffs and pinned by tests. The rebuilt AntiCheatExpert draft leaves
+  out `ACE-ADVT`, which nothing in the diff ties to the publisher, and names it
+  for a reviewer instead; its notes have the evidence to add it back.
 - The harness can describe a machine that already has an anti-cheat installed.
   That is a *detection*, not an observation: `CONTRIBUTING.md` requires a
   before/after cycle, and `docs/16` §"The uninstall-and-reinstall cycle" is the

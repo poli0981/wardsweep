@@ -1,4 +1,4 @@
-# DRAFT — generated 2026-08-19T12:03:41.542Z
+# DRAFT — generated 2026-10-08T13:43:08.754Z
 # REVIEW EVERY FIELD BEFORE SUBMITTING.
 #
 # This is a hypothesis produced from an observation diff, not an entry.
@@ -10,16 +10,29 @@
 #       2 file(s)  ACEVILLE PTE LTD
 #
 # Before submitting:
+#   - KERNEL DRIVER service `ACE-ADVT` (image
+#     `C:\WINDOWS\system32\drivers\ACE-ADVT.sys`) was added but nothing ties it
+#     to ACEVILLE PTE LTD, so it was left out. Add it back only if it is this
+#     anti-cheat's.
+#   - driver file `C:\WINDOWS\System32\drivers\ACE-ADVT.sys` was added but
+#     nothing ties it to ACEVILLE PTE LTD, so it was left out. Add it to
+#     `drivers` only if it is this anti-cheat's.
 #   - a driver was observed but not at boot start. Vanguard has been seen
 #     configured either way, so confirm the start type rather than assuming this
 #     one generalises.
-#   - 14 added file(s) could not be attributed to this publisher and were left
+#   - 15 added file(s) could not be attributed to this publisher and were left
 #     out. That is ordinary machine churn between the two snapshots; check the
 #     diff if the footprint looks short.
 #   - `C:\WINDOWS\System32\drivers` was dropped: the deny-list refuses it. A
 #     driver there belongs in `drivers = [...]` by file name, never as a path.
 #   - 2 added registry key(s) could not be attributed to this anti-cheat and
 #     were left out.
+#   - 1 key(s) were seen in one WOW64 view only and are recorded that way rather
+#     than as `both`:
+#     `HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\AntiCheatExpert`
+#     (64-bit view only). `HKLM\SOFTWARE` is redirected and `HKLM\SYSTEM` is
+#     not, so a single view is usually a fact about redirection — but confirm
+#     it, because widening to `both` claims a key the observation never saw.
 #   - no residue diff was given, so every path is classified from the install
 #     diff alone. docs/16 calls the residue diff the more valuable of the two
 #     — it is the exact set of things the vendor's uninstaller leaves behind.
@@ -39,12 +52,10 @@ risk = "high"
 authenticode_cn = ["ACEVILLE PTE LTD"]
 file_hashes = []
 services = [
-    "ACE-ADVT",
     "ACE-BASE",
     "AntiCheatExpert Protection",
 ]
 drivers = [
-    "ACE-ADVT.sys",
     "ACE-BASE.sys",
     "ACE-CORE106095005.sys",
     "ACE-CORE206095005.sys",
@@ -88,12 +99,7 @@ class = "config"
 
 [[anticheat.registry]]
 key = 'HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\AntiCheatExpert'
-view = "both"
-class = "config"
-
-[[anticheat.registry]]
-key = 'HKLM\SYSTEM\CurrentControlSet\Services\ACE-ADVT'
-view = "both"
+view = "64"
 class = "config"
 
 [[anticheat.registry]]
