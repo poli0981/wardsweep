@@ -189,6 +189,14 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
   and `dotnet-ci.yml` fail when either is stale or when `about.toml` and
   `deny.toml` stop agreeing on the accepted licences; and `release.yml` packs
   them, with `LICENSE`, into every release.
+- `wardsweep observe …`, the passthrough `docs/11-CLI-REFERENCE.md` always
+  described: it runs `wardsweep-observe.exe` from beside the CLI — never from
+  `PATH` or the working directory — with every argument unchanged, and passes
+  its exit code back. It needs no catalog. Releases now carry the harness as
+  `WardSweep-observe-<version>.zip`, a download of its own with its own hash,
+  attestation and VirusTotal entry, rather than inside the installer: a binary
+  that reads the whole registry and filesystem is what heuristic engines flag,
+  and the uninstaller's users never run it.
 
 ### Changed
 - `docs/08-IPC-PROTOCOL.md` amended from the S3 findings, in five places. Events

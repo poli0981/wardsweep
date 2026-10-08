@@ -63,7 +63,10 @@ file list.
 Snapshots are **read-only**. The harness has no removal code path at all — it
 ships as `wardsweep-observe.exe`, built from `tools/observe/`, for exactly
 this reason. `wardsweep observe …` in [`11`](11-CLI-REFERENCE.md) forwards to
-it rather than linking its logic into the broker frontend.
+it rather than linking its logic into the broker frontend. Releases carry it as
+a download of its own, for the reason in
+[`14`](14-DISTRIBUTION-TRUST.md); extracted beside `wardsweep.exe`, it is what
+`wardsweep observe` runs.
 
 Size and time, measured rather than estimated. On the development machine —
 551 000 files under those roots, of which 90 000 are hashed — a full format 2

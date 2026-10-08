@@ -89,7 +89,9 @@ jobs:
           Copy-Item target/release/wardsweep.exe        artifacts/publish/ -Force
           Copy-Item target/release/wardsweep-broker.exe artifacts/publish/ -Force
           # Ship the PDBs: docs/14 lists them as a detection-reduction measure.
-          Copy-Item target/release/*.pdb artifacts/publish/ -Force -ErrorAction SilentlyContinue
+          # Named, not globbed: the harness and the catalog tool are built too,
+          # and neither belongs in this package.
+          Copy-Item target/release/wardsweep.pdb, target/release/wardsweep_broker.pdb artifacts/publish/ -Force -ErrorAction SilentlyContinue
           New-Item -ItemType Directory -Force artifacts/publish/catalog | Out-Null
           Copy-Item catalog/catalog.toml     artifacts/publish/catalog/ -Force
           Copy-Item catalog/catalog.toml.sig artifacts/publish/catalog/ -Force
@@ -118,6 +120,25 @@ jobs:
         env:
           VERSION: ${{ steps.ver.outputs.version }}
         run: Compress-Archive -Path artifacts/publish/* -DestinationPath "artifacts/WardSweep-$env:VERSION-portable.zip"
+
+      - name: Package the observation harness
+        # A download of its own, for contributors building catalog entries
+        # (docs/16-OBSERVATION-HARNESS.md); `wardsweep observe` runs it once it
+        # is extracted beside wardsweep.exe. Kept out of the main package on
+        # purpose: a binary that reads the whole registry and filesystem is
+        # what heuristic engines flag, and the uninstaller's users never run
+        # it. See docs/14-DISTRIBUTION-TRUST.md.
+        shell: pwsh
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          $dir = 'artifacts/observe'
+          New-Item -ItemType Directory -Force "$dir/licenses" | Out-Null
+          Copy-Item target/release/wardsweep-observe.exe $dir/ -Force
+          Copy-Item target/release/wardsweep_observe.pdb $dir/ -Force -ErrorAction SilentlyContinue
+          Copy-Item LICENSE, THIRD-PARTY-NOTICES.md $dir/ -Force
+          Copy-Item licenses/*.md "$dir/licenses/" -Force
+          Compress-Archive -Path "$dir/*" -DestinationPath "artifacts/WardSweep-observe-$env:VERSION.zip"
 
       - name: Compute SHA-256
         shell: pwsh

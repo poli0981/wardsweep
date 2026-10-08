@@ -46,12 +46,25 @@ report first, is in a much better position.
 
 1. Build release artifacts in CI (`windows-latest`, reproducible flags).
 2. Record SHA-256 of every artifact — installer, portable zip, `wardsweep.exe`,
-   `wardsweep-broker.exe`, `WardSweep.UI.exe`.
+   `wardsweep-broker.exe`, `WardSweep.UI.exe`, and the observation harness's
+   own zip and `wardsweep-observe.exe`.
 3. Upload each to VirusTotal.
 4. Wait for the scan to settle (roughly 5–10 minutes; engines report at
    different speeds — an early snapshot undercounts).
 5. Copy the **permalink** (`https://www.virustotal.com/gui/file/<sha256>`).
 6. Paste into the release notes, alongside the hash.
+
+### The observation harness is a separate download
+
+`wardsweep-observe.exe` ([`16`](16-OBSERVATION-HARNESS.md)) is released as its
+own zip, never inside the installer or the portable zip. It reads the whole
+registry and filesystem and writes what it found to a file — the behaviour
+heuristic engines are built to flag — and the people who install an
+uninstaller never need it; contributors building catalog entries do. Bundled,
+it could only add detections to the package that has to stay trusted. It gets
+the same SHA-256, VirusTotal permalink and build attestation as every other
+artifact, and `wardsweep observe …` runs it once it is extracted beside
+`wardsweep.exe`.
 
 ### Where the links live
 
