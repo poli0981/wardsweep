@@ -537,13 +537,25 @@ pub fn audit_shared(catalog: &Catalog, require_evidence: bool) -> Vec<Problem> {
             }
             continue;
         };
-        if evidence.titles_observed.len() < 2 {
+        // Distinct and non-empty. The same title listed twice, or a blank, is
+        // not a second observation.
+        let titles: std::collections::BTreeSet<String> = evidence
+            .titles_observed
+            .iter()
+            .map(|title| title.trim().to_ascii_lowercase())
+            .filter(|title| !title.is_empty())
+            .collect();
+        if titles.len() < 2 {
             problems.push(Problem::new(
                 format!("{at}.shared_evidence.titles_observed"),
-                "shared = false needs at least two observed titles (docs/16-OBSERVATION-HARNESS.md)",
+                "shared = false needs at least two distinct observed titles (docs/16-OBSERVATION-HARNESS.md)",
             ));
         }
-        if evidence.observation_ids.is_empty() {
+        if evidence
+            .observation_ids
+            .iter()
+            .all(|id| id.trim().is_empty())
+        {
             problems.push(Problem::new(
                 format!("{at}.shared_evidence.observation_ids"),
                 "must name at least one observation the claim came from",
@@ -734,6 +746,20 @@ mod tests {
              [anticheat.shared_evidence]\n\
              titles_observed = [\"only-one\"]\n\
              observation_ids = []\n"
+        );
+        let catalog = catalog_from(&body);
+        assert_eq!(audit_shared(&catalog, true).len(), 2);
+    }
+
+    #[test]
+    fn the_same_title_twice_is_not_two_observations() {
+        let body = format!(
+            "{HEADER}\n[[anticheat]]\n\
+             id = \"solo-ac\"\ndisplay = \"Solo\"\nkind = \"usermode\"\n\
+             shared = false\nrisk = \"low\"\n\
+             [anticheat.shared_evidence]\n\
+             titles_observed = [\"one-game\", \"One-Game \", \"\"]\n\
+             observation_ids = [\" \"]\n"
         );
         let catalog = catalog_from(&body);
         assert_eq!(audit_shared(&catalog, true).len(), 2);

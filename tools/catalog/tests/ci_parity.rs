@@ -102,6 +102,73 @@ fn a_catalog_naming_a_protected_path_is_rejected() {
     assert_eq!(output.status.code(), Some(9), "docs/11 exit code table");
 }
 
+/// Signing is where the maintainer vouches for a catalog, so it must refuse
+/// one that CI would refuse — and a key, once made, must not be replaced by
+/// running keygen again.
+#[test]
+fn a_catalog_that_fails_the_gate_is_not_signed_and_a_key_is_not_overwritten() {
+    let dir = std::env::temp_dir().join(format!("wardsweep-sign-test-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).expect("temp dir should be creatable");
+    let path = |name: &str| dir.join(name).to_string_lossy().into_owned();
+
+    assert_ok(&[
+        "keygen",
+        "--out-secret",
+        &path("secret.hex"),
+        "--out-public",
+        &path("public.hex"),
+    ]);
+    let original = std::fs::read(dir.join("secret.hex")).expect("the key was written");
+    let again = run(&[
+        "keygen",
+        "--out-secret",
+        &path("secret.hex"),
+        "--out-public",
+        &path("public.hex"),
+    ]);
+    assert!(
+        !again.status.success(),
+        "keygen must refuse an existing key"
+    );
+    assert_eq!(
+        std::fs::read(dir.join("secret.hex")).expect("the key is still there"),
+        original
+    );
+
+    // Schema-valid, and names a protected path: validate alone would sign it.
+    std::fs::write(
+        dir.join("hostile.toml"),
+        "schema_version = 1\n\
+         catalog_version = \"0.0.0-test\"\n\
+         minimum_app_version = \"0.1.0\"\n\
+         [[anticheat]]\n\
+         id = \"hostile\"\n\
+         display = \"Hostile\"\n\
+         kind = \"usermode\"\n\
+         shared = true\n\
+         risk = \"low\"\n\
+         paths = [{ path = \"%SystemRoot%\\\\System32\", class = \"install\" }]\n",
+    )
+    .expect("temp file should be writable");
+    let signed = run(&[
+        "sign",
+        "--toml",
+        &path("hostile.toml"),
+        "--secret",
+        &path("secret.hex"),
+        "--out",
+        &path("hostile.toml.sig"),
+    ]);
+    let wrote_signature = dir.join("hostile.toml.sig").exists();
+    let _ = std::fs::remove_dir_all(&dir);
+
+    assert!(
+        !signed.status.success(),
+        "a catalog CI would refuse must not be signed"
+    );
+    assert!(!wrote_signature);
+}
+
 /// An unsigned or wrongly-signed catalog is refused, never used with a warning.
 #[test]
 fn a_tampered_catalog_fails_verification() {
