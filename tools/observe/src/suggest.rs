@@ -863,4 +863,34 @@ mod tests {
             r"C:\Program Files\AntiCheatExpert\ACE-Service64.exe"
         );
     }
+
+    /// The committed Riot Vanguard install diff, exactly as `suggest` read it.
+    const VANGUARD_INSTALL_DIFF: &str =
+        include_str!("../../../observations/2026-08-19-riot-vanguard/install.json");
+
+    /// The draft committed alongside that diff.
+    const VANGUARD_DRAFT: &str =
+        include_str!("../../../observations/2026-08-19-riot-vanguard/draft.toml");
+
+    #[test]
+    fn the_committed_vanguard_draft_is_reproducible_from_its_committed_diff() {
+        // docs/PROGRESS.md: the AntiCheatExpert draft came from a script that
+        // was never committed and cannot be rebuilt. This one can, and this
+        // test is what keeps it that way. A change to the differ or to this
+        // generator that alters the draft fails here, where it has to be
+        // explained, instead of leaving a committed artefact nobody can
+        // reproduce.
+        let diff: Diff =
+            serde_json::from_str(VANGUARD_INSTALL_DIFF).expect("the committed install diff parses");
+        let generated_utc = VANGUARD_DRAFT
+            .lines()
+            .next()
+            .and_then(|line| line.strip_prefix("# DRAFT — generated "))
+            .expect("the committed draft starts with its generation line");
+
+        let rendered = to_toml(&draft(&diff, None, Some("Riot Games, Inc.")), generated_utc)
+            .expect("the draft serialises");
+
+        assert_eq!(rendered, VANGUARD_DRAFT);
+    }
 }
