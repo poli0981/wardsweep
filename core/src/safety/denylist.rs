@@ -63,6 +63,385 @@ const CONTAINER_TOP_LEVEL: &[&str] = &[
     "DOCUMENTS AND SETTINGS",
 ];
 
+/// Deeper directories that hold other software, refused when targeted *as a
+/// whole* and never below. `*` matches any one component.
+///
+/// The top-level list above stops `C:\Users` being removed, and stopped nothing
+/// one level down: `C:\Users\<name>` — a whole profile — passed the depth floor
+/// of two, and so did every root a bare `%LOCALAPPDATA%`, `%APPDATA%` or
+/// `%USERPROFILE%` expands to. A catalog entry naming one of these is a mistake
+/// in every case; a catalog entry naming something *inside* one is ordinary
+/// footprint and stays allowed.
+const CONTAINERS: &[&[&str]] = &[
+    // A profile, its application-data roots, and the folders Windows makes in
+    // every profile.
+    &["USERS", "*"],
+    &["USERS", "*", "APPDATA"],
+    &["USERS", "*", "APPDATA", "LOCAL"],
+    &["USERS", "*", "APPDATA", "LOCALLOW"],
+    &["USERS", "*", "APPDATA", "ROAMING"],
+    &["USERS", "*", "APPDATA", "LOCAL", "PROGRAMS"],
+    &["USERS", "*", "APPDATA", "LOCAL", "PACKAGES"],
+    &["USERS", "*", "APPDATA", "LOCAL", "TEMP"],
+    &["USERS", "*", "CONTACTS"],
+    &["USERS", "*", "DESKTOP"],
+    &["USERS", "*", "DOCUMENTS"],
+    &["USERS", "*", "DOCUMENTS", "MY GAMES"],
+    &["USERS", "*", "DOWNLOADS"],
+    &["USERS", "*", "FAVORITES"],
+    &["USERS", "*", "LINKS"],
+    &["USERS", "*", "MUSIC"],
+    &["USERS", "*", "ONEDRIVE"],
+    &["USERS", "*", "PICTURES"],
+    &["USERS", "*", "SAVED GAMES"],
+    &["USERS", "*", "SEARCHES"],
+    &["USERS", "*", "VIDEOS"],
+    // Shared component and installer stores.
+    &["PROGRAM FILES", "COMMON FILES"],
+    &["PROGRAM FILES (X86)", "COMMON FILES"],
+    &["PROGRAMDATA", "PACKAGE CACHE"],
+    // Launcher installations, which hold every game they installed.
+    &["PROGRAM FILES", "STEAM"],
+    &["PROGRAM FILES (X86)", "STEAM"],
+];
+
+/// Final components that name a game library wherever it lives: removing one
+/// removes every game in it. `D:\Games\SteamLibrary` passes the depth floor;
+/// `steamapps\common` is three levels down in any library.
+const LIBRARY_LEAVES: &[&str] = &["STEAMLIBRARY", "STEAMAPPS", "EPIC GAMES"];
+
+/// Directories directly inside a Steam library's `steamapps`.
+const STEAMAPPS_CONTAINERS: &[&str] = &[
+    "COMMON",
+    "COMPATDATA",
+    "DOWNLOADING",
+    "SHADERCACHE",
+    "SOURCEMODS",
+    "TEMP",
+    "WORKSHOP",
+];
+
+/// Subtrees Windows owns, refused at any depth, the way `%ProgramData%\Microsoft`
+/// already is.
+///
+/// `AppData\Roaming\Microsoft` holds the user's DPAPI master keys and credential
+/// store; `AppData\Local\Microsoft\Windows\UsrClass.dat` is a loaded registry
+/// hive. Per-user Start menu shortcuts live under it too, which makes them as
+/// unremovable as the all-users ones under `%ProgramData%\Microsoft` have always
+/// been.
+const WINDOWS_DATA: &[&[&str]] = &[
+    &["USERS", "*", "APPDATA", "LOCAL", "MICROSOFT"],
+    &["USERS", "*", "APPDATA", "LOCALLOW", "MICROSOFT"],
+    &["USERS", "*", "APPDATA", "ROAMING", "MICROSOFT"],
+    &["PROGRAM FILES", "WINDOWSAPPS"],
+    &["PROGRAM FILES", "WINDOWS DEFENDER"],
+    &[
+        "PROGRAM FILES",
+        "WINDOWS DEFENDER ADVANCED THREAT PROTECTION",
+    ],
+    &["PROGRAM FILES (X86)", "WINDOWS DEFENDER"],
+];
+
+/// File names of user registry hives, matched as a prefix of the final
+/// component so their logs and backups are covered too.
+const USER_HIVE_FILES: &[&str] = &["NTUSER.DAT", "USRCLASS.DAT"];
+
+/// Driver files that ship with Windows. No catalog may unlock one.
+///
+/// The carve-out for `System32\drivers` lets an anti-cheat entry name its own
+/// driver file, and nothing stopped it naming `ntfs.sys`. A wrong entry here is
+/// an unbootable machine, so these names are refused whatever a catalog says.
+const INBOX_DRIVERS: &[&str] = &[
+    "ACPI.SYS",
+    "ACPIEX.SYS",
+    "AFD.SYS",
+    "AMDPPM.SYS",
+    "BEEP.SYS",
+    "BINDFLT.SYS",
+    "BOWSER.SYS",
+    "CDFS.SYS",
+    "CDROM.SYS",
+    "CLASSPNP.SYS",
+    "CLFS.SYS",
+    "CLIPSP.SYS",
+    "CNG.SYS",
+    "DISK.SYS",
+    "DXGKRNL.SYS",
+    "DXGMMS2.SYS",
+    "EXFAT.SYS",
+    "FASTFAT.SYS",
+    "FILECRYPT.SYS",
+    "FILEINFO.SYS",
+    "FLTMGR.SYS",
+    "FVEVOL.SYS",
+    "HIDCLASS.SYS",
+    "HIDPARSE.SYS",
+    "HTTP.SYS",
+    "I8042PRT.SYS",
+    "INTELPPM.SYS",
+    "KBDCLASS.SYS",
+    "KBDHID.SYS",
+    "KSECDD.SYS",
+    "KSECPKG.SYS",
+    "MOUCLASS.SYS",
+    "MOUHID.SYS",
+    "MOUNTMGR.SYS",
+    "MRXSMB.SYS",
+    "MSRPC.SYS",
+    "MUP.SYS",
+    "NDIS.SYS",
+    "NETBT.SYS",
+    "NETIO.SYS",
+    "NPFS.SYS",
+    "NSIPROXY.SYS",
+    "NTFS.SYS",
+    "NULL.SYS",
+    "PARTMGR.SYS",
+    "PCI.SYS",
+    "PDC.SYS",
+    "RDBSS.SYS",
+    "REFS.SYS",
+    "SPACEPORT.SYS",
+    "SRV2.SYS",
+    "SRVNET.SYS",
+    "STORAHCI.SYS",
+    "STORNVME.SYS",
+    "STORPORT.SYS",
+    "TCPIP.SYS",
+    "TDX.SYS",
+    "TM.SYS",
+    "TPM.SYS",
+    "UCX01000.SYS",
+    "UDFS.SYS",
+    "USBHUB3.SYS",
+    "USBSTOR.SYS",
+    "USBXHCI.SYS",
+    "VHDMP.SYS",
+    "VOLMGR.SYS",
+    "VOLMGRX.SYS",
+    "VOLSNAP.SYS",
+    "VOLUME.SYS",
+    "WCIFS.SYS",
+    "WDBOOT.SYS",
+    "WDF01000.SYS",
+    "WDFILTER.SYS",
+    "WDFLDR.SYS",
+    "WDNISDRV.SYS",
+    "WFPLWFS.SYS",
+    "WOF.SYS",
+];
+
+/// Services and drivers that ship with Windows. No catalog may unlock one.
+const INBOX_SERVICES: &[&str] = &[
+    "ACPI",
+    "AFD",
+    "APPXSVC",
+    "BEEP",
+    "BFE",
+    "BROKERINFRASTRUCTURE",
+    "CLIPSVC",
+    "CNG",
+    "COREMESSAGINGREGISTRAR",
+    "CRYPTSVC",
+    "DCOMLAUNCH",
+    "DHCP",
+    "DISK",
+    "DNSCACHE",
+    "EVENTLOG",
+    "FASTFAT",
+    "FILEINFO",
+    "FLTMGR",
+    "FVEVOL",
+    "GPSVC",
+    "KEYISO",
+    "KSECDD",
+    "KSECPKG",
+    "LANMANSERVER",
+    "LANMANWORKSTATION",
+    "LSM",
+    "MOUNTMGR",
+    "MPSDRV",
+    "MPSSVC",
+    "MSRPC",
+    "NDIS",
+    "NETBT",
+    "NPFS",
+    "NSI",
+    "NTFS",
+    "NULL",
+    "PARTMGR",
+    "PCI",
+    "PLUGPLAY",
+    "POWER",
+    "PROFSVC",
+    "REFS",
+    "RPCEPTMAPPER",
+    "RPCSS",
+    "SAMSS",
+    "SCHEDULE",
+    "SECURITYHEALTHSERVICE",
+    "SENSE",
+    "SPACEPORT",
+    "STATEREPOSITORY",
+    "STORAHCI",
+    "STORNVME",
+    "SYSTEMEVENTSBROKER",
+    "TCPIP",
+    "TCPIP6",
+    "TDX",
+    "TOKENBROKER",
+    "TPM",
+    "TRUSTEDINSTALLER",
+    "USERMANAGER",
+    "VAULTSVC",
+    "VOLMGR",
+    "VOLMGRX",
+    "VOLSNAP",
+    "VOLUME",
+    "W32TIME",
+    "WDBOOT",
+    "WDF01000",
+    "WDFILTER",
+    "WDNISDRV",
+    "WDNISSVC",
+    "WINDEFEND",
+    "WINMGMT",
+    "WLIDSVC",
+    "WOF",
+    "WUAUSERV",
+];
+
+/// Whether a driver file name belongs to Windows itself.
+#[must_use]
+pub fn is_inbox_driver(file_name: &str) -> bool {
+    INBOX_DRIVERS
+        .iter()
+        .any(|inbox| inbox.eq_ignore_ascii_case(file_name.trim()))
+}
+
+/// Whether a service name belongs to Windows itself.
+#[must_use]
+pub fn is_inbox_service(service_name: &str) -> bool {
+    INBOX_SERVICES
+        .iter()
+        .any(|inbox| inbox.eq_ignore_ascii_case(service_name.trim()))
+}
+
+/// Registry keys below `HKLM` that hold other software's keys, refused when
+/// targeted as a whole. Each is also refused under `SOFTWARE\WOW6432Node`.
+///
+/// `HKLM\SOFTWARE\Microsoft` had two components and passed the depth floor;
+/// so did `HKLM\SOFTWARE\WOW6432Node`, the entire 32-bit view. The uninstall
+/// entry *inside* `…\CurrentVersion\Uninstall` is footprint `docs/02` lets a
+/// catalog name; the `Uninstall` key itself is every program's.
+const MACHINE_CONTAINER_KEYS: &[&[&str]] = &[
+    &["SOFTWARE", "CLASSES"],
+    &["SOFTWARE", "CLASSES", "APPID"],
+    &["SOFTWARE", "CLASSES", "CLSID"],
+    &["SOFTWARE", "CLASSES", "INTERFACE"],
+    &["SOFTWARE", "CLASSES", "TYPELIB"],
+    &["SOFTWARE", "CLIENTS"],
+    &["SOFTWARE", "MICROSOFT"],
+    &["SOFTWARE", "MICROSOFT", "WINDOWS"],
+    &["SOFTWARE", "MICROSOFT", "WINDOWS", "CURRENTVERSION"],
+    &[
+        "SOFTWARE",
+        "MICROSOFT",
+        "WINDOWS",
+        "CURRENTVERSION",
+        "APP PATHS",
+    ],
+    &[
+        "SOFTWARE",
+        "MICROSOFT",
+        "WINDOWS",
+        "CURRENTVERSION",
+        "EXPLORER",
+    ],
+    &["SOFTWARE", "MICROSOFT", "WINDOWS", "CURRENTVERSION", "RUN"],
+    &[
+        "SOFTWARE",
+        "MICROSOFT",
+        "WINDOWS",
+        "CURRENTVERSION",
+        "RUNONCE",
+    ],
+    &[
+        "SOFTWARE",
+        "MICROSOFT",
+        "WINDOWS",
+        "CURRENTVERSION",
+        "SHAREDDLLS",
+    ],
+    &[
+        "SOFTWARE",
+        "MICROSOFT",
+        "WINDOWS",
+        "CURRENTVERSION",
+        "UNINSTALL",
+    ],
+    &["SOFTWARE", "MICROSOFT", "WINDOWS NT"],
+    &["SOFTWARE", "MICROSOFT", "WINDOWS NT", "CURRENTVERSION"],
+    &[
+        "SOFTWARE",
+        "MICROSOFT",
+        "WINDOWS NT",
+        "CURRENTVERSION",
+        "IMAGE FILE EXECUTION OPTIONS",
+    ],
+    &["SOFTWARE", "POLICIES"],
+    &["SOFTWARE", "POLICIES", "MICROSOFT"],
+    &["SOFTWARE", "REGISTEREDAPPLICATIONS"],
+    &["SOFTWARE", "WOW6432NODE"],
+];
+
+/// Registry subtrees below `HKLM` that Windows owns, refused at any depth. Each
+/// is also refused under `SOFTWARE\WOW6432Node`.
+const MACHINE_PROTECTED_KEYS: &[&[&str]] = &[
+    // Safety Gate G3: machine identity lives here.
+    &["SOFTWARE", "MICROSOFT", "CRYPTOGRAPHY"],
+    // Logon itself.
+    &[
+        "SOFTWARE",
+        "MICROSOFT",
+        "WINDOWS NT",
+        "CURRENTVERSION",
+        "WINLOGON",
+    ],
+    &["SOFTWARE", "MICROSOFT", "WINDOWS DEFENDER"],
+    &["SOFTWARE", "POLICIES", "MICROSOFT", "WINDOWS DEFENDER"],
+];
+
+/// Registry keys below a user's root (`HKCU`, or `HKU\<SID>`) that hold other
+/// software's keys, refused when targeted as a whole.
+const USER_CONTAINER_KEYS: &[&[&str]] = &[
+    &["SOFTWARE", "CLASSES"],
+    &["SOFTWARE", "CLASSES", "CLSID"],
+    &["SOFTWARE", "MICROSOFT"],
+    &["SOFTWARE", "MICROSOFT", "WINDOWS"],
+    &["SOFTWARE", "MICROSOFT", "WINDOWS", "CURRENTVERSION"],
+    &["SOFTWARE", "MICROSOFT", "WINDOWS", "CURRENTVERSION", "RUN"],
+    &[
+        "SOFTWARE",
+        "MICROSOFT",
+        "WINDOWS",
+        "CURRENTVERSION",
+        "RUNONCE",
+    ],
+    &[
+        "SOFTWARE",
+        "MICROSOFT",
+        "WINDOWS",
+        "CURRENTVERSION",
+        "UNINSTALL",
+    ],
+    &["SOFTWARE", "POLICIES"],
+    &["SOFTWARE", "WOW6432NODE"],
+];
+
+/// Hives below `HKLM` that are never footprint, refused at any depth.
+const PROTECTED_MACHINE_HIVES: &[&str] = &["SAM", "SECURITY", "HARDWARE", "COMPONENTS", "DRIVERS"];
+
 /// Why the deny-list refused an artifact.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum DenyReason {
@@ -78,6 +457,13 @@ pub enum DenyReason {
     /// Inside `%ProgramData%\Microsoft`.
     #[error("path is inside ProgramData\\Microsoft")]
     ProtectedProgramData,
+    /// A directory that holds other software — a profile, an application-data
+    /// root, a game library — targeted as a whole.
+    #[error("path is a folder that holds other software, and is never removed as a whole")]
+    ProtectedContainer,
+    /// Inside a subtree Windows owns, such as `AppData\Roaming\Microsoft`.
+    #[error("path is inside data Windows owns")]
+    ProtectedWindowsData,
     /// The root of a volume.
     #[error("path is a volume root")]
     VolumeRoot,
@@ -97,9 +483,18 @@ pub enum DenyReason {
     /// Execution was attempted on a path that never went through an open handle.
     #[error("path was not resolved through an open handle")]
     UnresolvedAtExecution,
-    /// `HKLM\SAM`, `HKLM\SECURITY`, or `HKLM\BCD*`.
+    /// `HKLM\SAM`, `HKLM\SECURITY`, `HKLM\BCD*`, `HKLM\HARDWARE`,
+    /// `HKLM\COMPONENTS` or `HKLM\DRIVERS`.
     #[error("registry key is inside a protected hive")]
     ProtectedRegistryHive,
+    /// Under `HKLM\SYSTEM` or `HKCC` but not a service key.
+    #[error("registry key is system configuration outside the services key")]
+    ProtectedSystemKey,
+    /// A key that holds other software's keys, such as
+    /// `HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall`, targeted as
+    /// a whole; or a subtree Windows owns.
+    #[error("registry key holds other software's keys, or belongs to Windows")]
+    ProtectedRegistryKey,
     /// A service key under `CurrentControlSet\Services` that the catalog does
     /// not name.
     #[error("registry key is a service not named by the catalog")]
@@ -152,7 +547,8 @@ impl Exceptions {
     /// verified anti-cheat entry declared, for that entry's own footprint.
     ///
     /// Only the base filename of a driver is retained; a catalog cannot smuggle
-    /// a directory in through this field.
+    /// a directory in through this field. A name that belongs to Windows itself
+    /// is dropped: no catalog unlocks `ntfs.sys` or `Tcpip`.
     pub fn new<D, S>(driver_files: D, service_names: S) -> Self
     where
         D: IntoIterator,
@@ -164,11 +560,12 @@ impl Exceptions {
             driver_files: driver_files
                 .into_iter()
                 .filter_map(|name| base_file_name(name.as_ref()))
+                .filter(|name| !is_inbox_driver(name))
                 .collect(),
             service_names: service_names
                 .into_iter()
-                .map(|name| name.as_ref().to_ascii_uppercase())
-                .filter(|name| !name.is_empty())
+                .map(|name| name.as_ref().trim().to_ascii_uppercase())
+                .filter(|name| !name.is_empty() && !is_inbox_service(name))
                 .collect(),
         }
     }
@@ -269,11 +666,12 @@ fn evaluate_path(
         return Err(DenyReason::ProtectedTopLevelDirectory);
     }
 
-    // C:\Users\**\NTUSER.DAT*
-    if top.eq_ignore_ascii_case("USERS")
-        && components
-            .last()
-            .is_some_and(|leaf| leaf.starts_with("NTUSER.DAT"))
+    // A user hive by name, wherever it is. Checking only below `C:\Users` let
+    // `C:\Documents and Settings\<name>\NTUSER.DAT` through, and a profile on
+    // another drive; `UsrClass.dat` was not checked at all.
+    if components
+        .last()
+        .is_some_and(|leaf| USER_HIVE_FILES.iter().any(|hive| leaf.starts_with(hive)))
     {
         return Err(DenyReason::ProtectedUserHive);
     }
@@ -283,11 +681,62 @@ fn evaluate_path(
         return Err(DenyReason::ProtectedProgramData);
     }
 
+    if WINDOWS_DATA
+        .iter()
+        .any(|pattern| starts_with_pattern(components, pattern))
+    {
+        return Err(DenyReason::ProtectedWindowsData);
+    }
+
+    if is_container(components) {
+        return Err(DenyReason::ProtectedContainer);
+    }
+
     if components.len() < MIN_COMPONENTS_UNDER_DRIVE_ROOT {
         return Err(DenyReason::TooShallow);
     }
 
     Ok(())
+}
+
+/// Whether `components` match `pattern` exactly, `*` matching any component.
+fn equals_pattern(components: &[String], pattern: &[&str]) -> bool {
+    components.len() == pattern.len() && starts_with_pattern(components, pattern)
+}
+
+/// Whether `components` begin with `pattern`, `*` matching any component.
+fn starts_with_pattern(components: &[String], pattern: &[&str]) -> bool {
+    pattern.len() <= components.len()
+        && pattern
+            .iter()
+            .zip(components)
+            .all(|(want, have)| *want == "*" || have.eq_ignore_ascii_case(want))
+}
+
+/// Whether a path names a directory that holds other software.
+fn is_container(components: &[String]) -> bool {
+    if CONTAINERS
+        .iter()
+        .any(|pattern| equals_pattern(components, pattern))
+    {
+        return true;
+    }
+    match components {
+        [.., leaf]
+            if LIBRARY_LEAVES
+                .iter()
+                .any(|name| leaf.eq_ignore_ascii_case(name)) =>
+        {
+            true
+        }
+        [.., steamapps, child] => {
+            steamapps.eq_ignore_ascii_case("STEAMAPPS")
+                && STEAMAPPS_CONTAINERS
+                    .iter()
+                    .any(|name| child.eq_ignore_ascii_case(name))
+        }
+        _ => false,
+    }
 }
 
 /// The single carve-out inside the Windows directory.
@@ -339,29 +788,108 @@ pub fn check_registry_key(
 fn evaluate_registry_key(key: &CanonicalRegKey, exceptions: &Exceptions) -> Result<(), DenyReason> {
     let components = key.components();
 
-    if key.hive() == Hive::Hklm {
-        if let Some(first) = components.first()
-            && (first.eq_ignore_ascii_case("SAM")
-                || first.eq_ignore_ascii_case("SECURITY")
-                || first.starts_with("BCD"))
-        {
-            return Err(DenyReason::ProtectedRegistryHive);
-        }
+    match key.hive() {
+        Hive::Hklm => evaluate_machine_key(components, exceptions),
+        Hive::Hkcu => evaluate_user_key(components),
+        Hive::Hku => match components {
+            // A user's root, or the whole of `HKEY_USERS`.
+            [] | [_] => Err(DenyReason::RegistryKeyTooShallow),
+            // `HKU\<SID>_Classes` is that user's `SOFTWARE\Classes`.
+            [user, rest @ ..] if user.ends_with("_CLASSES") => {
+                let mut relative = vec!["SOFTWARE".to_owned(), "CLASSES".to_owned()];
+                relative.extend(rest.iter().cloned());
+                evaluate_user_key(&relative)
+            }
+            [_, rest @ ..] => evaluate_user_key(rest),
+        },
+        // `HKCC` is a view of `HKLM\SYSTEM`, and none of it is footprint.
+        Hive::Hkcc => Err(DenyReason::ProtectedSystemKey),
+        Hive::Hkcr => shallow_floor(components),
+    }
+}
 
-        if let Some(service) = service_key_leaf(components) {
-            // The Services container itself, and anything nested below a
-            // service, are never removal targets in their own right.
-            return match service {
-                ServiceKey::Named(name) if exceptions.allows_service(name) => Ok(()),
-                _ => Err(DenyReason::UnknownServiceKey),
-            };
-        }
+/// `HKLM`, whose `SYSTEM` hive is refused except for catalog-named services.
+fn evaluate_machine_key(components: &[String], exceptions: &Exceptions) -> Result<(), DenyReason> {
+    if let Some(first) = components.first()
+        && (first.starts_with("BCD")
+            || PROTECTED_MACHINE_HIVES
+                .iter()
+                .any(|hive| first.eq_ignore_ascii_case(hive)))
+    {
+        return Err(DenyReason::ProtectedRegistryHive);
     }
 
+    if let Some(service) = service_key_leaf(components) {
+        // The Services container itself, and anything nested below a
+        // service, are never removal targets in their own right.
+        return match service {
+            ServiceKey::Named(name) if exceptions.allows_service(name) => Ok(()),
+            _ => Err(DenyReason::UnknownServiceKey),
+        };
+    }
+
+    // Everything else under `SYSTEM` is the machine's configuration: control
+    // sets, `Control`, `Enum`, `Setup`, `MountedDevices`. Every anti-cheat
+    // observed so far wrote only service keys there.
+    if components
+        .first()
+        .is_some_and(|first| first.eq_ignore_ascii_case("SYSTEM"))
+    {
+        return Err(DenyReason::ProtectedSystemKey);
+    }
+
+    // The 32-bit view mirrors the 64-bit one, so each rule applies in both.
+    let native = match components {
+        [software, wow, rest @ ..]
+            if software.eq_ignore_ascii_case("SOFTWARE")
+                && wow.eq_ignore_ascii_case("WOW6432NODE") =>
+        {
+            let mut native = vec![software.clone()];
+            native.extend(rest.iter().cloned());
+            Some(native)
+        }
+        _ => None,
+    };
+    for view in std::iter::once(components).chain(native.as_deref()) {
+        if MACHINE_PROTECTED_KEYS
+            .iter()
+            .any(|pattern| starts_with_pattern(view, pattern))
+        {
+            return Err(DenyReason::ProtectedRegistryKey);
+        }
+    }
+    if MACHINE_CONTAINER_KEYS
+        .iter()
+        .any(|pattern| equals_pattern(components, pattern))
+        || native.as_deref().is_some_and(|view| {
+            view.len() > 1
+                && MACHINE_CONTAINER_KEYS
+                    .iter()
+                    .any(|pattern| equals_pattern(view, pattern))
+        })
+    {
+        return Err(DenyReason::ProtectedRegistryKey);
+    }
+
+    shallow_floor(components)
+}
+
+/// A user's root: `HKCU`, or `HKU\<SID>` with the SID removed.
+fn evaluate_user_key(components: &[String]) -> Result<(), DenyReason> {
+    if USER_CONTAINER_KEYS
+        .iter()
+        .any(|pattern| equals_pattern(components, pattern))
+    {
+        return Err(DenyReason::ProtectedRegistryKey);
+    }
+    shallow_floor(components)
+}
+
+/// A hive root or a single-level key is never a removal target.
+fn shallow_floor(components: &[String]) -> Result<(), DenyReason> {
     if components.len() < 2 {
         return Err(DenyReason::RegistryKeyTooShallow);
     }
-
     Ok(())
 }
 
@@ -661,6 +1189,218 @@ mod tests {
             ),
             Err(DenyReason::ReparsePointInPath)
         );
+    }
+
+    #[test]
+    fn a_folder_that_holds_other_software_is_refused_as_a_whole() {
+        for container in [
+            r"C:\Users\anon",
+            r"C:\Users\Public",
+            r"C:\Users\anon\AppData",
+            r"C:\Users\anon\AppData\Local",
+            r"C:\Users\anon\AppData\LocalLow",
+            r"C:\Users\anon\AppData\Roaming",
+            r"C:\Users\anon\AppData\Local\Temp",
+            r"C:\Users\anon\Documents",
+            r"C:\Users\anon\Documents\My Games",
+            r"C:\Users\anon\Saved Games",
+            r"C:\Users\Public\Documents",
+            r"C:\Program Files\Common Files",
+            r"C:\Program Files (x86)\Common Files",
+            r"C:\ProgramData\Package Cache",
+            r"C:\Program Files (x86)\Steam",
+            r"C:\Program Files (x86)\Steam\steamapps",
+            r"C:\Program Files (x86)\Steam\steamapps\common",
+            r"D:\SteamLibrary\steamapps\common",
+            r"D:\SteamLibrary\steamapps\workshop",
+            r"D:\Games\SteamLibrary",
+            r"C:\Program Files\Epic Games",
+            r"E:\Games\Epic Games",
+        ] {
+            assert_eq!(
+                check_path(
+                    &syntactic(container),
+                    &catalog_exceptions(),
+                    Stage::CatalogLoad
+                ),
+                Err(DenyReason::ProtectedContainer),
+                "for {container}"
+            );
+        }
+    }
+
+    #[test]
+    fn data_windows_owns_is_refused_at_any_depth() {
+        for owned in [
+            r"C:\Users\anon\AppData\Roaming\Microsoft\Protect",
+            r"C:\Users\anon\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Example",
+            r"C:\Users\anon\AppData\Local\Microsoft\Windows\INetCache",
+            r"C:\Program Files\WindowsApps\Example_1.0_x64__abc",
+            r"C:\Program Files\Windows Defender\MsMpEng.exe",
+        ] {
+            assert_eq!(
+                check_path(&syntactic(owned), &catalog_exceptions(), Stage::CatalogLoad),
+                Err(DenyReason::ProtectedWindowsData),
+                "for {owned}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_user_hive_is_refused_wherever_it_is() {
+        for hive in [
+            r"C:\Users\anon\AppData\Local\Microsoft\Windows\UsrClass.dat",
+            r"C:\Documents and Settings\anon\NTUSER.DAT",
+            r"D:\Profiles\anon\ntuser.dat.LOG2",
+        ] {
+            assert_eq!(
+                check_path(&syntactic(hive), &catalog_exceptions(), Stage::CatalogLoad),
+                Err(DenyReason::ProtectedUserHive),
+                "for {hive}"
+            );
+        }
+    }
+
+    #[test]
+    fn footprint_inside_a_container_stays_allowed() {
+        // The other direction, which matters as much: everything here is
+        // footprint docs/02 permits removing, and every one sits inside a
+        // container that is now refused as a whole.
+        for allowed in [
+            r"C:\Users\anon\AppData\Local\Riot Games\Riot Vanguard",
+            r"C:\Users\anon\AppData\LocalLow\Example Studio\Example Shooter",
+            r"C:\Users\anon\Documents\My Games\Example Shooter",
+            r"C:\Users\Public\Desktop\Example Shooter.lnk",
+            r"C:\Program Files (x86)\Steam\steamapps\common\Example Shooter",
+            r"D:\SteamLibrary\steamapps\common\Example Shooter",
+            r"C:\Program Files\Epic Games\ExampleShooter",
+            r"C:\Program Files\Riot Vanguard",
+            r"C:\ProgramData\AntiCheatExpert",
+        ] {
+            assert_eq!(
+                check_path(
+                    &syntactic(allowed),
+                    &catalog_exceptions(),
+                    Stage::CatalogLoad
+                ),
+                Ok(()),
+                "deny-list wrongly refused {allowed}"
+            );
+        }
+    }
+
+    #[test]
+    fn windows_drivers_and_services_cannot_be_unlocked() {
+        let exceptions = Exceptions::new(
+            ["ntfs.sys", "vgk.sys", "NTFS.SYS"],
+            ["Tcpip", "vgk", " WinDefend "],
+        );
+        assert!(exceptions.allows_driver_file("vgk.sys"));
+        assert!(!exceptions.allows_driver_file("ntfs.sys"));
+        assert!(exceptions.allows_service("vgk"));
+        assert!(!exceptions.allows_service("Tcpip"));
+        assert!(!exceptions.allows_service("WinDefend"));
+        assert!(
+            check_path(
+                &syntactic(r"C:\Windows\System32\drivers\ntfs.sys"),
+                &exceptions,
+                Stage::CatalogLoad
+            )
+            .is_err()
+        );
+        let tcpip = canonicalise_reg_key(r"HKLM\SYSTEM\CurrentControlSet\Services\Tcpip")
+            .expect("valid key");
+        assert_eq!(
+            check_registry_key(&tcpip, &exceptions),
+            Err(DenyReason::UnknownServiceKey)
+        );
+    }
+
+    #[test]
+    fn keys_that_hold_other_software_or_belong_to_windows_are_refused() {
+        for (key, reason) in [
+            (r"HKLM\SOFTWARE\Microsoft", DenyReason::ProtectedRegistryKey),
+            (
+                r"HKLM\SOFTWARE\WOW6432Node",
+                DenyReason::ProtectedRegistryKey,
+            ),
+            (r"HKLM\SOFTWARE\Classes", DenyReason::ProtectedRegistryKey),
+            (
+                r"HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
+                DenyReason::ProtectedRegistryKey,
+            ),
+            (
+                r"HKLM\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run",
+                DenyReason::ProtectedRegistryKey,
+            ),
+            (
+                r"HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\x",
+                DenyReason::ProtectedRegistryKey,
+            ),
+            (
+                r"HKLM\SOFTWARE\WOW6432Node\Microsoft\Cryptography\x",
+                DenyReason::ProtectedRegistryKey,
+            ),
+            (
+                r"HKLM\SYSTEM\CurrentControlSet",
+                DenyReason::ProtectedSystemKey,
+            ),
+            (
+                r"HKLM\SYSTEM\CurrentControlSet\Control\Session Manager",
+                DenyReason::ProtectedSystemKey,
+            ),
+            (r"HKLM\SYSTEM\Setup", DenyReason::ProtectedSystemKey),
+            (
+                r"HKLM\HARDWARE\DESCRIPTION",
+                DenyReason::ProtectedRegistryHive,
+            ),
+            (r"HKLM\COMPONENTS\x", DenyReason::ProtectedRegistryHive),
+            (
+                r"HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run",
+                DenyReason::ProtectedRegistryKey,
+            ),
+            (
+                r"HKU\S-1-5-21-1-2-3-1001\SOFTWARE",
+                DenyReason::RegistryKeyTooShallow,
+            ),
+            (
+                r"HKU\S-1-5-21-1-2-3-1001\SOFTWARE\Microsoft",
+                DenyReason::ProtectedRegistryKey,
+            ),
+            (
+                r"HKU\S-1-5-21-1-2-3-1001_Classes\CLSID",
+                DenyReason::ProtectedRegistryKey,
+            ),
+            (r"HKCC\Software\Fonts", DenyReason::ProtectedSystemKey),
+        ] {
+            let canonical = canonicalise_reg_key(key).expect("valid key");
+            assert_eq!(
+                check_registry_key(&canonical, &catalog_exceptions()),
+                Err(reason),
+                "for {key}"
+            );
+        }
+    }
+
+    #[test]
+    fn registry_footprint_inside_a_container_stays_allowed() {
+        for key in [
+            r"HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Riot Vanguard",
+            r"HKLM\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\EasyAntiCheat",
+            r"HKLM\SOFTWARE\EasyAntiCheat",
+            r"HKLM\SOFTWARE\WOW6432Node\EasyAntiCheat",
+            r"HKLM\SYSTEM\CurrentControlSet\Services\vgk",
+            r"HKCU\SOFTWARE\appdatalow\AntiCheatExpert\{4324E6D9-BA90-499E-9B3A-A7DAB216C94E}",
+            r"HKU\S-1-5-21-1-2-3-1001\SOFTWARE\Riot Games",
+            r"HKCR\CLSID\{4324E6D9-BA90-499E-9B3A-A7DAB216C94E}",
+        ] {
+            let canonical = canonicalise_reg_key(key).expect("valid key");
+            assert_eq!(
+                check_registry_key(&canonical, &catalog_exceptions()),
+                Ok(()),
+                "deny-list wrongly refused {key}"
+            );
+        }
     }
 
     #[test]

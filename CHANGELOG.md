@@ -301,6 +301,26 @@ maintainer decision with rationale before it changes.
   roots, `HKLM\SYSTEM` beyond `Services`) was not taken and is recorded in
   `docs/PROGRESS.md` for a separate decision.
 
+- **Containers, Windows-owned data and Windows components are refused
+  (maintainer sign-off, 2026-10-08, in reply to the proposal above).** The
+  deny-list protected top-level directories and a handful of named locations,
+  and let the next level down through: a whole profile (`C:\Users\<name>`), the
+  root every bare `%LOCALAPPDATA%`, `%APPDATA%` or `%USERPROFILE%` expands to,
+  `AppData\Roaming\Microsoft` with the user's DPAPI keys, `UsrClass.dat`, a
+  Steam installation or library, `HKLM\SOFTWARE\Microsoft`, the whole of
+  `HKLM\SOFTWARE\WOW6432Node`, every key under `HKLM\SYSTEM` that is not a
+  service, and the `HARDWARE`, `COMPONENTS` and `DRIVERS` hives. A catalog
+  could also unlock `ntfs.sys` or `Tcpip` by declaring them.
+
+  Containers are now refused when targeted as a whole and never below, so
+  everything the observations so far have produced — both committed drafts,
+  the example catalog — still passes. Subtrees Windows owns are refused at any
+  depth, user hives anywhere, `HKLM\SYSTEM` except catalog-named service keys,
+  `HKCC` entirely, and inbox driver and service names can no longer be
+  unlocked; a catalog that declares one fails `check-denylist`. `HKU\<SID>`
+  is judged like `HKCU`. Per-user Start menu shortcuts become unremovable, as
+  the all-users ones under `%ProgramData%\Microsoft` always were.
+
 ### Continuous integration
 - **The CI workflows now exist.** Rust CI, .NET CI and CodeQL were caller stubs
   delegating to `poli0981/.github/.github/workflows/*@main`. That repository is
