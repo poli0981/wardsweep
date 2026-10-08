@@ -407,10 +407,10 @@ seven review items, `id` and `display` are placeholders, and `shared = true`
 must stay so until a second title has been observed — `docs/04` is explicit that
 a wrong `shared = false` is the G1 violation this project exists to prevent.
 
-Raw snapshots are **not** committed. They are at
-`%LOCALAPPDATA%\WardSweep\observations\`. The redacted diffs the draft was
-derived from are: `install.json` (`14` → `15`) and `residue.json`
-(`11` → `12`).
+Raw snapshots are **not** committed. They were kept at
+`%LOCALAPPDATA%\WardSweep\observations\` and no longer exist (checked
+2026-10-08). The redacted diffs the draft was derived from are: `install.json`
+(`14` → `15`) and `residue.json` (`11` → `12`).
 
 ### Both diffs were refiltered on 2026-10-08
 
@@ -435,3 +435,17 @@ under *Windows's own*, and the `TypedPaths` value under *The observer's own*.
 `draft.toml` was rebuilt from the refiltered `install.json`. The only change is
 in a review note: 12 unattributed added registry keys where there were 14, the
 other two having been activity records.
+
+### Both diffs were upgraded to diff format 2 on 2026-10-08
+
+`observe refilter` from the format 2 build (`docs/16`, "Formats, and why two of
+them are never compared") rewrote both diffs. A modified registry key now
+carries only the values that changed: `install.json` went from 2 358 values
+carried to 540, `residue.json` from 780 to 186. Each diff now says
+`snapshot_format_version: 1`, and `emptied_keys` stays absent — not known —
+because format 1 snapshots never recorded empty keys.
+
+Nothing else moved. The policy removed nothing this time; every change, field
+and file record is what it was; and the draft rebuilt from `install.json` is
+byte-for-byte `draft.toml`, which a test pins. The files are indented again:
+`redact` had written them on one line.

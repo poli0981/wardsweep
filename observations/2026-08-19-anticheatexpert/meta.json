@@ -47,10 +47,12 @@
 
   "refiltered": "2026-10-08: residue.json passed through observe refilter and observe redact; 36 registry records and 10 unreadable-key records removed, none of them the anti-cheat's (see notes.md).",
 
+  "diff_format": "2 since 2026-10-08, upgraded by observe refilter; snapshot_format_version 1, so emptied_keys is not known.",
+
   "snapshots": {
     "00-current": "baseline, ACE installed, services stopped",
     "01-uninstalled": "after C:/Program Files/AntiCheatExpert/Uninstaller.exe, no reboot required or performed",
-    "02-reinstalled": "pending - launch Neverness To Everness so it reinstalls ACE",
-    "storage": "%LOCALAPPDATA%/WardSweep/observations/ - raw snapshots are NOT committed; they list every file under the profile"
+    "02-reinstalled": "not possible as planned - the raw snapshots no longer exist, and a format 1 snapshot cannot be diffed against a format 2 one; docs/PROGRESS.md has the replacement cycle",
+    "storage": "%LOCALAPPDATA%/WardSweep/observations/ - raw snapshots are NOT committed; they list every file under the profile. They no longer exist (checked 2026-10-08)."
   }
 }

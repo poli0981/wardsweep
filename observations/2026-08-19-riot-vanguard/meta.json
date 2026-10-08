@@ -85,7 +85,7 @@
     "12-vanguard-uninstalled": "after uninstall.exe; the after side of the committed diff",
     "13-vanguard-uninstalled-dirs": "after uninstall.exe, first capture recording directories and boot session",
     "14-noise-floor": "idle machine minutes after 13, to measure how much the new empty-directory list churns on its own",
-    "storage": "%LOCALAPPDATA%/WardSweep/observations/ - raw snapshots are NOT committed; they list every file under the profile",
+    "storage": "%LOCALAPPDATA%/WardSweep/observations/ - raw snapshots are NOT committed; they list every file under the profile. They no longer exist (checked 2026-10-08).",
     "15-vanguard-reinstalled": "after the Riot Client reinstalled Vanguard; the after side of install.json"
   },
   "reinstall": {
@@ -117,6 +117,7 @@
     "file": "draft.toml",
     "derived_from": "install.json, the redacted 14 -> 15 diff",
     "rebuilt": "2026-10-08, from install.json after observe refilter; the only change is 12 unattributed added registry keys where there were 14 (see notes.md)",
+    "diff_format": "2 since 2026-10-08, upgraded by observe refilter; snapshot_format_version 1, so emptied_keys is not known. The draft rebuilt from the upgraded install.json is unchanged.",
     "status": "hypothesis, not an entry; seven review items; id and display are placeholders",
     "attribution_note": "Riot Games, Inc. signs the Riot Client as well as Vanguard, and the install diff holds 51 Riot Client files. Signer clustering alone would have pulled the whole launcher in; token attribution excluded all of it.",
     "residue_not_representable": "suggest has no input shape for what survived the uninstall. Residue is unchanged between snapshots, so it appears in a diff as nothing at all, and needs a clean baseline this machine does not have."
