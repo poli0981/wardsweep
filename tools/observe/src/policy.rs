@@ -156,12 +156,17 @@ pub const EXCLUDED_FRAGMENTS: &[&str] = &[
     // Which application windows were open.
     "\\explorer\\sessioninfo\\",
     "\\search\\jumplistdata\\",
-    // Folder view history.
+    // Folder view history, and the display name of every program run.
     "\\shell\\bagmru\\",
     "\\shell\\bags\\",
+    "\\shell\\muicache\\",
     // Background activity moderator: last-run time of every executable.
     "\\services\\bam\\state\\",
     "\\services\\dam\\state\\",
+    // Host Activity Manager: how long each application was in use, kept per
+    // package under AppModel\SystemAppData\<package>\HAM and as a commit history.
+    "\\ham\\",
+    "\\hostactivitymanager\\",
     // --- Volume without information ----------------------------------------
     // Component servicing manifests and the installer database are enormous
     // and describe Windows, not an install.
@@ -368,6 +373,9 @@ mod tests {
             "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\SessionInfo\\1",
             "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Search\\JumplistData",
             "HKLM\\SYSTEM\\CurrentControlSet\\Services\\bam\\State\\UserSettings\\S-1-5-21-%REDACTED%",
+            "HKCU\\SOFTWARE\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\SystemAppData\\Microsoft.WindowsNotepad_8wekyb3d8bbwe\\HAM",
+            "HKCU\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\HostActivityManager\\CommitHistory\\x",
+            "HKCU\\SOFTWARE\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\Shell\\MuiCache",
         ] {
             assert!(is_excluded(key), "{key} must not be walked");
         }

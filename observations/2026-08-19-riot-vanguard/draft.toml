@@ -1,4 +1,4 @@
-# DRAFT — generated 2026-08-19T14:39:27.251Z
+# DRAFT — generated 2026-10-08T11:43:31.875Z
 # REVIEW EVERY FIELD BEFORE SUBMITTING.
 #
 # This is a hypothesis produced from an observation diff, not an entry.
@@ -17,7 +17,7 @@
 #   - 66 added file(s) could not be attributed to this publisher and were left
 #     out. That is ordinary machine churn between the two snapshots; check the
 #     diff if the footprint looks short.
-#   - 14 added registry key(s) could not be attributed to this anti-cheat and
+#   - 12 added registry key(s) could not be attributed to this anti-cheat and
 #     were left out.
 #   - 1 key(s) were seen in one WOW64 view only and are recorded that way rather
 #     than as `both`:

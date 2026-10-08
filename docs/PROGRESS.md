@@ -250,12 +250,15 @@ consequences that outlive the spike.
   lookup are parallel; the remaining cost is the walk itself.
 - **`redact` removes identity, not secrets, and cannot promise completeness.**
   It learns account names from profile-rooted paths and replaces them
-  everywhere, but only on token boundaries — so a name embedded in a longer
-  word survives. On the development machine 284 446 substitutions were applied
-  and 83 occurrences remained, every one of them the English word
-  `Anonymous` rather than the account. The tool reports the residue and exits
-  non-zero so a script cannot publish the result by accident; a person still
-  reads the file.
+  everywhere, in any letter case, but only on token boundaries — so a name
+  embedded in a longer word survives. The tool reports the residue with each
+  occurrence in context and exits non-zero so a script cannot publish the
+  result by accident; a person still reads the file. Its earlier report called
+  every such residue "`Anonymous` and the like", which was not true of two
+  committed diffs: account identity reached the repository that way. All three
+  committed diffs were refiltered and re-redacted on 2026-10-08 (see the
+  observation notes), and the harness no longer records account identity or
+  activity history at all.
 - **The harness has been wrong twice about what it could see, and both times
   the wrong answer looked like a clean result.** A directory left standing and
   empty produced no record at all, so the clearest residue Riot Vanguard left

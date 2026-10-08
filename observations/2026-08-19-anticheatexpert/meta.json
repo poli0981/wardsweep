@@ -45,6 +45,8 @@
     "filesystem_roots_note": "Other volumes are not walked, so anything ACE left on D:, E: or G: is invisible to this observation."
   },
 
+  "refiltered": "2026-10-08: residue.json passed through observe refilter and observe redact; 36 registry records and 10 unreadable-key records removed, none of them the anti-cheat's (see notes.md).",
+
   "snapshots": {
     "00-current": "baseline, ACE installed, services stopped",
     "01-uninstalled": "after C:/Program Files/AntiCheatExpert/Uninstaller.exe, no reboot required or performed",

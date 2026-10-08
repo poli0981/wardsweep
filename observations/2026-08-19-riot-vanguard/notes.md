@@ -411,3 +411,27 @@ Raw snapshots are **not** committed. They are at
 `%LOCALAPPDATA%\WardSweep\observations\`. The redacted diffs the draft was
 derived from are: `install.json` (`14` → `15`) and `residue.json`
 (`11` → `12`).
+
+### Both diffs were refiltered on 2026-10-08
+
+Both committed diffs were passed through `observe refilter` and then
+`observe redact`, from the build that stopped recording account identity,
+hardware identifiers and activity history (`docs/16`, "Personal identity and
+activity history are not recorded either"). The raw snapshots no longer exist,
+so this is the only way the files could be brought under that rule.
+
+- `install.json` lost 58 registry records, 8 host-name values and 10
+  unreadable-key records.
+- `residue.json` lost 101 registry records and 10 unreadable-key records.
+
+None of it was Vanguard's. Its five registry changes, the 41 install-side and 16
+residue-side files that name it, both services, the signer counts and the
+emptied-directory field are byte-for-byte what they were.
+
+Two findings above are now recorded **only** in this note, because the harness
+no longer reads the stores they came from: the Compatibility Assistant entry
+under *Windows's own*, and the `TypedPaths` value under *The observer's own*.
+
+`draft.toml` was rebuilt from the refiltered `install.json`. The only change is
+in a review note: 12 unattributed added registry keys where there were 14, the
+other two having been activity records.
