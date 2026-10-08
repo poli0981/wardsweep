@@ -25,6 +25,7 @@ wardsweep-core.workspace = true
 
 anyhow.workspace = true
 clap.workspace = true
+hex.workspace = true
 rayon.workspace = true
 serde.workspace = true
 serde_json.workspace = true

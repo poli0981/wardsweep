@@ -10,9 +10,9 @@
       },
       "Meziantou.Analyzer": {
         "type": "Direct",
-        "requested": "[2.0.242, )",
-        "resolved": "2.0.242",
-        "contentHash": "M24UlaIe/gppqAtpTA96hkzs5PRGfq/lXF7auqZRdQuKrCa8aESugytgn33npgzSEygs7JuoE16ZRwIBJvWsvQ=="
+        "requested": "[3.0.294, )",
+        "resolved": "3.0.294",
+        "contentHash": "j78ENG75OozcuL0OPSIjvgLaYI4F5nS8mpK02PlXCCCXj8A4CAIfpKw27ZPvG4k8TweGqParV8Dwm2VAwBBmgg=="
       },
       "Microsoft.Extensions.Hosting": {
         "type": "Direct",
@@ -46,9 +46,9 @@
       },
       "Roslynator.Analyzers": {
         "type": "Direct",
-        "requested": "[4.14.0, )",
-        "resolved": "4.14.0",
-        "contentHash": "AEWQMrb1rcmjv9FGzrwYSBb4INhDhsauS+wwTumG0wq8N1Il+CIQHqUZJ7bt0zYJEA1qXSqgpg8Fgwc88WrR/Q=="
+        "requested": "[5.0.1, )",
+        "resolved": "5.0.1",
+        "contentHash": "sCZ0Di4B937wKa9pwKbdsE6Njr8A/FdCLw28+yDKyMaDZ/f8JWxcFn6NOCukzKhCG/eA6M2DbXlKkrPi0g0lIA=="
       },
       "WPF-UI": {
         "type": "Direct",
