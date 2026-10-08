@@ -56,6 +56,15 @@
 //! [`Report::residual`] counts what is left, in any case, and shows where it
 //! is. A redactor that quietly leaves identity behind is worse than one that
 //! refuses, because it is trusted.
+//!
+//! # The document comes back the way it went in
+//!
+//! A diff is indented because a person reviews it, and a snapshot is compact
+//! because it is large; [`render_like`] writes the redacted copy in whichever
+//! layout the original had, with its keys in their original order. Redaction
+//! used to write everything on one line with every object's keys sorted, which
+//! is how the committed diffs came to be one-line files that no later rewrite
+//! could change without touching every line.
 
 use std::collections::BTreeMap;
 
@@ -171,6 +180,21 @@ pub fn redact_document(value: &mut serde_json::Value, extra: &Extra) -> Report {
     report.names = accounts;
     report.computers = computers;
     report
+}
+
+/// Serialise a redacted document in the layout its source had.
+///
+/// Indented when the source spans more than one line, compact when it does
+/// not. A compact document never does: JSON escapes a newline inside a string.
+///
+/// # Errors
+/// If the document cannot be serialised, which a parsed document always can.
+pub fn render_like(source: &str, document: &serde_json::Value) -> serde_json::Result<String> {
+    if source.trim().contains('\n') {
+        serde_json::to_string_pretty(document)
+    } else {
+        serde_json::to_string(document)
+    }
 }
 
 /// Account names appearing as a `\Users\<name>\` segment anywhere.
@@ -608,6 +632,41 @@ mod tests {
 
     fn redact(document: &mut serde_json::Value) -> Report {
         redact_document(document, &Extra::default())
+    }
+
+    #[test]
+    fn a_redacted_document_keeps_its_layout_and_key_order() {
+        // Keys deliberately out of alphabetical order, as a diff writes them.
+        let indented = "{\n  \"format_version\": 2,\n  \"before_taken_utc\": \"x\",\n  \"after\": {\n    \"path\": \"C:\\\\Users\\\\Anon\\\\a\",\n    \"kind\": \"added\"\n  }\n}";
+        let compact: String =
+            serde_json::to_string(&serde_json::from_str::<serde_json::Value>(indented).unwrap())
+                .unwrap();
+
+        for source in [indented.to_owned(), compact.clone()] {
+            let mut document: serde_json::Value = serde_json::from_str(&source).unwrap();
+            redact(&mut document);
+            let out = render_like(&source, &document).unwrap();
+
+            assert_eq!(
+                out.contains('\n'),
+                source.contains('\n'),
+                "layout changed: {out}"
+            );
+            let order: Vec<usize> = [
+                "format_version",
+                "before_taken_utc",
+                "after",
+                "path",
+                "kind",
+            ]
+            .iter()
+            .map(|key| out.find(&format!("\"{key}\"")).unwrap())
+            .collect();
+            assert!(order.is_sorted(), "keys reordered: {out}");
+            assert!(out.contains("%USER%"));
+        }
+        // The compact form really is compact, and the indented one indented.
+        assert!(!compact.contains('\n'));
     }
 
     #[test]

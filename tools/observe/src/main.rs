@@ -280,7 +280,10 @@ fn run_suggest(
 }
 
 fn run_redact(input: &PathBuf, output: &PathBuf, also_names: &[String]) -> Result<u8> {
-    let mut document: serde_json::Value = read_json(input)?;
+    let source =
+        std::fs::read_to_string(input).with_context(|| format!("reading {}", input.display()))?;
+    let mut document: serde_json::Value =
+        serde_json::from_str(&source).with_context(|| format!("parsing {}", input.display()))?;
 
     // The machine this runs on is almost always the machine the snapshot came
     // from, and its names reach a document without a profile path to learn
@@ -301,7 +304,7 @@ fn run_redact(input: &PathBuf, output: &PathBuf, also_names: &[String]) -> Resul
     let report = redact::redact_document(&mut document, &extra);
 
     ensure_parent(output)?;
-    let text = serde_json::to_string(&document).context("serialising")?;
+    let text = redact::render_like(&source, &document).context("serialising")?;
     std::fs::write(output, text).with_context(|| format!("writing {}", output.display()))?;
 
     eprintln!("redacted copy written to {}", output.display());
