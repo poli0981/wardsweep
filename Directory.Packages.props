@@ -23,7 +23,7 @@
   <ItemGroup Label="Testing">
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageVersion Include="xunit" Version="2.9.3" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.4" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
   </ItemGroup>
 
   <ItemGroup Label="Analysers">
@@ -31,8 +31,8 @@
       Applied to every project. CLAUDE.md requires Roslynator and
       Meziantou.Analyzer alongside TreatWarningsAsErrors.
     -->
-    <GlobalPackageReference Include="Roslynator.Analyzers" Version="4.14.0" />
-    <GlobalPackageReference Include="Meziantou.Analyzer" Version="2.0.242" />
+    <GlobalPackageReference Include="Roslynator.Analyzers" Version="4.16.1" />
+    <GlobalPackageReference Include="Meziantou.Analyzer" Version="2.0.302" />
   </ItemGroup>
 
 </Project>
