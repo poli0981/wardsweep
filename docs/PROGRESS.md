@@ -3,7 +3,8 @@
 Where the project actually stands, and what to pick up next. `CHANGELOG.md`
 records what happened; this file records what is true now and what is not done.
 
-Last updated after **spike S3**.
+Last updated **2026-10-08**, after an audit of the whole tree — see
+"The 2026-10-08 audit" below.
 
 ---
 
@@ -12,7 +13,7 @@ Last updated after **spike S3**.
 The repository builds, CI runs and is green, and **nothing here can delete
 anything**. That is the intended state: `docs/19-ROADMAP.md` makes v0.1
 audit-only, and `docs/13-P0-SPIKES.md` gates all feature work behind seven
-recorded verdicts, of which **zero exist**.
+recorded verdicts, of which **one exists** (S3, below).
 
 M0 delivered the parts that had to come before any of that: a workspace shaped
 to what CI requires, the safety gate's first real code, and a catalog integrity
@@ -55,17 +56,18 @@ compare against. A third would probably be worth more than the next feature.
 | Area | State |
 |---|---|
 | Cargo workspace, .NET solution, toolchain pins | Done |
-| `core/src/safety/paths.rs` — canonicalisation | Done. Extended-length, UNC, device, NT-object, drive-relative and 8.3 forms all collapse or are refused. |
-| `core/src/safety/denylist.rs` — the deny-list | Done, with the adversarial path table from [`12`](12-TESTING-STRATEGY.md). Cannot be widened by a catalog. |
+| `core/src/safety/paths.rs` — canonicalisation | Done. Extended-length, UNC, device, NT-object, drive-relative and 8.3 forms all collapse or are refused; trailing dots and spaces are stripped in any mix, and dots-only components and NTFS stream syntax are refused, each checked against `GetFullPathNameW`. |
+| `core/src/safety/denylist.rs` — the deny-list | Done, with the adversarial path table from [`12`](12-TESTING-STRATEGY.md). Cannot be widened by a catalog; carve-outs are earned per anti-cheat entry, and a game entry earns none. |
 | `core/src/catalog/` — schema, Ed25519, integrity checks | Done |
-| `tools/catalog/` — `wardsweep-catalog` | Done. Implements the six invocations `catalog-verify.yml` runs, with a parity test. |
+| `tools/catalog/` — `wardsweep-catalog` | Done. Implements the six invocations `catalog-verify.yml` runs, with a parity test; `sign` refuses a catalog any of them would refuse. |
+| `cli/` — `wardsweep catalog …` | Verifies the signature **and** runs the four integrity checks before using a catalog, and warns when `minimum_app_version` is newer than the build. |
 | `catalog/catalog.toml` | Signed, and **empty of entries** on purpose — see below |
 | `core/benches/scan_corpus.rs` | Done, gated on the hard-fail budgets in [`10`](10-PERF-BUDGET.md) |
 | `ui/` — WPF shell | Shell only, plus the architecture tests that assert the UI has no destructive code path |
-| CI — Rust, .NET, CodeQL, Catalog Verify | Done, inline in this repository, all green |
+| CI — Rust, .NET, CodeQL (C#, Rust, Actions), Catalog Verify, weekly dependency audit | Done, inline in this repository, least-privilege, third-party actions pinned to SHAs, all green |
 | Spike S3 — split-privilege architecture | **PASS.** All six criteria measured — 23 checks, 0 failed. `spikes/S3-RESULT.md`. Throwaway code in `spikes/s3-split-privilege/`, unreachable from either build. |
 | `observations/2026-08-19-anticheatexpert/` | **First real observation.** Uninstall half of the `docs/16` cycle, committed with its diff, draft entry and notes. Reinstall half pending. |
-| `tools/observe/` — the observation harness | **`snapshot`, `diff`, `suggest`, `redact`.** Services, filesystem and registry, with Authenticode signer clustering and both WOW64 views. A draft entry is generated from the shipped schema and is proven to load through the real parser. Scheduled tasks, firewall, event sources and environment are named as `not_captured` rather than omitted; `intersect` is not written. |
+| `tools/observe/` — the observation harness | **`snapshot`, `diff`, `suggest`, `redact`, `refilter`.** Services, filesystem and registry, with Authenticode signer clustering and both WOW64 views. Never records account identity, activity history or G3 material, and the differ re-applies that policy to older snapshots. A draft entry is generated from the shipped schema, is proven to load through the real parser, and the committed Vanguard draft is pinned by a test to its committed diff. Scheduled tasks, firewall, event sources and environment are named as `not_captured` rather than omitted; `intersect` is not written. |
 
 Enforced by tests rather than by review:
 
@@ -85,7 +87,37 @@ has seen fail is not a gate.
 - **Any catalog entry.** `CONTRIBUTING.md` rejects entries not derived from an
   observation diff and none has been taken. An empty catalog finds nothing,
   which is harmless; a guessed catalog deletes the wrong thing.
-- **The scanner**, the plan builder, refcount, IPC, and the observation harness.
+- **The scanner**, the plan builder, refcount and IPC.
+
+## The 2026-10-08 audit
+
+A read of the whole tree, pull requests #18–#29. What it found, in order of
+consequence:
+
+- **Personal data had reached the public repository.** Two committed Riot
+  Vanguard diffs carried the contributor's Microsoft-account identity and the
+  machine's name; all three committed diffs carried activity history. The
+  harness now never records either (`tools/observe/src/policy.rs`), the differ
+  applies that to snapshots older builds took, `redact` catches e-mail
+  addresses and machine names, and the committed diffs were refiltered with
+  the committed tools. Nothing that names an anti-cheat changed in them.
+- **The harness read what Safety Gate G3 forbids reading**: a MAC-bearing
+  DHCPv6 identifier, TPM state, Bluetooth device addresses and volume GUIDs,
+  all in raw snapshots that never left the machine. Excluded now.
+- **Five spellings slipped past the deny-list**, each checked against
+  `GetFullPathNameW`, and **game entries could borrow an anti-cheat's
+  carve-outs** — a path to a G1 violation through the catalog gate. Fixed with
+  maintainer sign-off; `CHANGELOG.md` records the ruling.
+- **The tooling said false things**: services compared without coverage, two
+  per-user service instances collapsed into one record, every added driver and
+  service drafted whether or not it was the publisher's, profile names left in
+  draft paths, a service enumeration that aborted on `ERROR_MORE_DATA`,
+  directories called empty that the walk had chosen not to look inside.
+- **CI was narrower than it looked**: CodeQL analysed C# only, advisories were
+  checked only when Rust files changed, and the release workflow gave every job
+  write access and spliced a typed input into a script.
+
+What it did not do is in "Open, needs a maintainer decision" below.
 
 ## Next, in order
 
@@ -198,6 +230,19 @@ that S2 should start from rather than rediscover:
   every change narrowed the contract to what the platform actually does. If any
   of the five is contentious, `spikes/S3-RESULT.md` records the measurement
   behind it.
+- **Broader deny-list hardening was proposed and not taken.** The 2026-10-08
+  review found that the deny-list protects top-level directories and a few
+  named locations, but allows whole user profiles (`C:\Users\<name>`), the
+  `AppData` roots a bare `%LOCALAPPDATA%` or `%APPDATA%` expands to,
+  `AppData\Roaming\Microsoft` (DPAPI keys live under it), `UsrClass.dat`,
+  library roots such as `%STEAM_LIBRARY%\steamapps\common`, every key under
+  `HKLM\SYSTEM` except service keys, container keys such as
+  `HKLM\SOFTWARE\Microsoft`, and the `HARDWARE`, `COMPONENTS` and `DRIVERS`
+  hives. A catalog entry naming any of them passes `check-denylist`. Closing
+  that needs container lists, a ruling in `docs/05`, and care not to refuse the
+  footprint `docs/02` explicitly permits removing (`…\Uninstall\<product>`,
+  `Services\<catalog-named>`, `%ProgramData%\<vendor>`). Not urgent while no
+  removal code exists; necessary before any does.
 - **The G3 test cannot tell a reader from a refuser, and this now matters.**
   `core/tests/no_destructive_code.rs` fails the build if a hardware-identity
   string appears in any `.rs` file under a shipped `src/`. That is the right
@@ -290,11 +335,34 @@ consequences that outlive the spike.
   procedure for recovering a clean baseline from a machine where the game was
   installed first.
 
+- **Two registry shapes are still invisible to the harness.** A key with no
+  values is not recorded at all, so an uninstaller that empties a key and
+  leaves it standing produces nothing in a diff — the registry twin of the
+  empty-directory blind spot fixed for the filesystem. And a value larger than
+  4 KB is skipped, not recorded by name and size. Both need a snapshot format
+  change, and so a version bump.
+- **A modified registry key carries all of its values into a diff**, not only
+  the ones that changed. That is what put a whole activity store into a
+  committed file; recording only the changed values would shrink every diff and
+  what it can expose.
+- The 64-bit registry walk also descends into `HKLM\SOFTWARE\WOW6432Node`, so
+  32-bit keys are captured twice under two names. `suggest` folds the two
+  spellings; the snapshot still carries both.
+- The filesystem exclusion `\packages\` matches any directory of that name, not
+  only `%LOCALAPPDATA%\Packages`. Narrowing it changes the snapshot policy, so it
+  waits until the AntiCheatExpert reinstall diff above has been taken against
+  its existing baseline.
+- Service type labels: `0x40` and `0x80` are `SERVICE_USER_SERVICE` and
+  `SERVICE_USERSERVICE_INSTANCE`, not the "own/share process" labels the
+  collector writes, and `0x4`, `0x8` and `0x200` are unlabelled. Changing the
+  strings changes snapshots, so it belongs with the next format bump.
+
 - `THIRD-PARTY-NOTICES.md` staleness is not checked by CI. Needs `cargo-about`
   configuration and a `dotnet-project-licenses` run. Worth closing before the
   first release, since it is a GPL obligation.
-- `release.yml` is unverified. It only runs on a tag, so the packaging fixes and
-  action version bumps in it have never executed.
+- `release.yml` is unverified. It only runs on a tag, so the packaging fixes,
+  action version bumps and the 2026-10-08 permission and input changes have
+  never executed.
 - No peak-RSS measurement, and no benchmark regression threshold — only the
   absolute hard-fail budgets. [`10`](10-PERF-BUDGET.md) says which.
 - `Strings.ja.resx` does not exist. `CLAUDE.md` lists EN/VI/JA; `docs/19` defers
@@ -312,6 +380,7 @@ dotnet restore WardSweep.sln --locked-mode
 dotnet build WardSweep.sln -c Release --no-restore
 dotnet format WardSweep.sln --verify-no-changes --severity warn --no-restore
 dotnet test WardSweep.sln -c Release --no-build
+dotnet tool restore && dotnet xstyler --passive --recursive --directory ui
 ```
 
 To reproduce the ubuntu lint job from Windows — this is the check that catches a
