@@ -1,0 +1,58 @@
+# Dependency audit, on a schedule.
+#
+# rust-ci.yml checks advisories only when a Rust file changes, and dotnet-ci.yml
+# checks packages only when the UI changes. An advisory published against a
+# locked dependency in a quiet week would otherwise wait for the next unrelated
+# change to be noticed — between 19 August and 8 October 2026 no Rust
+# advisory check ran at all. Same gates, same configuration, run weekly.
+#
+# NOTE: explicit `permissions:` required — see rust-ci.yml.
+name: Dependency audit
+
+on:
+  schedule:
+    - cron: '0 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rust:
+    name: cargo-deny advisories
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2.1.1
+        with:
+          command: check advisories
+
+  dotnet:
+    name: vulnerable packages
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - run: dotnet restore WardSweep.sln --locked-mode
+
+      - name: Scan, transitively
+        # Same gate as dotnet-ci.yml: the command reports findings on stdout
+        # and exits 0 either way, so the output is what is checked.
+        shell: pwsh
+        run: |
+          $output = dotnet list WardSweep.sln package --vulnerable --include-transitive | Out-String
+          Write-Host $output
+          if ($output -match 'has the following vulnerable packages') {
+            Write-Host "::error::vulnerable packages found"
+            exit 1
+          }
+          Write-Host "no vulnerable packages"

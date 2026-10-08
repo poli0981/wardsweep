@@ -8,9 +8,9 @@ name: .NET CI
 on:
   push:
     branches: [main]
-    paths: ['ui/**', '*.sln', 'Directory.Build.props', 'Directory.Packages.props', 'global.json', 'nuget.config', 'Settings.XamlStyler', '.github/workflows/dotnet-ci.yml']
+    paths: ['ui/**', '*.sln', 'Directory.Build.props', 'Directory.Packages.props', 'global.json', 'nuget.config', 'Settings.XamlStyler', '.config/dotnet-tools.json', '.github/workflows/dotnet-ci.yml']
   pull_request:
-    paths: ['ui/**', '*.sln', 'Directory.Build.props', 'Directory.Packages.props', 'global.json', 'nuget.config', 'Settings.XamlStyler', '.github/workflows/dotnet-ci.yml']
+    paths: ['ui/**', '*.sln', 'Directory.Build.props', 'Directory.Packages.props', 'global.json', 'nuget.config', 'Settings.XamlStyler', '.config/dotnet-tools.json', '.github/workflows/dotnet-ci.yml']
   workflow_dispatch:
 
 permissions:
@@ -31,6 +31,8 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-dotnet@v6
         with:
@@ -61,6 +63,8 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-dotnet@v6
         with:
@@ -78,6 +82,8 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-dotnet@v6
         with:
@@ -104,19 +110,24 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
 
-      - run: dotnet tool install -g XamlStyler.Console
+      - name: Restore the pinned tools
+        # .config/dotnet-tools.json fixes the XamlStyler version, so the check
+        # cannot change its mind about the same XAML between two runs.
+        run: dotnet tool restore
 
       - name: Check XAML formatting
         shell: pwsh
         run: |
-          $output = xstyler --passive --recursive --directory ui | Out-String
+          $output = dotnet xstyler --passive --recursive --directory ui | Out-String
           Write-Host $output
           if ($output -match 'FAIL') {
-            Write-Host "::error::XAML is not XamlStyler-clean; run 'xstyler --recursive --directory ui'"
+            Write-Host "::error::XAML is not XamlStyler-clean; run 'dotnet xstyler --recursive --directory ui'"
             exit 1
           }

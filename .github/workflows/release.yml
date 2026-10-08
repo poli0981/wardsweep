@@ -19,10 +19,11 @@ on:
         description: 'Version (e.g. 0.5.0)'
         required: true
 
+# Read-only by default; each job asks for exactly what it uses. The build job
+# runs a compiler, a packager and every build script of every dependency, and
+# none of that needs to be able to write to the repository.
 permissions:
-  contents: write
-  attestations: write
-  id-token: write
+  contents: read
 
 concurrency:
   group: release-${{ github.ref }}
@@ -31,18 +32,34 @@ concurrency:
 jobs:
   build:
     runs-on: windows-latest
+    permissions:
+      contents: read
+      # Build provenance attestation.
+      id-token: write
+      attestations: write
     outputs:
       version: ${{ steps.ver.outputs.version }}
     steps:
       - uses: actions/checkout@v7
-        with: { fetch-depth: 0 }
+        with:
+          fetch-depth: 0
+          persist-credentials: false
 
       - id: ver
+        # The dispatch input arrives through the environment, never spliced
+        # into the script, and must be a plain version: it names files and a
+        # package below, and is the one value here a person types.
         shell: pwsh
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
         run: |
           $v = if ($env:GITHUB_REF -like 'refs/tags/*') {
-            $env:GITHUB_REF -replace 'refs/tags/v',''
-          } else { '${{ inputs.version }}' }
+            $env:GITHUB_REF -replace '^refs/tags/v',''
+          } else { $env:INPUT_VERSION }
+          if ($v -notmatch '^\d+\.\d+\.\d+(-[0-9A-Za-z.]+)?$') {
+            Write-Host "::error::version '$v' is not MAJOR.MINOR.PATCH, with an optional pre-release suffix"
+            exit 1
+          }
           "version=$v" >> $env:GITHUB_OUTPUT
 
       - name: Install the pinned toolchain
@@ -79,16 +96,22 @@ jobs:
           Get-ChildItem artifacts/publish
 
       - name: Package (Velopack)
+        # vpk is pinned in .config/dotnet-tools.json: a release rebuilt from the
+        # same commit has to come out of the same packager.
         shell: pwsh
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
         run: |
-          dotnet tool install -g vpk
-          vpk pack --packId WardSweep --packVersion ${{ steps.ver.outputs.version }} `
+          dotnet tool restore
+          dotnet vpk pack --packId WardSweep --packVersion $env:VERSION `
                    --packDir artifacts/publish --mainExe WardSweep.UI.exe `
                    --outputDir artifacts
 
       - name: Portable zip
         shell: pwsh
-        run: Compress-Archive -Path artifacts/publish/* -DestinationPath "artifacts/WardSweep-${{ steps.ver.outputs.version }}-portable.zip"
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: Compress-Archive -Path artifacts/publish/* -DestinationPath "artifacts/WardSweep-$env:VERSION-portable.zip"
 
       - name: Compute SHA-256
         shell: pwsh
@@ -125,13 +148,14 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     permissions:
+      # Creating the draft release is the one write this workflow makes.
       contents: write
     steps:
       - uses: actions/download-artifact@v8
         with: { name: release-artifacts, path: artifacts }
 
       - name: Create draft release
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           draft: true   # NEVER auto-publish: VirusTotal links go in by hand
           body_path: artifacts/VERIFICATION.md

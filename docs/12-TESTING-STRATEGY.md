@@ -151,7 +151,10 @@ public in any useful sense.
 | .NET CI | `vulnerable-packages` | windows | transitive scan. Hard gate, and the output is parsed rather than the exit code, which is always 0. |
 | .NET CI | `xaml-style` | windows | XamlStyler |
 | Catalog Verify | `verify` | ubuntu | signature, schema, referential integrity, deny-list conflict, shared-flag audit |
-| CodeQL | `analyze` | windows | C# `security-extended`. Windows rather than ubuntu because the solution is WPF and building the real thing on the real platform is worth the deviation. CodeQL has no Rust support; clippy pedantic and `cargo deny` cover that side. |
+| CodeQL | `analyze csharp` | windows | C# `security-extended`. Windows rather than ubuntu because the solution is WPF and building the real thing on the real platform is worth the deviation. |
+| CodeQL | `analyze rust` | windows | Rust `security-extended`, no build. Windows because every Win32 call and every `unsafe` block is behind `cfg(windows)`, which a Linux extraction would never see. |
+| CodeQL | `analyze actions` | ubuntu | The workflows themselves: injection into scripts, over-broad tokens. |
+| Dependency audit | `rust`, `dotnet` | ubuntu, windows | Weekly, on a schedule: `cargo deny check advisories` and the transitive vulnerable-package gate, so an advisory published in a quiet week is not waiting for the next unrelated change. |
 
 `catalog-verify` includes a check that no catalog entry resolves to a
 deny-listed path. A catalog that would be refused at runtime must fail CI, not

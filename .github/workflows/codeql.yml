@@ -2,14 +2,19 @@
 #
 # Inline rather than a caller stub — see the note in rust-ci.yml.
 #
-# Runs on windows-latest rather than ubuntu. The analysis has to build the
-# solution, and the solution is WPF: a Linux runner needs EnableWindowsTargeting
-# and still exercises a code path nobody ships. docs/12-TESTING-STRATEGY.md puts
-# this job on ubuntu in its CI matrix; building the real thing on the real
-# platform is worth the deviation.
+# Three languages, each where it is real:
 #
-# Rust is not analysed: CodeQL has no Rust support at the time of writing.
-# `cargo deny` and clippy pedantic cover that side — see rust-ci.yml.
+# - C# on windows-latest. The analysis has to build the solution, and the
+#   solution is WPF: a Linux runner needs EnableWindowsTargeting and still
+#   exercises a code path nobody ships. docs/12-TESTING-STRATEGY.md originally
+#   put this job on ubuntu; building the real thing on the real platform is
+#   worth the deviation.
+# - Rust on windows-latest, without a build. Every Win32 call — and every
+#   `unsafe` block — sits behind `cfg(windows)`, so a Linux extraction would
+#   analyse the portable half of the code and none of the half that matters.
+# - The workflows themselves, on ubuntu. A release workflow holds write tokens,
+#   and the injection and permission mistakes CodeQL looks for there are the
+#   ones nothing else in this repository would notice.
 #
 # NOTE: explicit `permissions:` required.
 name: CodeQL
@@ -32,30 +37,53 @@ concurrency:
 
 jobs:
   analyze:
-    name: analyze C#
-    runs-on: windows-latest
+    name: analyze ${{ matrix.language }}
+    runs-on: ${{ matrix.runner }}
     permissions:
       contents: read
       security-events: write
       actions: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: csharp
+            runner: windows-latest
+            build-mode: manual
+          - language: rust
+            runner: windows-latest
+            build-mode: none
+          - language: actions
+            runner: ubuntu-latest
+            build-mode: none
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-dotnet@v6
+        if: matrix.language == 'csharp'
         with:
           global-json-file: global.json
 
+      - name: Install the pinned toolchain
+        # rust-toolchain.toml is the single source of truth for the version;
+        # the extractor loads the workspace through it.
+        if: matrix.language == 'rust'
+        run: rustup show
+
       - uses: github/codeql-action/init@v4
         with:
-          languages: csharp
+          languages: ${{ matrix.language }}
           queries: security-extended
-          build-mode: manual
+          build-mode: ${{ matrix.build-mode }}
 
       - name: Build
+        if: matrix.build-mode == 'manual'
         run: |
           dotnet restore WardSweep.sln --locked-mode
           dotnet build WardSweep.sln -c Release --no-restore
 
       - uses: github/codeql-action/analyze@v4
         with:
-          category: /language:csharp
+          category: /language:${{ matrix.language }}

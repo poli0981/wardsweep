@@ -16,6 +16,7 @@ on:
       - 'tools/catalog/**'
       - 'core/src/safety/**'
       - 'core/src/catalog/**'
+      - 'core/Cargo.toml'
       - 'Cargo.*'
       - '.github/workflows/catalog-verify.yml'
   pull_request:
@@ -24,25 +25,29 @@ on:
       - 'tools/catalog/**'
       - 'core/src/safety/**'
       - 'core/src/catalog/**'
+      - 'core/Cargo.toml'
       - 'Cargo.*'
       - '.github/workflows/catalog-verify.yml'
   workflow_dispatch:
 
+# Read-only. Nothing here comments on a pull request or writes anywhere; a
+# write grant it never used was still a write grant.
 permissions:
   contents: read
-  pull-requests: write
 
 jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Install the pinned toolchain
         # rust-toolchain.toml is the single source of truth for the version.
         run: rustup show
 
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
 
       - name: Build catalog tool
         run: cargo build -p wardsweep-catalog --release

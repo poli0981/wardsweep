@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "isRoot": true,
+  "tools": {
+    "xamlstyler.console": {
+      "version": "3.2501.8",
+      "commands": [
+        "xstyler"
+      ]
+    },
+    "vpk": {
+      "version": "1.2.161",
+      "commands": [
+        "vpk"
+      ]
+    }
+  }
+}

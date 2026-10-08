@@ -44,7 +44,19 @@ wildcards = "deny"
 # docs/01-VISION-SCOPE.md: zero network by default. A TLS or HTTP stack showing
 # up in the graph means something reached for the network — that is a review
 # event, not a routine dependency bump.
-deny = []
+deny = [
+  { crate = "hyper", reason = "HTTP stack: docs/01-VISION-SCOPE.md is zero network by default" },
+  { crate = "h2", reason = "HTTP/2: zero network by default" },
+  { crate = "reqwest", reason = "HTTP client: zero network by default" },
+  { crate = "ureq", reason = "HTTP client: zero network by default" },
+  { crate = "isahc", reason = "HTTP client: zero network by default" },
+  { crate = "curl", reason = "HTTP client: zero network by default" },
+  { crate = "quinn", reason = "QUIC: zero network by default" },
+  { crate = "rustls", reason = "TLS: zero network by default" },
+  { crate = "native-tls", reason = "TLS: zero network by default" },
+  { crate = "openssl", reason = "TLS: zero network by default" },
+  { crate = "openssl-sys", reason = "TLS: zero network by default" },
+]
 
 [sources]
 unknown-registry = "deny"
