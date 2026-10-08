@@ -33,7 +33,8 @@ wardsweep observe diff --before 01-clean.json --after 02-installed.json -o footp
 wardsweep observe diff --before 03-uninstalled.json --after 01-clean.json -o residue.json
 wardsweep observe suggest --diff footprint.json --residue residue.json -o draft.toml
 
-# a diff written by an older build: apply the current privacy rules to it
+# a diff written by an older build: apply the current privacy rules and diff
+# format to it
 wardsweep observe refilter --in footprint.json -o footprint.json
 ```
 
@@ -45,7 +46,7 @@ human review, never a finished entry — see "Review before submitting" below.
 | Domain | Captured |
 |---|---|
 | Services | Full `QueryServiceConfigW` + `QueryServiceConfig2W` for every service and driver |
-| Registry | `HKLM\SOFTWARE` (both WOW64 views), `HKLM\SYSTEM\CurrentControlSet\Services`, `Run` keys, uninstall keys, `HKCU\SOFTWARE` |
+| Registry | `HKLM\SOFTWARE` (both WOW64 views), `HKLM\SYSTEM\CurrentControlSet\Services`, `Run` keys, uninstall keys, `HKCU\SOFTWARE`; values, and keys left standing with none |
 | Filesystem | Path, size, SHA-256, mtime, Authenticode signer for `%ProgramFiles*%`, `%ProgramData%`, `%LOCALAPPDATA%`, `%APPDATA%`, `System32\drivers`, launcher libraries |
 | Scheduled tasks | Full XML export of every task |
 | Firewall | Every rule via `INetFwPolicy2` |
@@ -53,10 +54,11 @@ human review, never a finished entry — see "Review before submitting" below.
 | Environment | Windows build, locale, installed launchers and versions |
 
 Alongside the domains, every snapshot records **when each domain started**, the
-**boot session** it belongs to, and the **directories holding no file beneath
-them**. The three exist for the same reason and are covered below: a file list
-and a service list, on their own, answered three questions wrongly on a real
-machine.
+**boot session** it belongs to, and the **directories and registry keys with
+nothing beneath them**. They exist for the same reason and are covered below: a
+file list and a service list, on their own, answered three questions wrongly on
+a real machine, and a list of registry values had the same blind spot as the
+file list.
 
 Snapshots are **read-only**. The harness has no removal code path at all — it
 ships as `wardsweep-observe.exe`, built from `tools/observe/`, for exactly
@@ -64,10 +66,15 @@ this reason. `wardsweep observe …` in [`11`](11-CLI-REFERENCE.md) forwards to
 it rather than linking its logic into the broker frontend.
 
 Size and time, measured rather than estimated. On the development machine —
-745 000 files under those roots, of which 124 000 are hashed — a full snapshot
-is **156 MB uncompressed** and takes **about three and a half minutes**, with
-hashing and the signer lookup running in parallel. The earlier estimate of
-40–120 MB was optimistic for a machine with games and toolchains installed.
+551 000 files under those roots, of which 90 000 are hashed — a full format 2
+snapshot is **196 MB uncompressed** and takes **between three and a half and
+ten minutes**, with hashing and the signer lookup running in parallel. The walk
+reads about 100 GB, 54 GB to hash and 48 GB again to check signatures, so it is
+bound by the disk rather than the processor: one build measured both ends of
+that range on the same day, and at the slow end the disk sat at about 135 MB/s
+with a queue 28 deep while the harness used a fifth of one core. The earlier
+estimate of 40–120 MB was optimistic for a machine with games and toolchains
+installed.
 
 It also needs memory: the walk holds every record before serialising, and
 resident set was observed at **around 550 MB** part-way through a capture on
@@ -101,10 +108,44 @@ a vendor tray application's log.
 
 That number is the one to judge a new noise rule against. Eighteen is already
 low enough that adding rules to reduce it costs more than it saves: every
-exclusion is a directory that is never read again, and the `	emp\` mistake
+exclusion is a directory that is never read again, and the `\temp\` mistake
 above shows how that fails. If residual noise ever does need addressing, prefer
 a *suppression* rule — which relocates a change and keeps it recoverable — over
 an *exclusion*, which does not.
+
+### Formats, and why two of them are never compared
+
+A snapshot carries `format_version`, and **`diff` refuses two snapshots of
+different formats** rather than compare them. Each format change alters what a
+snapshot holds without anything on the machine changing, which is the same
+failure as a policy change and a louder one. Format 2 (2026-10-08):
+
+- records the topmost registry keys with no value beneath them, below;
+- records a value larger than 4 KB by name, type and size instead of skipping
+  it — never its data, and never a digest, since a hash of a blob that holds an
+  identifier is a fingerprint;
+- walks `HKLM\SOFTWARE\WOW6432Node` once. The 64-bit walk used to descend into
+  it as well, so every 32-bit key was recorded twice under two names; it is now
+  left to the 32-bit walk, which reads the same keys under their own names;
+- names service types for what the flags mean: `0x40` and `0x80` are
+  `user_service` and `user_service_instance`, combined with the process bits
+  rather than alternatives to them, and `0x4`, `0x8` and `0x200` have names now,
+  so a file system recognizer counts as a driver;
+- excludes `%LOCALAPPDATA%\Packages` by its full name. The bare `\packages\`
+  fragment it replaces also excluded every other directory called `Packages` —
+  including a game's own.
+
+Across any one of those, every per-user service would read as modified and
+every 32-bit key as removed. A format 1 snapshot is still read, and two of them
+still compare.
+
+Diffs have a format too. Diff format 2 adds `emptied_keys`, says which snapshot
+format it came from in `snapshot_format_version`, and records a modified
+registry key with **only the values that changed** — format 1 carried both
+records whole, which is how a whole activity store once reached a committed
+file through one changed value. `refilter` brings an older diff to the current
+format; it cannot add what the snapshots never recorded, and
+`snapshot_format_version` keeps saying so.
 
 ### A snapshot is not an instant
 
@@ -178,11 +219,36 @@ suppression rule is needed here, and none has been added. If one ever is, it
 belongs in the noise filter where it can be named and audited, not in the
 exclusion list where the directory would never be walked at all.
 
+### A key that survives with nothing in it
+
+The registry has the same shape. A record is written only for a key holding a
+value, so a key whose values were deleted while the key itself was left standing
+looked, in a diff, exactly like a key that was deleted — and a key created with
+no values did not appear at all.
+
+`registry_empty_keys` records the topmost keys with no value anywhere beneath
+them, each in the view it was read through, and `diff` reports `emptied_keys`.
+A key the walk would not look inside — excluded, unreadable, or the
+`WOW6432Node` alias — counts as holding something, because it is not known to
+be empty. So does a key whose only values were refused.
+
+Measured on the development machine: **7 072** such keys, costing 0.98 MB, or
+**0.5 % of a snapshot**. Two captures eleven minutes apart on a machine in
+ordinary use produced **0** newly emptied keys, against 34 changed registry keys
+and 72 changed files in the same pair. So, as with directories, no suppression
+rule is needed.
+
+Both lists are compared exactly, topmost entry against topmost entry. A subtree
+that was already empty is therefore reported again if a value lands beside it
+and splits it in two. That errs towards saying too much, which a reviewer can
+see through, rather than too little, which nobody can.
+
 ### Absence and emptiness are different answers
 
-`boot_session`, `file_empty_directories`, `rebooted_between` and
-`emptied_directories` are all optional, and a diff answers `null` rather than
-`false` or `[]` when either snapshot predates the field.
+`boot_session`, `file_empty_directories`, `registry_empty_keys`,
+`rebooted_between`, `emptied_directories` and `emptied_keys` are all optional,
+and a diff answers `null` rather than `false` or `[]` when either snapshot
+predates the field.
 
 An empty list would read as *nothing was left behind*. That is the one wrong
 answer this tool must never give, and it is the same rule `coverage` has

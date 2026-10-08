@@ -143,31 +143,36 @@ mod win32 {
         values
     }
 
+    /// The service type, one name per flag set.
+    ///
+    /// Format 1 called `0x40` `user_own_process` and `0x80`
+    /// `user_share_process`; they are `SERVICE_USER_SERVICE` and
+    /// `SERVICE_USERSERVICE_INSTANCE`, flags combined with the own/share bits
+    /// rather than alternatives to them. `0x4`, `0x8` and `0x200` had no name
+    /// at all, so a file system recognizer was not recognised as a driver.
     fn service_type_name(flags: u32) -> String {
-        let mut parts = Vec::new();
-        if flags & 0x0000_0001 != 0 {
-            parts.push("kernel_driver");
-        }
-        if flags & 0x0000_0002 != 0 {
-            parts.push("file_system_driver");
-        }
-        if flags & 0x0000_0010 != 0 {
-            parts.push("win32_own_process");
-        }
-        if flags & 0x0000_0020 != 0 {
-            parts.push("win32_share_process");
-        }
-        if flags & 0x0000_0040 != 0 {
-            parts.push("user_own_process");
-        }
-        if flags & 0x0000_0080 != 0 {
-            parts.push("user_share_process");
-        }
-        if flags & 0x0000_0100 != 0 {
-            parts.push("interactive_process");
-        }
-        if parts.is_empty() {
-            return format!("unknown(0x{flags:08x})");
+        const NAMES: &[(u32, &str)] = &[
+            (0x0000_0001, "kernel_driver"),
+            (0x0000_0002, "file_system_driver"),
+            (0x0000_0004, "adapter"),
+            (0x0000_0008, "recognizer_driver"),
+            (0x0000_0010, "win32_own_process"),
+            (0x0000_0020, "win32_share_process"),
+            (0x0000_0040, "user_service"),
+            (0x0000_0080, "user_service_instance"),
+            (0x0000_0100, "interactive_process"),
+            (0x0000_0200, "package_service"),
+        ];
+        let mut parts: Vec<String> = NAMES
+            .iter()
+            .filter(|(flag, _)| flags & flag != 0)
+            .map(|(_, name)| (*name).to_owned())
+            .collect();
+        // A bit nobody named is kept as a number rather than dropped, so a
+        // future service type is visible instead of read as its neighbours.
+        let unnamed = NAMES.iter().fold(flags, |rest, (flag, _)| rest & !flag);
+        if unnamed != 0 || parts.is_empty() {
+            parts.push(format!("unknown(0x{unnamed:08x})"));
         }
         parts.join("|")
     }
@@ -440,6 +445,22 @@ mod win32 {
 
     #[cfg(test)]
     mod tests {
+        #[test]
+        fn service_types_are_named_for_what_the_flags_mean() {
+            // A per-user instance of a shared-process template, as the SCM
+            // reports one: 0x20 | 0x40 | 0x80.
+            assert_eq!(
+                super::service_type_name(0xE0),
+                "win32_share_process|user_service|user_service_instance"
+            );
+            assert_eq!(super::service_type_name(0x08), "recognizer_driver");
+            assert_eq!(super::service_type_name(0x1000), "unknown(0x00001000)");
+            assert_eq!(
+                super::service_type_name(0x1010),
+                "win32_own_process|unknown(0x00001000)"
+            );
+        }
+
         #[test]
         fn the_live_service_list_is_read_whole() {
             // Every Windows machine, CI runners included, has the event log

@@ -24,11 +24,26 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use serde::{Deserialize, Serialize};
 
-use crate::model::{Coverage, Domain, FileRecord, RegistryRecord, ServiceRecord, Snapshot};
-use crate::policy::Policy;
+use crate::model::{
+    Coverage, Domain, FileRecord, OLDEST_SNAPSHOT_FORMAT, RegistryKeyRef, RegistryRecord,
+    SNAPSHOT_FORMAT_VERSION, ServiceRecord, Snapshot,
+};
+use crate::policy::{Policy, is_excluded};
 
 /// Wire-format version of a diff file.
-pub const DIFF_FORMAT_VERSION: u32 = 1;
+///
+/// Format 2 added [`Diff::emptied_keys`] and [`Diff::snapshot_format_version`],
+/// and a registry modification now carries only the values that changed. A
+/// format 1 diff is still read, and `refilter` upgrades one in place.
+pub const DIFF_FORMAT_VERSION: u32 = 2;
+
+/// The oldest diff format this build still reads.
+pub const OLDEST_DIFF_FORMAT: u32 = 1;
+
+/// The snapshot format every diff written before the field existed came from.
+fn first_snapshot_format() -> u32 {
+    1
+}
 
 /// What happened to one item between two snapshots.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -112,8 +127,13 @@ pub struct RegistryChange {
     /// Added, removed, or modified.
     pub kind: ChangeKind,
     /// The record as it was, when there was one.
+    ///
+    /// For a modification, only the values that differ: the rest of the key is
+    /// not evidence of anything, and every value carried is one more chance to
+    /// carry something personal into a file meant to be committed. A format 1
+    /// diff carried both records whole.
     pub before: Option<RegistryRecord>,
-    /// The record as it is, when there is one.
+    /// The record as it is, when there is one. Trimmed like `before`.
     pub after: Option<RegistryRecord>,
     /// Value-level differences, for a modification.
     #[serde(default)]
@@ -159,6 +179,9 @@ pub struct Refiltered {
     /// `access_denied` items that named an excluded key.
     #[serde(default)]
     pub access_denied: usize,
+    /// Emptied keys dropped because the key itself is excluded.
+    #[serde(default)]
+    pub emptied_keys: usize,
 }
 
 impl Refiltered {
@@ -172,6 +195,7 @@ impl Refiltered {
         self.registry_records += other.registry_records;
         self.registry_values += other.registry_values;
         self.access_denied += other.access_denied;
+        self.emptied_keys += other.emptied_keys;
     }
 }
 
@@ -181,6 +205,15 @@ impl Refiltered {
 pub struct Diff {
     /// Wire-format version; see [`DIFF_FORMAT_VERSION`].
     pub format_version: u32,
+    /// The format of the two snapshots this was computed from.
+    ///
+    /// Not the same thing as `format_version`: `refilter` upgrades a diff's
+    /// shape, and cannot upgrade what its snapshots recorded. A diff computed
+    /// from format 1 snapshots holds no emptied keys and may list a 32-bit key
+    /// twice, under both of its names, whatever its own format says. Absent
+    /// from every format 1 diff, all of which came from format 1 snapshots.
+    #[serde(default = "first_snapshot_format")]
+    pub snapshot_format_version: u32,
     /// When the earlier snapshot was taken.
     pub before_taken_utc: String,
     /// When the later snapshot was taken.
@@ -210,6 +243,19 @@ pub struct Diff {
     /// is the one wrong answer this tool must never give.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub emptied_directories: Option<Vec<String>>,
+    /// Registry keys that hold no value in the later snapshot and did in the
+    /// earlier one, or that appeared already empty — the registry twin of
+    /// `emptied_directories`, and `None` under the same rule: unless both
+    /// snapshots walked the registry and both recorded empty keys, which no
+    /// snapshot older than format 2 did.
+    ///
+    /// Both lists hold only the topmost empty key of each chain and are
+    /// compared exactly, so a subtree that was already empty is reported again
+    /// if a value lands beside it and splits it. That errs towards saying too
+    /// much, which a reviewer can see through, rather than too little, which
+    /// nobody can.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub emptied_keys: Option<Vec<RegistryKeyRef>>,
     /// What both snapshots covered. A diff can speak only about these domains.
     pub coverage: Coverage,
     /// Service and driver changes that survived the noise filter.
@@ -275,17 +321,41 @@ pub enum DiffError {
     UnsupportedFormat {
         /// The version found in the file.
         found: u32,
-        /// The version this build implements.
-        supported: u32,
+        /// The oldest version this build reads.
+        oldest: u32,
+        /// The newest version this build reads, which is the one it writes.
+        newest: u32,
+    },
+    /// The two snapshots were taken in different formats.
+    ///
+    /// Each format change alters what a snapshot holds without anything on the
+    /// machine changing — see [`SNAPSHOT_FORMAT_VERSION`] — so a diff across
+    /// one reports the harness, not the machine.
+    MixedFormats {
+        /// The earlier snapshot's format.
+        before: u32,
+        /// The later snapshot's format.
+        after: u32,
     },
 }
 
 impl std::fmt::Display for DiffError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::UnsupportedFormat { found, supported } => write!(
+            Self::UnsupportedFormat {
+                found,
+                oldest,
+                newest,
+            } => write!(
                 f,
-                "snapshot format version {found} is not supported by this build, which implements {supported}"
+                "snapshot format version {found} is not supported by this build, which reads \
+                 {oldest} to {newest}"
+            ),
+            Self::MixedFormats { before, after } => write!(
+                f,
+                "the snapshots are format {before} and format {after}, and a diff across formats \
+                 reports what changed in the harness rather than on the machine; take both \
+                 snapshots with the same build"
             ),
         }
     }
@@ -296,19 +366,26 @@ impl std::error::Error for DiffError {}
 /// Compare two snapshots.
 ///
 /// # Errors
-/// If either snapshot's format version is not implemented.
+/// If either snapshot's format version is not implemented, or the two differ.
 pub fn compare(
     before: &Snapshot,
     after: &Snapshot,
     filter: &NoiseFilter,
 ) -> Result<Diff, DiffError> {
     for snapshot in [before, after] {
-        if snapshot.format_version != crate::model::SNAPSHOT_FORMAT_VERSION {
+        if !(OLDEST_SNAPSHOT_FORMAT..=SNAPSHOT_FORMAT_VERSION).contains(&snapshot.format_version) {
             return Err(DiffError::UnsupportedFormat {
                 found: snapshot.format_version,
-                supported: crate::model::SNAPSHOT_FORMAT_VERSION,
+                oldest: OLDEST_SNAPSHOT_FORMAT,
+                newest: SNAPSHOT_FORMAT_VERSION,
             });
         }
+    }
+    if before.format_version != after.format_version {
+        return Err(DiffError::MixedFormats {
+            before: before.format_version,
+            after: after.format_version,
+        });
     }
 
     // Applied to both sides before anything is compared. A snapshot taken by an
@@ -364,8 +441,9 @@ pub fn compare(
     };
 
     // Directories are part of the filesystem domain, so they answer to the same
-    // coverage rule the file list does.
+    // coverage rule the file list does. Empty keys likewise to the registry's.
     let emptied_directories = emptied_directories(before, after, &coverage);
+    let emptied_keys = emptied_keys(before, after, &coverage, &mut refiltered);
 
     let mut signers: BTreeMap<String, usize> = BTreeMap::new();
     for change in &files {
@@ -376,10 +454,12 @@ pub fn compare(
 
     Ok(Diff {
         format_version: DIFF_FORMAT_VERSION,
+        snapshot_format_version: before.format_version,
         before_taken_utc: before.taken_utc.clone(),
         after_taken_utc: after.taken_utc.clone(),
         rebooted_between: rebooted_between(before, after),
         emptied_directories,
+        emptied_keys,
         coverage,
         services: kept,
         suppressed,
@@ -401,11 +481,20 @@ pub fn compare(
 /// modification whose only differences were refused values is no longer a
 /// change at all. This is what makes cleaning a committed diff reproducible from
 /// committed code rather than from a script nobody kept.
+///
+/// It also brings the diff to the current format: a modification keeps only
+/// the values that changed. What the snapshots recorded cannot be upgraded, and
+/// [`Diff::snapshot_format_version`] keeps saying which format that was.
 pub fn refilter(diff: &mut Diff, policy: &Policy) -> Refiltered {
     let mut report = Refiltered {
         access_denied: drop_excluded_denials(&mut diff.coverage),
         ..Refiltered::default()
     };
+    if let Some(keys) = diff.emptied_keys.as_mut() {
+        let listed = keys.len();
+        keys.retain(|key| !is_excluded(&key.key));
+        report.emptied_keys = listed - keys.len();
+    }
 
     let mut kept = Vec::with_capacity(diff.registry.len());
     for change in std::mem::take(&mut diff.registry) {
@@ -429,21 +518,12 @@ pub fn refilter(diff: &mut Diff, policy: &Policy) -> Refiltered {
                 after: None,
                 fields: Vec::new(),
             }),
-            (Some(old), Some(new)) => {
-                let fields = value_changes(&old, &new);
-                (!fields.is_empty()).then(|| RegistryChange {
-                    key: new.key.clone(),
-                    view: new.view.clone(),
-                    kind: ChangeKind::Modified,
-                    before: Some(old),
-                    after: Some(new),
-                    fields,
-                })
-            }
+            (Some(old), Some(new)) => modification(&old, &new),
         };
         kept.extend(rebuilt);
     }
     diff.registry = kept;
+    diff.format_version = DIFF_FORMAT_VERSION;
 
     diff.refiltered.absorb(report);
     report
@@ -507,6 +587,31 @@ fn emptied_directories(
             .cloned()
             .collect(),
     )
+}
+
+/// Registry keys that hold no value now and held one before, or did not exist.
+///
+/// `None` unless both snapshots walked the registry *and* both recorded empty
+/// keys, for the reason [`emptied_directories`] gives. A key the current policy
+/// excludes is dropped and counted, as a record would be.
+fn emptied_keys(
+    before: &Snapshot,
+    after: &Snapshot,
+    coverage: &Coverage,
+    refiltered: &mut Refiltered,
+) -> Option<Vec<RegistryKeyRef>> {
+    if !coverage.covers(Domain::Registry) {
+        return None;
+    }
+    let was: BTreeSet<&RegistryKeyRef> = before.registry_empty_keys.as_ref()?.iter().collect();
+    let (excluded, kept): (Vec<&RegistryKeyRef>, Vec<&RegistryKeyRef>) = after
+        .registry_empty_keys
+        .as_ref()?
+        .iter()
+        .filter(|key| !was.contains(key))
+        .partition(|key| is_excluded(&key.key));
+    refiltered.emptied_keys += excluded.len();
+    Some(kept.into_iter().cloned().collect())
 }
 
 /// How far two derived boot instants may differ and still be the same boot.
@@ -595,60 +700,82 @@ fn compare_registry(
                     after: None,
                     fields: Vec::new(),
                 }),
-                (Some(old), Some(new)) => {
-                    let fields = value_changes(old, new);
-                    if fields.is_empty() {
-                        return None;
-                    }
-                    Some(RegistryChange {
-                        key: new.key.clone(),
-                        view: new.view.clone(),
-                        kind: ChangeKind::Modified,
-                        before: Some(old.as_ref().clone()),
-                        after: Some(new.as_ref().clone()),
-                        fields,
-                    })
-                }
+                (Some(old), Some(new)) => modification(old, new),
                 (None, None) => None,
             }
         })
         .collect()
 }
 
-fn value_changes(before: &RegistryRecord, after: &RegistryRecord) -> Vec<FieldChange> {
-    let map = |record: &RegistryRecord| -> BTreeMap<String, String> {
+/// A modification of one key, as a diff records it: the values that differ and
+/// nothing else. `None` when nothing differs.
+fn modification(old: &RegistryRecord, new: &RegistryRecord) -> Option<RegistryChange> {
+    let (differing, fields) = value_differences(old, new);
+    if fields.is_empty() {
+        return None;
+    }
+    let only_differing = |record: &RegistryRecord| RegistryRecord {
+        key: record.key.clone(),
+        view: record.view.clone(),
+        values: record
+            .values
+            .iter()
+            .filter(|value| differing.contains(value.name.as_str()))
+            .cloned()
+            .collect(),
+    };
+    Some(RegistryChange {
+        key: new.key.clone(),
+        view: new.view.clone(),
+        kind: ChangeKind::Modified,
+        before: Some(only_differing(old)),
+        after: Some(only_differing(new)),
+        fields,
+    })
+}
+
+/// The names of the values that differ between two records of one key, and a
+/// field change for each.
+fn value_differences<'a>(
+    before: &'a RegistryRecord,
+    after: &'a RegistryRecord,
+) -> (BTreeSet<&'a str>, Vec<FieldChange>) {
+    // What is compared is type and data, or type and size for a value too large
+    // to record — see `RegistryValue::comparable`.
+    let comparable = |record: &'a RegistryRecord| -> BTreeMap<&'a str, String> {
         record
             .values
             .iter()
-            .map(|value| (value.name.clone(), format!("{}:{}", value.kind, value.data)))
+            .map(|value| (value.name.as_str(), value.comparable()))
             .collect()
     };
 
-    let old = map(before);
-    let new = map(after);
-    let names: BTreeSet<&String> = old.keys().chain(new.keys()).collect();
+    let old = comparable(before);
+    let new = comparable(after);
+    let names: BTreeSet<&str> = old.keys().chain(new.keys()).copied().collect();
 
-    names
-        .into_iter()
-        .filter_map(|name| {
-            let was = old.get(name);
-            let now = new.get(name);
-            if was == now {
-                return None;
-            }
-            Some(FieldChange {
-                // Rendered as the value name so a reviewer sees which value
-                // moved, not merely that the key did.
-                field: if name.is_empty() {
-                    "(default)".to_owned()
-                } else {
-                    name.clone()
-                },
-                before: was.cloned().unwrap_or_default(),
-                after: now.cloned().unwrap_or_default(),
-            })
-        })
-        .collect()
+    let mut differing = BTreeSet::new();
+    let mut fields = Vec::new();
+    for name in names {
+        let was = old.get(name);
+        let now = new.get(name);
+        if was == now {
+            continue;
+        }
+        differing.insert(name);
+        fields.push(FieldChange {
+            // Rendered as the value name so a reviewer sees which value moved,
+            // not merely that the key did.
+            field: if name.is_empty() {
+                "(default)".to_owned()
+            } else {
+                name.to_owned()
+            },
+            before: was.cloned().unwrap_or_default(),
+            after: now.cloned().unwrap_or_default(),
+        });
+    }
+    (differing, fields)
 }
 
 fn compare_files<'a>(
@@ -1088,6 +1215,7 @@ pub(crate) mod tests {
             file_empty_directories: None,
             registry: Vec::new(),
             registry_policy: None,
+            registry_empty_keys: None,
         }
     }
 
@@ -1435,6 +1563,7 @@ pub(crate) mod tests {
                     name: (*name).to_owned(),
                     kind: "sz".to_owned(),
                     data: (*data).to_owned(),
+                    oversized_bytes: None,
                 })
                 .collect(),
         }
@@ -1492,6 +1621,7 @@ pub(crate) mod tests {
                 registry_records: 2,
                 registry_values: 2,
                 access_denied: 1,
+                emptied_keys: 0,
             }
         );
     }
@@ -1509,11 +1639,12 @@ pub(crate) mod tests {
             &NoiseFilter::permissive(),
         )
         .unwrap();
+        // Records whole, as format 1 wrote a modification.
         let modified = |old: RegistryRecord, new: RegistryRecord| RegistryChange {
             key: new.key.clone(),
             view: new.view.clone(),
             kind: ChangeKind::Modified,
-            fields: value_changes(&old, &new),
+            fields: value_differences(&old, &new).1,
             before: Some(old),
             after: Some(new),
         };
@@ -1548,6 +1679,7 @@ pub(crate) mod tests {
                 registry_records: 2,
                 registry_values: 2,
                 access_denied: 1,
+                emptied_keys: 0,
             }
         );
         assert_eq!(
@@ -1568,5 +1700,214 @@ pub(crate) mod tests {
         let error = compare(&before, &after, &NoiseFilter::permissive()).unwrap_err();
 
         assert!(matches!(error, DiffError::UnsupportedFormat { .. }));
+    }
+
+    #[test]
+    fn snapshots_of_different_formats_are_never_compared() {
+        // Format 2 relabels per-user service types and stops walking
+        // WOW6432Node twice. Across the change every per-user service would
+        // read as modified and every 32-bit key as removed.
+        let mut before = snapshot(vec![]);
+        before.format_version = 1;
+        let after = snapshot(vec![]);
+
+        let error = compare(&before, &after, &NoiseFilter::permissive()).unwrap_err();
+
+        assert!(matches!(
+            error,
+            DiffError::MixedFormats {
+                before: 1,
+                after: SNAPSHOT_FORMAT_VERSION
+            }
+        ));
+    }
+
+    #[test]
+    fn two_older_snapshots_still_compare_and_say_what_they_were() {
+        let mut before = registry_snapshot(vec![]);
+        let mut after = registry_snapshot(vec![]);
+        before.format_version = 1;
+        after.format_version = 1;
+
+        let diff = compare(&before, &after, &NoiseFilter::permissive()).unwrap();
+
+        assert_eq!(diff.format_version, DIFF_FORMAT_VERSION);
+        assert_eq!(diff.snapshot_format_version, 1);
+        // Format 1 recorded no empty keys, so the answer is unknown.
+        assert_eq!(diff.emptied_keys, None);
+    }
+
+    fn key(path: &str) -> RegistryKeyRef {
+        RegistryKeyRef {
+            key: path.to_owned(),
+            view: "64".to_owned(),
+        }
+    }
+
+    #[test]
+    fn a_key_left_standing_with_no_values_is_reported() {
+        // The registry shape of the Vanguard directory residue: values gone,
+        // keys left. Format 1 could not see it at all.
+        let mut before = registry_snapshot(vec![]);
+        let mut after = registry_snapshot(vec![]);
+        before.registry_empty_keys = Some(vec![key(r"HKCU\SOFTWARE\Already Empty")]);
+        after.registry_empty_keys = Some(vec![
+            key(r"HKCU\SOFTWARE\Already Empty"),
+            key(r"HKLM\SOFTWARE\Vendor\Product"),
+        ]);
+
+        let diff = compare(&before, &after, &NoiseFilter::permissive()).unwrap();
+
+        assert_eq!(
+            diff.emptied_keys,
+            Some(vec![key(r"HKLM\SOFTWARE\Vendor\Product")])
+        );
+    }
+
+    #[test]
+    fn emptied_keys_are_unknown_unless_both_sides_recorded_them() {
+        let before = registry_snapshot(vec![]);
+        let mut after = registry_snapshot(vec![]);
+        after.registry_empty_keys = Some(vec![key(r"HKLM\SOFTWARE\Vendor")]);
+
+        let diff = compare(&before, &after, &NoiseFilter::permissive()).unwrap();
+
+        // Every empty key on the machine is new to a list that was never
+        // made, and none of them is news.
+        assert_eq!(diff.emptied_keys, None);
+    }
+
+    #[test]
+    fn an_emptied_key_the_policy_excludes_is_dropped_and_counted() {
+        let mut before = registry_snapshot(vec![]);
+        let mut after = registry_snapshot(vec![]);
+        before.registry_empty_keys = Some(Vec::new());
+        // A key name can itself be the identity.
+        after.registry_empty_keys = Some(vec![key(ACCOUNT_KEY)]);
+
+        let diff = compare(&before, &after, &NoiseFilter::permissive()).unwrap();
+
+        assert_eq!(diff.emptied_keys, Some(Vec::new()));
+        assert_eq!(diff.refiltered.emptied_keys, 1);
+    }
+
+    #[test]
+    fn a_modification_carries_only_the_values_that_changed() {
+        let before = registry_snapshot(vec![record(
+            TCPIP_KEY,
+            &[
+                ("Domain", "a"),
+                ("SearchList", "x"),
+                ("UseDomainNameDevolution", "1"),
+            ],
+        )]);
+        let after = registry_snapshot(vec![record(
+            TCPIP_KEY,
+            &[
+                ("Domain", "b"),
+                ("SearchList", "x"),
+                ("UseDomainNameDevolution", "1"),
+            ],
+        )]);
+
+        let diff = compare(&before, &after, &NoiseFilter::permissive()).unwrap();
+
+        let change = &diff.registry[0];
+        assert_eq!(change.kind, ChangeKind::Modified);
+        for side in [&change.before, &change.after] {
+            let names: Vec<&str> = side
+                .as_ref()
+                .unwrap()
+                .values
+                .iter()
+                .map(|value| value.name.as_str())
+                .collect();
+            assert_eq!(names, ["Domain"]);
+        }
+    }
+
+    #[test]
+    fn a_value_too_large_to_record_is_compared_by_size() {
+        let oversized = |bytes: u64| {
+            let mut side = record(r"HKLM\SOFTWARE\Vendor", &[]);
+            side.values.push(crate::model::RegistryValue {
+                name: "Blob".to_owned(),
+                kind: "binary".to_owned(),
+                data: String::new(),
+                oversized_bytes: Some(bytes),
+            });
+            side
+        };
+
+        let same = compare(
+            &registry_snapshot(vec![oversized(5000)]),
+            &registry_snapshot(vec![oversized(5000)]),
+            &NoiseFilter::permissive(),
+        )
+        .unwrap();
+        let grown = compare(
+            &registry_snapshot(vec![oversized(5000)]),
+            &registry_snapshot(vec![oversized(6000)]),
+            &NoiseFilter::permissive(),
+        )
+        .unwrap();
+
+        assert!(same.registry.is_empty());
+        assert_eq!(grown.registry.len(), 1);
+        assert_eq!(
+            grown.registry[0].fields[0].after,
+            "binary:<6000 bytes, not recorded>"
+        );
+    }
+
+    #[test]
+    fn refiltering_an_older_diff_trims_it_to_the_current_format() {
+        let old = record(TCPIP_KEY, &[("Domain", "a"), ("SearchList", "x")]);
+        let new = record(TCPIP_KEY, &[("Domain", "b"), ("SearchList", "x")]);
+        let mut diff = compare(
+            &registry_snapshot(vec![]),
+            &registry_snapshot(vec![]),
+            &NoiseFilter::permissive(),
+        )
+        .unwrap();
+        diff.format_version = 1;
+        diff.snapshot_format_version = 1;
+        // As format 1 wrote it: both records whole.
+        diff.registry.push(RegistryChange {
+            key: TCPIP_KEY.to_owned(),
+            view: "64".to_owned(),
+            kind: ChangeKind::Modified,
+            fields: value_differences(&old, &new).1,
+            before: Some(old),
+            after: Some(new),
+        });
+
+        let report = refilter(&mut diff, &Policy::current());
+
+        // Trimming is not a privacy removal, and is not counted as one.
+        assert!(report.is_empty());
+        assert_eq!(diff.format_version, DIFF_FORMAT_VERSION);
+        // What the snapshots recorded cannot be upgraded, and says so.
+        assert_eq!(diff.snapshot_format_version, 1);
+        assert_eq!(diff.registry[0].after.as_ref().unwrap().values.len(), 1);
+    }
+
+    #[test]
+    fn a_diff_without_the_newer_fields_reads_as_format_one_snapshots() {
+        let diff = compare(
+            &registry_snapshot(vec![]),
+            &registry_snapshot(vec![]),
+            &NoiseFilter::permissive(),
+        )
+        .unwrap();
+        let mut json = serde_json::to_value(&diff).unwrap();
+        let object = json.as_object_mut().unwrap();
+        object.remove("snapshot_format_version");
+        object.insert("format_version".to_owned(), 1.into());
+
+        let read: Diff = serde_json::from_value(json).unwrap();
+
+        assert_eq!(read.snapshot_format_version, 1);
+        assert_eq!(read.emptied_keys, None);
     }
 }
