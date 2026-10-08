@@ -66,10 +66,15 @@ this reason. `wardsweep observe …` in [`11`](11-CLI-REFERENCE.md) forwards to
 it rather than linking its logic into the broker frontend.
 
 Size and time, measured rather than estimated. On the development machine —
-745 000 files under those roots, of which 124 000 are hashed — a full snapshot
-is **156 MB uncompressed** and takes **about three and a half minutes**, with
-hashing and the signer lookup running in parallel. The earlier estimate of
-40–120 MB was optimistic for a machine with games and toolchains installed.
+551 000 files under those roots, of which 90 000 are hashed — a full format 2
+snapshot is **196 MB uncompressed** and takes **between three and a half and
+ten minutes**, with hashing and the signer lookup running in parallel. The walk
+reads about 100 GB, 54 GB to hash and 48 GB again to check signatures, so it is
+bound by the disk rather than the processor: one build measured both ends of
+that range on the same day, and at the slow end the disk sat at about 135 MB/s
+with a queue 28 deep while the harness used a fifth of one core. The earlier
+estimate of 40–120 MB was optimistic for a machine with games and toolchains
+installed.
 
 It also needs memory: the walk holds every record before serialising, and
 resident set was observed at **around 550 MB** part-way through a capture on
