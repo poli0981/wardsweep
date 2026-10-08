@@ -167,6 +167,12 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
   global analysers, and any package it needs has to be added to the central
   version file that `dotnet-ci.yml` path-filters on — so throwaway code would
   re-run the whole .NET pipeline and leave a permanent entry behind.
+- `observe intersect`: what every footprint of one anti-cheat holds, across
+  titles, written as a diff so `suggest` drafts from it. Matched by identity,
+  never content, since titles ship different builds; a change kept by any
+  footprint stays kept; coverage is what every footprint covered; and it refuses
+  fewer than two footprints, the same footprint twice, an intersection as
+  input, and footprints from different snapshot formats.
 
 ### Changed
 - `docs/08-IPC-PROTOCOL.md` amended from the S3 findings, in five places. Events

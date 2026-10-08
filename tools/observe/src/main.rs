@@ -23,6 +23,7 @@
 mod clock;
 mod collect;
 mod diff;
+mod intersect;
 mod model;
 mod policy;
 mod redact;
@@ -111,6 +112,20 @@ enum Command {
         output: PathBuf,
     },
 
+    /// Keep what every footprint has in common.
+    ///
+    /// For one anti-cheat observed under several titles, `docs/16`: what every
+    /// footprint holds is the anti-cheat, and the rest is per-title
+    /// integration. The result is a diff, so `suggest` drafts from it.
+    Intersect {
+        /// A footprint diff. Give at least two, each from a different title.
+        #[arg(long = "diff", value_name = "PATH", required = true)]
+        diffs: Vec<PathBuf>,
+        /// Where to write the shared footprint.
+        #[arg(short, long, value_name = "PATH")]
+        output: PathBuf,
+    },
+
     /// Apply this build's privacy policy to a diff that already exists.
     ///
     /// Drops what the current build refuses to keep — account identity,
@@ -177,6 +192,7 @@ fn run(command: &Command) -> Result<u8> {
             signer,
             output,
         } => run_suggest(diff, residue.as_ref(), signer.as_deref(), output),
+        Command::Intersect { diffs, output } => run_intersect(diffs, output),
         Command::Refilter { input, output } => run_refilter(input, output),
         Command::Redact {
             input,
@@ -207,6 +223,71 @@ fn run_refilter(input: &PathBuf, output: &PathBuf) -> Result<u8> {
              record can be added.",
             diff.format_version, diff.snapshot_format_version
         );
+    }
+    Ok(exit::SUCCESS)
+}
+
+fn run_intersect(paths: &[PathBuf], output: &PathBuf) -> Result<u8> {
+    let mut footprints = Vec::with_capacity(paths.len());
+    for path in paths {
+        let footprint: diff::Diff = read_json(path)?;
+        ensure_readable_diff(path, &footprint)?;
+        footprints.push(footprint);
+    }
+
+    let shared = intersect::intersect(footprints).context("intersecting the footprints")?;
+    write_diff(output, &shared)?;
+
+    eprintln!(
+        "shared footprint written to {} — {} service change(s), {} file change(s), {} registry \
+         change(s) held by every footprint",
+        output.display(),
+        shared.services.len(),
+        shared.files.len(),
+        shared.registry.len()
+    );
+    report_refiltered(&shared.refiltered);
+    let held = shared.services.len()
+        + shared.suppressed.len()
+        + shared.files.len()
+        + shared.suppressed_files.len()
+        + shared.registry.len();
+    for (path, source) in paths.iter().zip(shared.intersection_of.iter().flatten()) {
+        eprintln!(
+            "  {}: {} change(s), {} of them not in every other footprint",
+            path.display(),
+            source.changes,
+            source.changes.saturating_sub(held)
+        );
+    }
+    if shared.filesystem_policy_changed || shared.registry_policy_changed {
+        eprintln!(
+            "  WARNING: at least one footprint was taken across a policy change, and its \
+             differences may be the harness rather than an installer."
+        );
+    }
+    if !shared.coverage.not_captured.is_empty() {
+        eprintln!(
+            "  this footprint says nothing about: {}",
+            shared
+                .coverage
+                .not_captured
+                .iter()
+                .map(ToString::to_string)
+                .collect::<Vec<_>>()
+                .join(", ")
+        );
+    }
+    // Said every time: the one way an intersection goes wrong without looking
+    // wrong.
+    eprintln!(
+        "  a title observed with the anti-cheat already installed has it missing from its \
+         footprint, and so does the intersection"
+    );
+
+    if held == 0 {
+        eprintln!("nothing is held by every footprint");
+        return Ok(exit::NOTHING);
     }
     Ok(exit::SUCCESS)
 }
