@@ -311,3 +311,17 @@ reinstall, at step 7.
 
 Raw snapshots are **not** committed: they list every file under the profile.
 They are kept at `%LOCALAPPDATA%\WardSweep\observations\`.
+
+### The committed diff was refiltered on 2026-10-08
+
+`residue.json` was passed through `observe refilter` and then `observe redact`,
+from the build that stopped recording account identity, hardware identifiers
+and activity history (`docs/16`, "Personal identity and activity history are not
+recorded either"). It lost 36 registry records and 10 unreadable-key records.
+
+None of it was the anti-cheat's: the 19 registry changes, 8 files and three
+services that name it are byte-for-byte what they were. The `MuiCache` and
+Compatibility Assistant values quoted under *What did survive is Windows, not
+the vendor* are among what was removed — the harness no longer reads either
+store — so this note is now their only record. `draft.toml` is unchanged; it was
+never derived from this file directly.
