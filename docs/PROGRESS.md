@@ -3,8 +3,8 @@
 Where the project actually stands, and what to pick up next. `CHANGELOG.md`
 records what happened; this file records what is true now and what is not done.
 
-Last updated **2026-10-08**, after an audit of the whole tree — see
-"The 2026-10-08 audit" below.
+Last updated **2026-10-08**, after an audit of the whole tree and the work that
+followed it the same day — see "The 2026-10-08 audit" below.
 
 ---
 
@@ -66,8 +66,8 @@ compare against. A third would probably be worth more than the next feature.
 | `ui/` — WPF shell | Shell only, plus the architecture tests that assert the UI has no destructive code path |
 | CI — Rust, .NET, CodeQL (C#, Rust, Actions), Catalog Verify, weekly dependency audit | Done, inline in this repository, least-privilege, third-party actions pinned to SHAs, all green |
 | Spike S3 — split-privilege architecture | **PASS.** All six criteria measured — 23 checks, 0 failed. `spikes/S3-RESULT.md`. Throwaway code in `spikes/s3-split-privilege/`, unreachable from either build. |
-| `observations/2026-08-19-anticheatexpert/` | **First real observation.** Uninstall half of the `docs/16` cycle, committed with its diff, draft entry and notes. Reinstall half pending. |
-| `tools/observe/` — the observation harness | **`snapshot`, `diff`, `suggest`, `intersect`, `redact`, `refilter`.** Services, filesystem and registry, with Authenticode signer clustering and both WOW64 views. Never records account identity, activity history or G3 material, and the differ re-applies that policy to older snapshots. A draft entry is generated from the shipped schema, is proven to load through the real parser, and the committed Vanguard draft is pinned by a test to its committed diff. Scheduled tasks, firewall, event sources and environment are named as `not_captured` rather than omitted. |
+| `observations/2026-08-19-anticheatexpert/` | **First real observation.** Uninstall half of the `docs/16` cycle, committed with its diff, draft entry and notes. The reinstall half now needs a new full cycle: its raw snapshots are gone (next step 1). |
+| `tools/observe/` — the observation harness | **`snapshot`, `diff`, `suggest`, `intersect`, `redact`, `refilter`.** Services, filesystem and registry, with Authenticode signer clustering and both WOW64 views. Never records account identity, activity history or G3 material, and the differ re-applies that policy to older snapshots. Snapshot format 2 also records registry keys left standing with no value and oversized values by size, and `diff` refuses to compare across formats. A draft entry is generated from the shipped schema, is proven to load through the real parser, and the committed Vanguard draft is pinned by a test to its committed diff. Scheduled tasks, firewall, event sources and environment are named as `not_captured` rather than omitted. |
 
 Enforced by tests rather than by review:
 
@@ -118,6 +118,37 @@ consequence:
   write access and spliced a typed input into a script.
 
 What it did not do is in "Open, needs a maintainer decision" below.
+
+### The same day, after the audit
+
+Pull requests #38–#43, once the maintainer approved the proposals:
+
+- **The broader deny-list hardening was approved and shipped** (#38): whole
+  profiles, `AppData` roots, game library containers, Windows-owned subtrees,
+  container registry keys and inbox driver and service names. `CHANGELOG.md`
+  records the ruling.
+- **Dependabot's first round was taken as one verified set** (#39). `sha2` 0.11
+  needed a code change, and `criterion` stays below 0.8 on purpose, with the
+  reason in `dependabot.yml`.
+- **Snapshot and diff format 2** (#40) closed five harness gaps in one version
+  bump, the registry's empty-key blind spot first among them. The committed
+  diffs were upgraded to it (#42), and `redact` no longer flattens a diff onto
+  one line (#41).
+- **`observe intersect`** (#43), the last subcommand `docs/16` described.
+- **CodeQL's first Rust analysis raised three alerts**, all
+  `rust/cleartext-logging` and all name matches: two test loops over fake
+  values in a variable called `secret`, and `keygen` printing the *path* of the
+  key it wrote. Each was dismissed with its reason; nothing real was logged.
+- **A snapshot is bound by the disk.** It reads about 100 GB, and one build
+  measured three and a half and ten minutes on the same day; a suspected
+  regression from the dependency refresh was ruled out by running the older
+  build back to back with the new one.
+- **The hardened deny-list costs more and still fits.** Measured with
+  `scan_corpus` after #38: canonicalising a path takes about 1 µs and checking
+  it about 70 ns — roughly half a second for half a million paths, against the
+  15 s audit budget in [`10`](10-PERF-BUDGET.md). Criterion reported ×2.7 and
+  ×12, but against a local baseline from 2026-08-12 that predates both the
+  canonicalisation rules and the containers, so the ratios say little.
 
 ## Next, in order
 
@@ -257,6 +288,20 @@ that S2 should start from rather than rediscover:
   also means a reviewer reading the test would not expect the terms to exist
   anywhere. **Worth a maintainer's ruling on whether the test should make the
   distinction explicit.**
+
+- **Whether the harness ships, and whether `wardsweep observe` forwards to
+  it.** [`11`](11-CLI-REFERENCE.md) and [`16`](16-OBSERVATION-HARNESS.md)
+  describe `wardsweep observe …` as a passthrough to `wardsweep-observe.exe`,
+  but the CLI has no such subcommand and `release.yml` does not package the
+  harness. Either it is a contributor tool, built from source, and the
+  documents should say so — or it ships, and the passthrough and the packaging
+  are both owed. Both are small; the choice is not.
+- **Whether unredirected registry roots are read through one view.**
+  `HKLM\SYSTEM\CurrentControlSet\Services` and `HKCU\SOFTWARE` are walked in
+  both WOW64 views, which doubles them (see "Known gaps"). Reading them once is
+  cheaper and more honest about what was observed, but `suggest` would then
+  draft their keys as `view = "64"` rather than `"both"`, and that changes what
+  a catalog entry says.
 
 ## What S3 changed, in one place
 
