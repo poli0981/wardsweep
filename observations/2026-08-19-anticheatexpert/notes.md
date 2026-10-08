@@ -310,7 +310,11 @@ reinstall, at step 7.
 | 7 | Diff `01-uninstalled` → `04-reinstalled`: the true install footprint | pending |
 
 Raw snapshots are **not** committed: they list every file under the profile.
-They are kept at `%LOCALAPPDATA%\WardSweep\observations\`.
+They were kept at `%LOCALAPPDATA%\WardSweep\observations\` and no longer exist
+(checked 2026-10-08), so steps 5–7 cannot be finished as planned: step 7 needs
+`01-uninstalled`, and a format 1 snapshot cannot be diffed against a format 2
+one in any case. `docs/PROGRESS.md` has the replacement — a full cycle with the
+format 2 harness, which also measures the residue half again.
 
 ### The committed diff was refiltered on 2026-10-08
 
@@ -325,3 +329,13 @@ Compatibility Assistant values quoted under *What did survive is Windows, not
 the vendor* are among what was removed — the harness no longer reads either
 store — so this note is now their only record. `draft.toml` is unchanged; it was
 never derived from this file directly.
+
+### The committed diff was upgraded to diff format 2 on 2026-10-08
+
+`observe refilter` from the format 2 build rewrote `residue.json`: a modified
+registry key now carries only the values that changed, 460 values carried
+becoming 200, and the diff says `snapshot_format_version: 1`. `emptied_keys`
+stays absent — not known — because format 1 snapshots never recorded empty
+keys. The policy removed nothing this time, and every change, field and file
+record is what it was. The file is indented again: `redact` had written it on
+one line.
