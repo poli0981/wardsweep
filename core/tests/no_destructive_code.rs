@@ -12,6 +12,12 @@
 //! rather than about intent.
 //!
 //! Scope is `src/` only. Test and benchmark code may clean up after itself.
+//!
+//! The lists are substrings, matched against code with `//` comments removed.
+//! That is a tripwire rather than a proof — a call assembled at runtime would
+//! pass — so each list names the API families rather than one spelling: an
+//! entry like `MoveFile` covers `MoveFileW`, `MoveFileExW` and
+//! `MoveFileWithProgressW` at once.
 
 use std::path::{Path, PathBuf};
 
@@ -44,15 +50,79 @@ const DESTRUCTIVE: &[(&str, &str)] = &[
     ),
     ("RegSetValue", "registry write — exec module only"),
     (
-        "MoveFileEx",
-        "delayed rename; must append to PendingFileRenameOperations",
+        "MoveFile",
+        "rename or delayed rename; must append to PendingFileRenameOperations",
     ),
     (
         "SetFileAttributes",
         "attribute change — quarantine module only",
     ),
+    ("DeleteFile", "Win32 file deletion — quarantine module only"),
+    (
+        "RemoveDirectory",
+        "Win32 directory deletion — quarantine module only",
+    ),
+    ("ReplaceFile", "file replacement — quarantine module only"),
+    (
+        "FileDispositionInfo",
+        "delete through a handle — quarantine module only",
+    ),
+    (
+        "FILE_FLAG_DELETE_ON_CLOSE",
+        "delete on close — quarantine module only",
+    ),
+    (
+        "NtDeleteFile",
+        "native file deletion — quarantine module only",
+    ),
+    (
+        "ZwDeleteFile",
+        "native file deletion — quarantine module only",
+    ),
+    (
+        "SHFileOperation",
+        "shell file operation — quarantine module only",
+    ),
+    (
+        "IFileOperation",
+        "shell file operation — quarantine module only",
+    ),
+    (
+        "RegDeleteTree",
+        "registry deletion — quarantine module only, after a .reg export",
+    ),
+    (
+        "SHDeleteKey",
+        "registry deletion — quarantine module only, after a .reg export",
+    ),
+    ("RegSetKeyValue", "registry write — exec module only"),
     ("TerminateProcess", "forbidden outright by Safety Gate G2"),
     ("NtUnloadDriver", "forbidden outright by Safety Gate G2"),
+    ("ZwUnloadDriver", "forbidden outright by Safety Gate G2"),
+    (
+        "FilterUnload",
+        "minifilter unload — forbidden outright by Safety Gate G2",
+    ),
+    ("NtSuspendProcess", "forbidden outright by Safety Gate G2"),
+    ("SuspendThread", "forbidden outright by Safety Gate G2"),
+    (
+        "CreateRemoteThread",
+        "injection — forbidden outright by Safety Gate G2",
+    ),
+    (
+        "WriteProcessMemory",
+        "injection — forbidden outright by Safety Gate G2",
+    ),
+    (
+        "SetWindowsHookEx",
+        "hooking — forbidden outright by Safety Gate G2",
+    ),
+    // Shelling out is the easiest way around every entry above.
+    ("taskkill", "forbidden outright by Safety Gate G2"),
+    (
+        "fltmc",
+        "filter manager control — forbidden outright by Safety Gate G2",
+    ),
 ];
 
 /// Modules permitted to contain destructive calls once they are written.
@@ -78,6 +148,28 @@ const HARDWARE_IDENTITY: &[&str] = &[
     // including from `BY_HANDLE_FILE_INFORMATION` and `FILE_ID_INFO`, where it
     // arrives free on a handle that is already open.
     "VolumeSerialNumber",
+    // SMBIOS and other firmware tables, read raw.
+    "GetSystemFirmwareTable",
+    "EnumSystemFirmwareTables",
+    // TPM commands. `Tbsi_` above opens the context; this sends to it.
+    "Tbsip_",
+    // Volume GUIDs.
+    "FindFirstVolume",
+    "GetVolumeNameForVolumeMountPoint",
+    // The hardware profile GUID.
+    "GetCurrentHwProfile",
+    // MAC addresses, by the older routes.
+    "GetAdaptersInfo",
+    "GetIfTable",
+    // Disk serials and firmware, through the storage stack.
+    "SMART_RCV_DRIVE_DATA",
+    "_PASS_THROUGH",
+    // CPU identity.
+    "__cpuid",
+    // WMI classes that are nothing but hardware identity.
+    "Win32_BIOS",
+    "Win32_BaseBoard",
+    "Win32_DiskDrive",
 ];
 
 fn repo_root() -> PathBuf {
@@ -132,14 +224,14 @@ fn no_destructive_call_exists_outside_the_modules_allowed_to_have_one() {
 
     for file in shipped_sources() {
         let relative = relative(&file);
+        // Nothing else is exempt. This file names every forbidden call, and
+        // it is not under a `src/` directory, so it is never scanned; an
+        // exemption for any path containing `/tests/` used to be here too,
+        // and it would have let a `src/**/tests/` module through.
         if PERMITTED
             .iter()
             .any(|allowed| relative.starts_with(allowed))
         {
-            continue;
-        }
-        // This file names every forbidden call in order to look for them.
-        if relative.contains("/tests/") {
             continue;
         }
 

@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using WardSweep.UI.Resources;
 using WardSweep.UI.Services;
 using WardSweep.UI.ViewModels;
 using WardSweep.UI.Views;
@@ -57,7 +58,7 @@ public partial class App : Application
         // logging work; crashing silently in the meantime would be worse.
         _ = MessageBox.Show(
             e.Exception.Message,
-            "WardSweep",
+            Strings.AppTitle,
             MessageBoxButton.OK,
             MessageBoxImage.Error);
         e.Handled = true;
