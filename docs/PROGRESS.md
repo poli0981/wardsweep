@@ -135,12 +135,15 @@ Note that Vanguard is **installed and running** on this machine again: the Riot
 Client autostarts at logon and reinstalled it unprompted at 21:21 on 2026-08-19.
 It cannot be kept uninstalled across a reboot.
 
-**1. Finish the AntiCheatExpert observation — one game launch.**
+**1. Finish the AntiCheatExpert observation — now a full cycle.**
 The uninstall half is done and committed at
-`observations/2026-08-19-anticheatexpert/`. To finish it: start Neverness To
-Everness so it reinstalls ACE, take a snapshot, and diff `01-uninstalled`
-against it for the true install footprint. The earlier snapshots are at
-`%LOCALAPPDATA%\WardSweep\observations\`.
+`observations/2026-08-19-anticheatexpert/`. The plan was one game launch and a
+diff against the `01-uninstalled` snapshot, but the raw snapshots are no longer
+at `%LOCALAPPDATA%\WardSweep\observations\` (checked 2026-10-08), and a format
+1 snapshot cannot be diffed against a format 2 one anyway. So: snapshot with
+ACE installed, uninstall through the official uninstaller, snapshot, start
+Neverness To Everness so it reinstalls ACE, snapshot — and the residue half is
+measured again, with the format 2 harness, which can now see an emptied key.
 
 The half that already exists is the one [`16`](16-OBSERVATION-HARNESS.md) says
 "alone justifies the cycle", and its answer was that **ACEVILLE's uninstaller
@@ -329,27 +332,18 @@ consequences that outlive the spike.
   procedure for recovering a clean baseline from a machine where the game was
   installed first.
 
-- **Two registry shapes are still invisible to the harness.** A key with no
-  values is not recorded at all, so an uninstaller that empties a key and
-  leaves it standing produces nothing in a diff — the registry twin of the
-  empty-directory blind spot fixed for the filesystem. And a value larger than
-  4 KB is skipped, not recorded by name and size. Both need a snapshot format
-  change, and so a version bump.
-- **A modified registry key carries all of its values into a diff**, not only
-  the ones that changed. That is what put a whole activity store into a
-  committed file; recording only the changed values would shrink every diff and
-  what it can expose.
-- The 64-bit registry walk also descends into `HKLM\SOFTWARE\WOW6432Node`, so
-  32-bit keys are captured twice under two names. `suggest` folds the two
-  spellings; the snapshot still carries both.
-- The filesystem exclusion `\packages\` matches any directory of that name, not
-  only `%LOCALAPPDATA%\Packages`. Narrowing it changes the snapshot policy, so it
-  waits until the AntiCheatExpert reinstall diff above has been taken against
-  its existing baseline.
-- Service type labels: `0x40` and `0x80` are `SERVICE_USER_SERVICE` and
-  `SERVICE_USERSERVICE_INSTANCE`, not the "own/share process" labels the
-  collector writes, and `0x4`, `0x8` and `0x200` are unlabelled. Changing the
-  strings changes snapshots, so it belongs with the next format bump.
+- **The committed diffs are format 1 snapshots underneath.** Snapshot format 2
+  (2026-10-08) closed the empty-key blind spot, records oversized values, stops
+  double-walking `WOW6432Node` and fixes the service-type labels, but none of
+  that can be applied to a snapshot already taken, and the raw snapshots behind
+  the committed diffs are gone. Their `emptied_keys` is `null` — not known —
+  and they say `snapshot_format_version: 1`. Only a new observation fills it.
+- `HKLM\SYSTEM\CurrentControlSet\Services` and `HKCU\SOFTWARE` are walked in
+  both WOW64 views although neither is redirected (apart from a few `Classes`
+  subkeys), so every key under them is recorded twice, once per view: 7.9 %
+  of a snapshot's registry records are the second copy. Harmless — `suggest`
+  reports such keys as `view = "both"`, which they are — but not free. Changing
+  it changes what `suggest` says about views, so it was left out of format 2.
 
 - `THIRD-PARTY-NOTICES.md` staleness is not checked by CI. Needs `cargo-about`
   configuration and a `dotnet-project-licenses` run. Worth closing before the

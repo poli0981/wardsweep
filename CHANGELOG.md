@@ -201,6 +201,16 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
 - `docs/08-IPC-PROTOCOL.md` no longer requires the broker to verify the UI's
   Authenticode signature unconditionally: releases are unsigned by design, so
   the check as written could never pass.
+- `tools/observe` snapshot and diff **format 2**. A snapshot records the
+  registry keys left standing with no value beneath them, which no diff could
+  see before — the registry twin of the empty-directory blind spot — and a
+  value too large to keep by name, type and size; the 64-bit walk no longer
+  records every 32-bit key a second time under `WOW6432Node`; service types are
+  named for what their flags mean; and the `Packages` exclusion no longer
+  matches a game's own `Packages` directory. A modified registry key carries
+  only the values that changed into a diff. `diff` refuses two snapshots of
+  different formats, since every one of those changes would read as a change on
+  the machine, and `refilter` brings an older diff to the current format.
 
 ### Fixed
 - `README.md` and `COPYING.md` pointed at a `COPYING` file that does not exist;
