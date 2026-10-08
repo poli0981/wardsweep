@@ -311,8 +311,24 @@ pub fn compare(
         }
     }
 
-    let mut changes = compare_services(&before.services, &after.services, filter);
-    changes.sort_by(|a, b| a.name.cmp(&b.name));
+    // Applied to both sides before anything is compared. A snapshot taken by an
+    // older build may hold what this build refuses to read — an account's
+    // e-mail address in a key name, a host name, a record of every program the
+    // user ran — and a diff is written to be committed.
+    let policy = Policy::current();
+    let mut refiltered = Refiltered::default();
+
+    let mut coverage = before.coverage.intersect(&after.coverage);
+    refiltered.access_denied = drop_excluded_denials(&mut coverage);
+
+    // Services answer to coverage like every other domain. A snapshot whose
+    // service enumeration failed, compared with one whose did not, would report
+    // every service on the machine as added or removed.
+    let changes = if coverage.covers(Domain::Services) {
+        compare_services(&before.services, &after.services, filter)
+    } else {
+        Vec::new()
+    };
 
     let mut kept = Vec::new();
     let mut suppressed = Vec::new();
@@ -325,16 +341,6 @@ pub fn compare(
             None => kept.push(change),
         }
     }
-
-    // Applied to both sides before anything is compared. A snapshot taken by an
-    // older build may hold what this build refuses to read — an account's
-    // e-mail address in a key name, a host name, a record of every program the
-    // user ran — and a diff is written to be committed.
-    let policy = Policy::current();
-    let mut refiltered = Refiltered::default();
-
-    let mut coverage = before.coverage.intersect(&after.coverage);
-    refiltered.access_denied = drop_excluded_denials(&mut coverage);
 
     // Only diff a domain both sides actually captured. Comparing a snapshot
     // that walked the filesystem against one that did not would report every
@@ -645,15 +651,18 @@ fn value_changes(before: &RegistryRecord, after: &RegistryRecord) -> Vec<FieldCh
         .collect()
 }
 
-fn compare_files(
-    before: &[FileRecord],
-    after: &[FileRecord],
+fn compare_files<'a>(
+    before: &'a [FileRecord],
+    after: &'a [FileRecord],
     filter: &NoiseFilter,
 ) -> (Vec<FileChange>, Vec<SuppressedFile>) {
-    let index = |records: &[FileRecord]| -> BTreeMap<String, FileRecord> {
+    // By reference. A real snapshot holds three quarters of a million file
+    // records, and cloning both sides into the index doubled the memory the
+    // comparison needed in order to copy the few that changed.
+    let index = |records: &'a [FileRecord]| -> BTreeMap<String, &'a FileRecord> {
         records
             .iter()
-            .map(|record| (record.path.to_ascii_lowercase(), record.clone()))
+            .map(|record| (record.path.to_ascii_lowercase(), record))
             .collect()
     };
 
@@ -675,7 +684,7 @@ fn compare_files(
                 signer: record.signer.clone(),
                 is_driver_image: record.is_driver_image(),
                 before: None,
-                after: Some(record.clone()),
+                after: Some((*record).clone()),
                 fields: Vec::new(),
             },
             (Some(record), None) => FileChange {
@@ -683,7 +692,7 @@ fn compare_files(
                 kind: ChangeKind::Removed,
                 signer: record.signer.clone(),
                 is_driver_image: record.is_driver_image(),
-                before: Some(record.clone()),
+                before: Some((*record).clone()),
                 after: None,
                 fields: Vec::new(),
             },
@@ -697,8 +706,8 @@ fn compare_files(
                     kind: ChangeKind::Modified,
                     signer: new.signer.clone(),
                     is_driver_image: new.is_driver_image(),
-                    before: Some(old.clone()),
-                    after: Some(new.clone()),
+                    before: Some((*old).clone()),
+                    after: Some((*new).clone()),
                     fields,
                 }
             }
@@ -762,15 +771,43 @@ fn file_field_changes(before: &FileRecord, after: &FileRecord) -> Vec<FieldChang
     changes
 }
 
-fn compare_services(
-    before: &[ServiceRecord],
-    after: &[ServiceRecord],
+fn compare_services<'a>(
+    before: &'a [ServiceRecord],
+    after: &'a [ServiceRecord],
     filter: &NoiseFilter,
 ) -> Vec<ServiceChange> {
-    let index = |records: &[ServiceRecord]| -> BTreeMap<String, ServiceRecord> {
+    // A per-user instance is indexed under its template name only when that
+    // name is unambiguous on *both* sides. With two users logged on, a snapshot
+    // holds two instances of the same template, and collapsing both onto one
+    // key kept whichever happened to be indexed last and dropped the other
+    // without a trace — the one thing this module promises never to do.
+    let crowded: BTreeSet<String> = [before, after]
+        .into_iter()
+        .flat_map(|records| {
+            let mut counts: BTreeMap<String, usize> = BTreeMap::new();
+            for record in records {
+                *counts
+                    .entry(filter.canonical_name(&record.name))
+                    .or_insert(0) += 1;
+            }
+            counts
+                .into_iter()
+                .filter(|(_, count)| *count > 1)
+                .map(|(name, _)| name)
+        })
+        .collect();
+    let key = |name: &str| -> String {
+        let canonical = filter.canonical_name(name);
+        if crowded.contains(&canonical) {
+            name.to_owned()
+        } else {
+            canonical
+        }
+    };
+    let index = |records: &'a [ServiceRecord]| -> BTreeMap<String, &'a ServiceRecord> {
         records
             .iter()
-            .map(|record| (filter.canonical_name(&record.name), record.clone()))
+            .map(|record| (key(&record.name), record))
             .collect()
     };
 
@@ -782,8 +819,8 @@ fn compare_services(
     names
         .into_iter()
         .filter_map(|name| {
-            let old = before_index.get(name);
-            let new = after_index.get(name);
+            let old = before_index.get(name).copied();
+            let new = after_index.get(name).copied();
             match (old, new) {
                 (None, Some(record)) => Some(ServiceChange {
                     name: name.clone(),
@@ -824,6 +861,20 @@ fn compare_services(
         .collect()
 }
 
+/// A display name without the instance suffix its service name carries.
+///
+/// The service control manager reports a per-user instance's display name as
+/// the instance name itself — `cbdhsvc_b1161` — so two instances of one
+/// template, matched across a reboot, always differ in display name by exactly
+/// the part that is supposed to be ignored.
+fn without_instance_suffix<'a>(display_name: &'a str, service_name: &str) -> &'a str {
+    service_name
+        .rsplit_once('_')
+        .and_then(|(_, suffix)| display_name.strip_suffix(suffix))
+        .and_then(|rest| rest.strip_suffix('_'))
+        .unwrap_or(display_name)
+}
+
 fn field_changes(before: &ServiceRecord, after: &ServiceRecord) -> Vec<FieldChange> {
     let mut changes = Vec::new();
     let mut compare = |field: &str, old: &str, new: &str| {
@@ -836,7 +887,17 @@ fn field_changes(before: &ServiceRecord, after: &ServiceRecord) -> Vec<FieldChan
         }
     };
 
-    compare("display_name", &before.display_name, &after.display_name);
+    // Two records with different names were matched as instances of one
+    // per-user template, and their display names carry their own suffixes.
+    let (old_display, new_display) = if before.name == after.name {
+        (before.display_name.as_str(), after.display_name.as_str())
+    } else {
+        (
+            without_instance_suffix(&before.display_name, &before.name),
+            without_instance_suffix(&after.display_name, &after.name),
+        )
+    };
+    compare("display_name", old_display, new_display);
     compare("service_type", &before.service_type, &after.service_type);
     compare("start_type", &before.start_type, &after.start_type);
     compare("error_control", &before.error_control, &after.error_control);
@@ -1226,6 +1287,52 @@ pub(crate) mod tests {
         assert!(diff.services.iter().all(|c| c.kind == ChangeKind::Modified));
         assert_eq!(diff.services.len(), 1);
         assert_eq!(diff.services[0].name, "cbdhsvc");
+    }
+
+    fn instance(name: &str) -> ServiceRecord {
+        // As the service control manager reports one: the display name is the
+        // instance name, and every instance shares the template's image.
+        let mut record = service(name);
+        record.binary_path = r"C:\Windows\system32\svchost.exe -k ClipboardSvcGroup -p".to_owned();
+        record
+    }
+
+    #[test]
+    fn a_reboot_does_not_turn_a_per_user_instance_into_a_change() {
+        let before = snapshot(vec![instance("cbdhsvc_5a1f2")]);
+        let after = snapshot(vec![instance("cbdhsvc_9c3e7")]);
+
+        let diff = compare(&before, &after, &NoiseFilter::standard()).unwrap();
+
+        assert!(diff.services.is_empty(), "{:?}", diff.services);
+    }
+
+    #[test]
+    fn two_instances_of_one_template_are_never_merged() {
+        // Two users logged on: two instances of the same template in one
+        // snapshot. Collapsing both onto the template name used to keep one and
+        // drop the other silently.
+        let before = snapshot(vec![instance("cbdhsvc_5a1f2")]);
+        let after = snapshot(vec![instance("cbdhsvc_5a1f2"), instance("cbdhsvc_9c3e7")]);
+
+        let diff = compare(&before, &after, &NoiseFilter::standard()).unwrap();
+
+        assert_eq!(diff.services.len(), 1, "{:?}", diff.services);
+        assert_eq!(diff.services[0].kind, ChangeKind::Added);
+        assert_eq!(diff.services[0].name, "cbdhsvc_9c3e7");
+    }
+
+    #[test]
+    fn services_are_not_compared_unless_both_sides_captured_them() {
+        let before = snapshot(vec![service("vgk"), service("spooler")]);
+        let mut after = snapshot(vec![]);
+        after.coverage.captured.clear();
+
+        let diff = compare(&before, &after, &NoiseFilter::permissive()).unwrap();
+
+        // Not "two services removed": the later snapshot never looked.
+        assert!(diff.services.is_empty());
+        assert!(diff.coverage.not_captured.contains(&Domain::Services));
     }
 
     #[test]
