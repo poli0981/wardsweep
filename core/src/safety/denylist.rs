@@ -7,7 +7,10 @@
 //! 1. **It is compiled in.** No catalog, config file, flag or environment
 //!    variable can add to it. [`Exceptions`] is the only thing a catalog
 //!    contributes, and it can only unlock the two narrow carve-outs the
-//!    deny-list already defines — it cannot introduce new ones.
+//!    deny-list already defines — it cannot introduce new ones. An anti-cheat
+//!    entry unlocks its own driver files and service names for its own paths
+//!    and keys; a game entry unlocks nothing (see
+//!    `crate::catalog::validate::check_denylist`).
 //! 2. **It runs on canonicalised input.** [`check_path`] accepts only
 //!    [`CanonicalPath`], so a caller cannot pass `C:\PROGRA~1` or
 //!    `\\?\C:\Windows` and slip past a string comparison.
@@ -145,8 +148,8 @@ impl Exceptions {
         Self::default()
     }
 
-    /// Build the carve-outs from driver filenames and service names that a
-    /// verified catalog declared.
+    /// Build the carve-outs from the driver filenames and service names one
+    /// verified anti-cheat entry declared, for that entry's own footprint.
     ///
     /// Only the base filename of a driver is retained; a catalog cannot smuggle
     /// a directory in through this field.
@@ -440,6 +443,36 @@ mod tests {
             check_path(&alias, &Exceptions::none(), Stage::CatalogLoad),
             Err(DenyReason::EightDotThreeUnresolved)
         );
+    }
+
+    #[test]
+    fn spellings_win32_resolves_to_protected_paths_are_refused() {
+        // Each of these was checked with GetFullPathNameW on Windows 11, and
+        // each opens a protected location. Before canonicalisation learned the
+        // rules, every one of them reached `check_path` as a path it allowed.
+        for spelling in [
+            r"C:\ProgramData\Microsoft .",
+            r"C:\ProgramData\Microsoft. .",
+            r"C:\ProgramData\MICROS~1 .",
+        ] {
+            let path = syntactic(spelling);
+            assert!(
+                check_path(&path, &catalog_exceptions(), Stage::CatalogLoad).is_err(),
+                "deny-list let {spelling} through"
+            );
+        }
+        // These no longer canonicalise at all, so nothing can hand them to the
+        // deny-list: `...` opens C:\ProgramData itself, and the stream form is
+        // the Microsoft directory reached through its index.
+        for spelling in [
+            r"C:\ProgramData\...",
+            r"C:\ProgramData\Microsoft::$INDEX_ALLOCATION",
+        ] {
+            assert!(
+                canonicalise_syntactic(spelling).is_err(),
+                "{spelling} must not canonicalise"
+            );
+        }
     }
 
     #[test]

@@ -222,7 +222,27 @@ Any top-level directory targeted as a whole: Windows, Users, ProgramData,
 Any path with fewer than 2 components under a drive root
 Any 8.3 alias that has not been expanded through the filesystem
 Any UNC or device-namespace path
+Any component made only of dots and spaces, or using NTFS stream syntax (`:`)
 ```
+
+Carve-outs are earned **per anti-cheat entry**: an entry's declared driver
+filenames and service names unlock those two carve-outs for that entry's own
+paths and keys, and nothing else. A game entry earns none. Driver files and
+service keys are anti-cheat footprint, removed only through the entry that owns
+them and only when its reference count allows; a game naming one would remove it
+with the game, which is G1.
+
+> **Canonicalisation follows Win32, towards the protected reading.** Checked
+> with `GetFullPathNameW` on Windows 11: `C:\ProgramData\Microsoft .` and
+> `Microsoft. .` both open `C:\ProgramData\Microsoft`, `C:\ProgramData\...`
+> opens `C:\ProgramData`, and `C:\ProgramData\Microsoft::$INDEX_ALLOCATION` is
+> the directory itself. All four once canonicalised to something this list
+> allowed. Trailing dots and spaces are now stripped in any mix, a component of
+> only dots and spaces is refused, and a `:` after the drive letter is refused.
+> Each rule can map a spelling onto a protected form, never away from one, and
+> catalog validation refuses such spellings outright so a reviewer never has to
+> resolve them. Enforced in `core/src/safety/paths.rs` and
+> `core/src/catalog/validate.rs`.
 
 > The depth floor was originally written as "fewer than 4 components under a
 > drive root". Taken literally that denies `%ProgramData%\EasyAntiCheat` and
