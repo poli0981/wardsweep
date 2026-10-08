@@ -405,6 +405,20 @@ Two consequences worth knowing:
   — from a container layer, an Android source tree and an ASP.NET sample — and
   it then replaced those tokens across the whole document.
 - Replacement is on token boundaries, so an account name inside a longer word
-  survives. `redact` counts what remains, reports it, and exits non-zero. It
-  does not claim to have produced a clean file, and `docs/16`'s checklist still
-  expects a person to read one before it is attached to anything.
+  survives. `redact` counts what remains — in any letter case, in values and in
+  object keys — prints the first few occurrences in context with the name
+  masked, and exits non-zero. It does not claim to have produced a clean file,
+  and `docs/16`'s checklist still expects a person to read one before it is
+  attached to anything.
+
+Three more rules came from a committed diff that carried an e-mail address with
+the account name glued to digits in front of the `@`, which the boundary rule
+cannot reach and the old report described as "`Anonymous` and the like":
+
+- E-mail addresses are replaced with `%EMAIL%` wherever they appear, before any
+  name is.
+- Names are matched in any letter case. Windows account names are
+  case-insensitive and applications write them however they like.
+- The local machine's computer and account names are removed too, because a
+  document has no reliable path to learn them from; `--also-name` adds another,
+  for a file that has been redacted once already and so teaches nothing.

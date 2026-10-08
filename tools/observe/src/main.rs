@@ -131,6 +131,9 @@ enum Command {
     /// Required before a raw snapshot may be shared, per `docs/16`. It removes
     /// identity, not secrets — a person still reads the file before it is
     /// attached to anything.
+    ///
+    /// The local machine's computer and account names are removed as well,
+    /// because a document has no reliable path to learn them from.
     Redact {
         /// The snapshot or diff to redact.
         #[arg(long = "in", value_name = "PATH")]
@@ -138,6 +141,12 @@ enum Command {
         /// Where to write the redacted copy.
         #[arg(short, long, value_name = "PATH")]
         output: PathBuf,
+        /// Another account name to remove. Repeatable.
+        ///
+        /// For a file redacted once already, whose profile paths no longer
+        /// name anyone to learn from.
+        #[arg(long = "also-name", value_name = "NAME")]
+        also_names: Vec<String>,
     },
 }
 
@@ -169,7 +178,11 @@ fn run(command: &Command) -> Result<u8> {
             output,
         } => run_suggest(diff, residue.as_ref(), signer.as_deref(), output),
         Command::Refilter { input, output } => run_refilter(input, output),
-        Command::Redact { input, output } => run_redact(input, output),
+        Command::Redact {
+            input,
+            output,
+            also_names,
+        } => run_redact(input, output, also_names),
     }
 }
 
@@ -251,9 +264,26 @@ fn run_suggest(
     Ok(exit::SUCCESS)
 }
 
-fn run_redact(input: &PathBuf, output: &PathBuf) -> Result<u8> {
+fn run_redact(input: &PathBuf, output: &PathBuf, also_names: &[String]) -> Result<u8> {
     let mut document: serde_json::Value = read_json(input)?;
-    let report = redact::redact_document(&mut document);
+
+    // The machine this runs on is almost always the machine the snapshot came
+    // from, and its names reach a document without a profile path to learn
+    // them from — OneDrive's host-name list, an application's "last user".
+    let local = |variable: &str| {
+        std::env::var(variable)
+            .ok()
+            .filter(|v| !v.trim().is_empty())
+    };
+    let extra = redact::Extra {
+        accounts: also_names
+            .iter()
+            .cloned()
+            .chain(local("USERNAME"))
+            .collect(),
+        computers: local("COMPUTERNAME").into_iter().collect(),
+    };
+    let report = redact::redact_document(&mut document, &extra);
 
     ensure_parent(output)?;
     let text = serde_json::to_string(&document).context("serialising")?;
@@ -261,7 +291,20 @@ fn run_redact(input: &PathBuf, output: &PathBuf) -> Result<u8> {
 
     eprintln!("redacted copy written to {}", output.display());
     if !report.names.is_empty() {
-        eprintln!("  account name(s) found: {}", report.names.join(", "));
+        eprintln!("  account name(s) looked for: {}", report.names.join(", "));
+    }
+    if !report.computers.is_empty() {
+        eprintln!(
+            "  computer name(s) looked for: {}",
+            report.computers.join(", ")
+        );
+    }
+    for name in &report.skipped {
+        eprintln!(
+            "  NOT APPLIED: `{name}` is shorter than {} characters and would match too much \
+             to replace safely. Search the file for it yourself.",
+            redact::MIN_NAME_LEN
+        );
     }
     if report.applied.is_empty() {
         eprintln!("  no identifying strings were found");
@@ -270,25 +313,27 @@ fn run_redact(input: &PathBuf, output: &PathBuf) -> Result<u8> {
         eprintln!("  {count} substitution(s) → {placeholder}");
     }
 
-    // Never claim more than was done.
+    // Never claim more than was done, and never tell the reader what the
+    // residue probably is. The previous wording said it was "`Anonymous` and
+    // the like"; in a committed diff it was an e-mail address.
     if report.residual.is_empty() {
-        eprintln!("  no occurrence of a discovered account name remains");
+        eprintln!("  no occurrence of a known name remains, in any letter case");
     } else {
-        for (name, count) in &report.residual {
-            // Deliberately not "this file still identifies someone". On a real
-            // snapshot all 83 residual hits were the English word "Anonymous",
-            // and a warning that cries wolf is one people learn to skip past.
-            // Say what is there and let the reader judge.
+        for (name, residual) in &report.residual {
             eprintln!(
-                "  CHECK: `{name}` still appears {count} time(s), inside longer words where \
-                 replacing it would corrupt unrelated text (`Anonymous` and the like). \
-                 Confirm none of them is the account name before sharing."
+                "  CHECK: `{name}` still appears {} time(s) where replacing it could corrupt \
+                 unrelated text — inside a longer word, or glued to other characters. Read \
+                 every one before sharing; the first few, with the name masked:",
+                residual.count
             );
+            for context in &residual.contexts {
+                eprintln!("      {context}");
+            }
         }
     }
     eprintln!("  this removes identity, not secrets — read the file before sharing it (docs/16)");
 
-    if report.residual.is_empty() {
+    if report.residual.is_empty() && report.skipped.is_empty() {
         Ok(exit::SUCCESS)
     } else {
         // Exit non-zero so a script cannot publish the result by accident.
