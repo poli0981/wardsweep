@@ -57,7 +57,7 @@ compare against. A third would probably be worth more than the next feature.
 |---|---|
 | Cargo workspace, .NET solution, toolchain pins | Done |
 | `core/src/safety/paths.rs` — canonicalisation | Done. Extended-length, UNC, device, NT-object, drive-relative and 8.3 forms all collapse or are refused; trailing dots and spaces are stripped in any mix, and dots-only components and NTFS stream syntax are refused, each checked against `GetFullPathNameW`. |
-| `core/src/safety/denylist.rs` — the deny-list | Done, with the adversarial path table from [`12`](12-TESTING-STRATEGY.md). Cannot be widened by a catalog; carve-outs are earned per anti-cheat entry, and a game entry earns none. |
+| `core/src/safety/denylist.rs` — the deny-list | Done, with the adversarial path table from [`12`](12-TESTING-STRATEGY.md). Cannot be widened by a catalog; carve-outs are earned per anti-cheat entry, and a game entry earns none. Refuses folders and keys that hold other software when targeted as a whole, Windows-owned subtrees, and inbox driver and service names. |
 | `core/src/catalog/` — schema, Ed25519, integrity checks | Done |
 | `tools/catalog/` — `wardsweep-catalog` | Done. Implements the six invocations `catalog-verify.yml` runs, with a parity test; `sign` refuses a catalog any of them would refuse. |
 | `cli/` — `wardsweep catalog …` | Verifies the signature **and** runs the four integrity checks before using a catalog, and warns when `minimum_app_version` is newer than the build. |
@@ -230,19 +230,13 @@ that S2 should start from rather than rediscover:
   every change narrowed the contract to what the platform actually does. If any
   of the five is contentious, `spikes/S3-RESULT.md` records the measurement
   behind it.
-- **Broader deny-list hardening was proposed and not taken.** The 2026-10-08
-  review found that the deny-list protects top-level directories and a few
-  named locations, but allows whole user profiles (`C:\Users\<name>`), the
-  `AppData` roots a bare `%LOCALAPPDATA%` or `%APPDATA%` expands to,
-  `AppData\Roaming\Microsoft` (DPAPI keys live under it), `UsrClass.dat`,
-  library roots such as `%STEAM_LIBRARY%\steamapps\common`, every key under
-  `HKLM\SYSTEM` except service keys, container keys such as
-  `HKLM\SOFTWARE\Microsoft`, and the `HARDWARE`, `COMPONENTS` and `DRIVERS`
-  hives. A catalog entry naming any of them passes `check-denylist`. Closing
-  that needs container lists, a ruling in `docs/05`, and care not to refuse the
-  footprint `docs/02` explicitly permits removing (`…\Uninstall\<product>`,
-  `Services\<catalog-named>`, `%ProgramData%\<vendor>`). Not urgent while no
-  removal code exists; necessary before any does.
+- **Deny-list containers are lists, and lists drift.** Since 2026-10-08 the
+  deny-list refuses whole profiles, `AppData` roots, game libraries, container
+  registry keys, Windows-owned subtrees and inbox driver and service names (see
+  `CHANGELOG.md`). Each list is written from what Windows and the three
+  launchers lay out today; a new standard profile folder, a new launcher's
+  library layout, or a new inbox driver is not covered until someone adds it.
+  Worth a review whenever a new launcher or Windows release is observed.
 - **The G3 test cannot tell a reader from a refuser, and this now matters.**
   `core/tests/no_destructive_code.rs` fails the build if a hardware-identity
   string appears in any `.rs` file under a shipped `src/`. That is the right

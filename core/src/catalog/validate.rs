@@ -410,6 +410,24 @@ pub fn check_denylist(catalog: &Catalog) -> Vec<Problem> {
 
     for ac in &catalog.anticheat {
         let owner = format!("anticheat `{}`", ac.id);
+        // Refused here as well as dropped from the carve-outs, so a catalog
+        // that names `ntfs.sys` fails loudly rather than being quietly narrowed.
+        for (index, driver) in ac.drivers.iter().enumerate() {
+            if denylist::is_inbox_driver(driver) {
+                problems.push(Problem::new(
+                    format!("{owner}.drivers[{index}]"),
+                    format!("`{driver}` ships with Windows, and no catalog may unlock it"),
+                ));
+            }
+        }
+        for (index, service) in ac.services.iter().enumerate() {
+            if denylist::is_inbox_service(service) {
+                problems.push(Problem::new(
+                    format!("{owner}.services[{index}]"),
+                    format!("`{service}` ships with Windows, and no catalog may unlock it"),
+                ));
+            }
+        }
         let exceptions = exceptions_for(ac);
         check_denylist_paths(&owner, "paths", &ac.paths, &exceptions, &mut problems);
         check_denylist_keys(&owner, &ac.registry, &exceptions, &mut problems);
@@ -650,6 +668,20 @@ mod tests {
                 .all(|problem| problem.location().starts_with("game `a-game`")),
             "the anti-cheat's own entries must stay allowed: {problems:?}"
         );
+    }
+
+    #[test]
+    fn a_catalog_cannot_name_a_windows_driver_or_service() {
+        let body = format!(
+            "{HEADER}\n[[anticheat]]\n\
+             id = \"overreach\"\ndisplay = \"Overreach\"\nkind = \"kernel\"\n\
+             shared = true\nrisk = \"critical\"\n\
+             drivers = [\"overreach.sys\", \"ntfs.sys\"]\nservices = [\"Overreach\", \"Tcpip\"]\n"
+        );
+        let problems = check_denylist(&catalog_from(&body));
+        assert_eq!(problems.len(), 2, "{problems:?}");
+        assert!(problems[0].message().contains("ntfs.sys"));
+        assert!(problems[1].message().contains("Tcpip"));
     }
 
     #[test]

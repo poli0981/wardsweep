@@ -210,20 +210,45 @@ Compiled in, checked after catalog expansion, on every path and key, at scan
 ```
 C:\Windows\**              except explicit driver filenames in System32\drivers
 C:\Windows\System32\**     no exceptions beyond the above
-C:\Users\**\NTUSER.DAT*
+**\NTUSER.DAT*  **\USRCLASS.DAT*        user hives, anywhere
 C:\ProgramData\Microsoft\**
-HKLM\SYSTEM\CurrentControlSet\Services\*   except catalog-named services
-HKLM\SAM\**  HKLM\SECURITY\**  HKLM\BCD*
+Users\*\AppData\{Local,LocalLow,Roaming}\Microsoft\**
+Program Files\WindowsApps\**  Program Files\Windows Defender\**
+HKLM\SYSTEM\**             except <ControlSet>\Services\<catalog-named service>
+HKLM\SAM  HKLM\SECURITY  HKLM\BCD*  HKLM\HARDWARE  HKLM\COMPONENTS  HKLM\DRIVERS
+HKCC\**
+HKLM\SOFTWARE\Microsoft\Cryptography\**  …\Windows NT\CurrentVersion\Winlogon\**
+  …\Microsoft\Windows Defender\**  (and the same under SOFTWARE\WOW6432Node)
+Driver files and services that ship with Windows — never unlockable by a catalog
 Any path resolving to a volume root
 Any path traversing a reparse point
 Any top-level directory targeted as a whole: Windows, Users, ProgramData,
   Program Files, Program Files (x86), $Recycle.Bin, System Volume Information,
   Recovery, Boot, EFI, PerfLogs — on every drive, not only C:
+Any folder that holds other software, targeted as a whole: a profile, its
+  AppData roots and standard folders (Documents, Desktop, Saved Games,
+  Documents\My Games, …), Common Files, Package Cache, a Steam installation,
+  any SteamLibrary, steamapps or steamapps\common, any Epic Games library
+Any registry key that holds other software's keys, targeted as a whole:
+  SOFTWARE\Microsoft, …\Windows\CurrentVersion, …\Uninstall, …\Run,
+  SOFTWARE\Classes, SOFTWARE\Policies, SOFTWARE\WOW6432Node, … — under HKLM
+  and under each user's root
 Any path with fewer than 2 components under a drive root
 Any 8.3 alias that has not been expanded through the filesystem
 Any UNC or device-namespace path
 Any component made only of dots and spaces, or using NTFS stream syntax (`:`)
 ```
+
+> **Containers are refused whole, never below.** `C:\Users\<name>` passed the
+> depth floor, and so did the root every bare `%LOCALAPPDATA%`, `%APPDATA%` or
+> `%USERPROFILE%` expands to, `HKLM\SOFTWARE\Microsoft`, the whole of
+> `HKLM\SOFTWARE\WOW6432Node`, and a Steam library three levels down. A catalog
+> naming one of those is wrong in every case; a catalog naming something
+> *inside* one — `…\Uninstall\<product>`, `%LOCALAPPDATA%\<vendor>`,
+> `steamapps\common\<game>` — is the footprint [`02`](02-SAFETY-GATE.md)
+> permits removing, and stays allowed. Per-user Start menu shortcuts become
+> unremovable, as the all-users ones under `%ProgramData%\Microsoft` always
+> were. The exact lists are in `core/src/safety/denylist.rs`.
 
 Carve-outs are earned **per anti-cheat entry**: an entry's declared driver
 filenames and service names unlock those two carve-outs for that entry's own
