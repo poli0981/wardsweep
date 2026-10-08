@@ -2,9 +2,10 @@
 //!
 //! `docs/11-CLI-REFERENCE.md` describes the full surface: `scan`, `plan`,
 //! `apply`, `resume`, `rollback`, `quarantine`, `report`, `catalog`, `observe`.
-//! This build implements only `catalog`, because only the catalog machinery
-//! exists — `docs/19-ROADMAP.md` v0.1 is audit-only and `docs/13-P0-SPIKES.md`
-//! gates the rest behind seven recorded spike verdicts.
+//! This build implements `catalog`, because only the catalog machinery exists,
+//! and `observe`, which runs the separate read-only harness — `docs/19-ROADMAP.md`
+//! v0.1 is audit-only and `docs/13-P0-SPIKES.md` gates the rest behind seven
+//! recorded spike verdicts.
 //!
 //! The unimplemented subcommands are **absent** rather than present-and-stubbed.
 //! `wardsweep apply` returning "not implemented" reads like a temporary outage;
@@ -12,6 +13,7 @@
 //! people to trust it with their drivers, and that starts with not overstating
 //! what it can do.
 
+use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
@@ -22,6 +24,8 @@ use wardsweep_core::catalog::{self, Catalog, validate, verify};
 const EXIT_OK: u8 = 0;
 /// Nothing found / nothing to do.
 const EXIT_NOTHING: u8 = 1;
+/// The scan failed — here, the harness could not be run at all.
+const EXIT_SCAN_ERROR: u8 = 2;
 /// Catalog verification failed.
 const EXIT_CATALOG_FAILED: u8 = 9;
 /// Usage error.
@@ -52,6 +56,23 @@ enum Command {
     /// Inspect the loaded catalog.
     #[command(subcommand)]
     Catalog(CatalogCommand),
+
+    /// Run the read-only observation harness, `wardsweep-observe`.
+    ///
+    /// Every argument after `observe` is passed to it unchanged, `--help`
+    /// included: `wardsweep observe snapshot -o x.json` is
+    /// `wardsweep-observe snapshot -o x.json`. The harness is looked for
+    /// beside this executable and nowhere else.
+    #[command(disable_help_flag = true)]
+    Observe {
+        /// The harness's subcommand and its arguments.
+        #[arg(
+            trailing_var_arg = true,
+            allow_hyphen_values = true,
+            value_name = "ARGS"
+        )]
+        args: Vec<OsString>,
+    },
 }
 
 #[derive(Subcommand)]
@@ -78,12 +99,75 @@ fn main() -> ExitCode {
         }
     };
 
-    let Command::Catalog(command) = &cli.command;
-    let path = resolve_catalog_path(cli.catalog.as_deref(), cli.data_dir.as_deref());
+    match &cli.command {
+        // No catalog: the harness observes the machine, it does not consult
+        // the catalog, and a missing or unsigned catalog must not stop it.
+        Command::Observe { args } => run_observe(args),
+        Command::Catalog(command) => {
+            let path = resolve_catalog_path(cli.catalog.as_deref(), cli.data_dir.as_deref());
+            match load_verified(&path) {
+                Err(code) => code,
+                Ok(loaded) => run_catalog(command, &loaded),
+            }
+        }
+    }
+}
 
-    match load_verified(&path) {
-        Err(code) => code,
-        Ok(loaded) => run_catalog(command, &loaded),
+/// The harness's file name on this platform.
+fn harness_name() -> String {
+    format!("wardsweep-observe{}", std::env::consts::EXE_SUFFIX)
+}
+
+/// Where the harness has to be: beside `exe`, the running CLI.
+///
+/// Never looked up on `PATH`, and never in the working directory, which is the
+/// first place Windows searches for a bare program name. `docs/11` makes
+/// `observe` a thin alias, and an alias that can be pointed at another program
+/// by whoever controls the current directory is not one.
+fn harness_beside(exe: &Path) -> PathBuf {
+    exe.with_file_name(harness_name())
+}
+
+/// The CLI's exit code for the harness's: its own, when it fits.
+///
+/// The two binaries share `docs/11`'s table, so a code passes through. One that
+/// does not fit a byte — a Windows status such as an access violation — or a
+/// process ended without one is reported as the scan having failed.
+fn exit_code_of(code: Option<i32>) -> u8 {
+    code.and_then(|code| u8::try_from(code).ok())
+        .unwrap_or(EXIT_SCAN_ERROR)
+}
+
+fn run_observe(args: &[OsString]) -> ExitCode {
+    let harness = match std::env::current_exe() {
+        Ok(exe) => harness_beside(&exe),
+        Err(error) => {
+            eprintln!("cannot tell where this executable is, so cannot find the harness: {error}");
+            return ExitCode::from(EXIT_SCAN_ERROR);
+        }
+    };
+    if !harness.is_file() {
+        eprintln!(
+            "the observation harness is not installed: {} does not exist",
+            harness.display()
+        );
+        eprintln!(
+            "  it is a separate download on the release page (docs/14-DISTRIBUTION-TRUST.md), \
+             or build it with `cargo build --release -p wardsweep-observe`, and put {} in {}",
+            harness_name(),
+            harness.parent().map_or_else(
+                || "this executable".to_owned(),
+                |dir| dir.display().to_string()
+            )
+        );
+        return ExitCode::from(EXIT_SCAN_ERROR);
+    }
+    match std::process::Command::new(&harness).args(args).status() {
+        Ok(status) => ExitCode::from(exit_code_of(status.code())),
+        Err(error) => {
+            eprintln!("cannot run {}: {error}", harness.display());
+            ExitCode::from(EXIT_SCAN_ERROR)
+        }
     }
 }
 
@@ -311,6 +395,54 @@ mod tests {
             signature_path(Path::new("catalog")),
             PathBuf::from("catalog.sig")
         );
+    }
+
+    #[test]
+    fn the_harness_is_looked_for_beside_the_cli_and_nowhere_else() {
+        let exe = Path::new("install").join(format!("wardsweep{}", std::env::consts::EXE_SUFFIX));
+
+        assert_eq!(
+            harness_beside(&exe),
+            Path::new("install").join(format!("wardsweep-observe{}", std::env::consts::EXE_SUFFIX))
+        );
+    }
+
+    #[test]
+    fn everything_after_observe_reaches_the_harness_unchanged() {
+        let parsed = |args: &[&str]| -> Vec<OsString> {
+            match Cli::try_parse_from(args).expect("parses").command {
+                Command::Observe { args } => args,
+                Command::Catalog(_) => panic!("parsed as catalog"),
+            }
+        };
+
+        assert_eq!(
+            parsed(&[
+                "wardsweep",
+                "observe",
+                "snapshot",
+                "-o",
+                "x.json",
+                "--label",
+                "a b"
+            ]),
+            ["snapshot", "-o", "x.json", "--label", "a b"]
+        );
+        // The harness's help, not this one's.
+        assert_eq!(parsed(&["wardsweep", "observe", "--help"]), ["--help"]);
+        assert_eq!(
+            parsed(&["wardsweep", "observe", "diff", "--no-filter"]),
+            ["diff", "--no-filter"]
+        );
+    }
+
+    #[test]
+    fn the_harness_exit_code_passes_through_when_it_can() {
+        assert_eq!(exit_code_of(Some(0)), 0);
+        assert_eq!(exit_code_of(Some(1)), 1);
+        // STATUS_ACCESS_VIOLATION, as Windows reports a crashed process.
+        assert_eq!(exit_code_of(Some(-1_073_741_819)), EXIT_SCAN_ERROR);
+        assert_eq!(exit_code_of(None), EXIT_SCAN_ERROR);
     }
 
     #[test]

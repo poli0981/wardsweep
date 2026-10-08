@@ -60,7 +60,7 @@ compare against. A third would probably be worth more than the next feature.
 | `core/src/safety/denylist.rs` — the deny-list | Done, with the adversarial path table from [`12`](12-TESTING-STRATEGY.md). Cannot be widened by a catalog; carve-outs are earned per anti-cheat entry, and a game entry earns none. Refuses folders and keys that hold other software when targeted as a whole, Windows-owned subtrees, and inbox driver and service names. |
 | `core/src/catalog/` — schema, Ed25519, integrity checks | Done |
 | `tools/catalog/` — `wardsweep-catalog` | Done. Implements the six invocations `catalog-verify.yml` runs, with a parity test; `sign` refuses a catalog any of them would refuse. |
-| `cli/` — `wardsweep catalog …` | Verifies the signature **and** runs the four integrity checks before using a catalog, and warns when `minimum_app_version` is newer than the build. |
+| `cli/` — `wardsweep catalog …`, `wardsweep observe …` | Verifies the signature **and** runs the four integrity checks before using a catalog, and warns when `minimum_app_version` is newer than the build. `observe` runs the harness from beside the CLI, never from `PATH`. |
 | `catalog/catalog.toml` | Signed, and **empty of entries** on purpose — see below |
 | `core/benches/scan_corpus.rs` | Done, gated on the hard-fail budgets in [`10`](10-PERF-BUDGET.md) |
 | `ui/` — WPF shell | Shell only, plus the architecture tests that assert the UI has no destructive code path |
@@ -120,6 +120,13 @@ consequence:
 What it did not do is in "Open, needs a maintainer decision" below.
 
 ### The same day, after the audit
+
+*Later that day the maintainer delegated the open decisions — "whatever is
+most optimal" — and they were settled as follows. **The harness ships, as a
+separate download**: `wardsweep observe` forwards to it, and releases carry it
+in a zip of its own rather than inside the installer, which keeps a binary
+that reads the whole machine away from the package whose antivirus record
+matters (see [`14`](14-DISTRIBUTION-TRUST.md)).*
 
 Pull requests #38–#43, once the maintainer approved the proposals:
 
@@ -291,13 +298,6 @@ that S2 should start from rather than rediscover:
   anywhere. **Worth a maintainer's ruling on whether the test should make the
   distinction explicit.**
 
-- **Whether the harness ships, and whether `wardsweep observe` forwards to
-  it.** [`11`](11-CLI-REFERENCE.md) and [`16`](16-OBSERVATION-HARNESS.md)
-  describe `wardsweep observe …` as a passthrough to `wardsweep-observe.exe`,
-  but the CLI has no such subcommand and `release.yml` does not package the
-  harness. Either it is a contributor tool, built from source, and the
-  documents should say so — or it ships, and the passthrough and the packaging
-  are both owed. Both are small; the choice is not.
 - **Whether unredirected registry roots are read through one view.**
   `HKLM\SYSTEM\CurrentControlSet\Services` and `HKCU\SOFTWARE` are walked in
   both WOW64 views, which doubles them (see "Known gaps"). Reading them once is

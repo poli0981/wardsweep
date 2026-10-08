@@ -154,8 +154,10 @@ wardsweep observe refilter --in diff.json -o diff.json     # current policy and 
 wardsweep observe redact --in diff.json -o shared-diff.json
 ```
 
-The passthrough itself is not written yet: today the harness is run as
-`wardsweep-observe`, under exactly the same arguments.
+The harness is run from the directory `wardsweep.exe` is in, never from `PATH`
+or the working directory, and its exit code is passed back unchanged. It is a
+separate download ([`14`](14-DISTRIBUTION-TRUST.md)); until it is extracted
+there, `wardsweep observe` says so and exits 2.
 
 ## Exit codes
 
