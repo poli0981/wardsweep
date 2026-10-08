@@ -288,7 +288,10 @@ this whole design exists to avoid.
 
 Only one diff was taken: `00-current` to `01-uninstalled`, committed as
 `residue.json`. `draft.toml` was generated from the **same data reversed**, so
-that the removals read as additions and `suggest` could see a footprint.
+that the removals read as additions and `suggest` could see a footprint. The
+first draft reversed it with a script that was never kept; since 2026-10-08 the
+draft is rebuilt from the committed diff with `suggest --removed`, and a test
+pins it — see "The draft was rebuilt" below.
 
 There is deliberately no `footprint.json`. It would be that same diff under a
 second name, and two files implying two independent observations is worse than
@@ -339,3 +342,24 @@ stays absent — not known — because format 1 snapshots never recorded empty
 keys. The policy removed nothing this time, and every change, field and file
 record is what it was. The file is indented again: `redact` had written it on
 one line.
+
+### The draft was rebuilt from the committed diff on 2026-10-08
+
+```
+wardsweep-observe suggest --diff residue.json --removed --signer "ACEVILLE PTE LTD" -o draft.toml
+```
+
+The rebuilt draft differs from the first one in two places, both because the
+generator got stricter after it was written:
+
+- **`ACE-ADVT` is no longer in it.** It is the anti-cheat's — the WMI finding
+  above is about exactly this driver — but nothing in the diff ties it to
+  ACEVILLE: like every ACE driver it is signed by the Microsoft Windows Hardware
+  Compatibility Publisher, and unlike `ACE-BASE` and the two `ACE-CORE` drivers
+  it has no copy under `%ProgramFiles%\AntiCheatExpert` to be attributed
+  through. The generator no longer guesses (`docs/16`, "Draft entry
+  generation"); it names the service and its driver at the top of the review
+  notes instead. A reviewer adds them back, and this note is the evidence for
+  doing so.
+- **The uninstall key is recorded in the 64-bit view only**, which is the view
+  it was observed in. The first draft claimed `both`.

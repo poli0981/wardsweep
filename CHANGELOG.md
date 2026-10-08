@@ -173,6 +173,12 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
   footprint stays kept; coverage is what every footprint covered; and it refuses
   fewer than two footprints, the same footprint twice, an intersection as
   input, and footprints from different snapshot formats.
+- `observe suggest --removed`, which reads a diff taken from an installed
+  machine to an uninstalled one the other way round, so the uninstall half of
+  the cycle can be drafted from without a script. The AntiCheatExpert draft is
+  rebuilt with it from its committed diff and pinned by a test, as the Vanguard
+  draft already was; the rebuild leaves out `ACE-ADVT`, which nothing in the
+  diff ties to the publisher, and names it for a reviewer instead.
 
 ### Changed
 - `docs/08-IPC-PROTOCOL.md` amended from the S3 findings, in five places. Events

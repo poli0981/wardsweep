@@ -481,6 +481,12 @@ state. Recovering it:
 Step 4 alone justifies the cycle. It answers "what does the official uninstaller
 miss?" with evidence, which is the founding claim of the whole project.
 
+Until the reinstall half exists, the uninstall half can still be drafted from: a
+diff taken from `00-current` to `01-clean` holds what the uninstaller removed as
+*removals*, and `suggest --removed` reads it the other way round so that they
+are the footprint. What the uninstaller left behind is in neither snapshot's
+difference, so it is not in that draft either.
+
 ## Storage
 
 ```

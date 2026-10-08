@@ -144,11 +144,13 @@ Pull requests #38–#43, once the maintainer approved the proposals:
   regression from the dependency refresh was ruled out by running the older
   build back to back with the new one.
 - **The hardened deny-list costs more and still fits.** Measured with
-  `scan_corpus` after #38: canonicalising a path takes about 1 µs and checking
-  it about 70 ns — roughly half a second for half a million paths, against the
-  15 s audit budget in [`10`](10-PERF-BUDGET.md). Criterion reported ×2.7 and
-  ×12, but against a local baseline from 2026-08-12 that predates both the
-  canonicalisation rules and the containers, so the ratios say little.
+  `scan_corpus` after #38: canonicalising a path takes about 0.4 µs, much as it
+  did on 2026-08-12, and checking it against the deny-list about 35 ns, five to
+  six times the August figure — together about a fifth of a second for half a
+  million paths, against the 15 s audit budget in
+  [`10`](10-PERF-BUDGET.md). A first run on a busy machine measured twice as
+  long and was briefly recorded here; criterion's ratios are only as good as
+  the moment their baseline was taken.
 
 ## Next, in order
 
@@ -368,11 +370,13 @@ consequences that outlive the spike.
   `docs/16` calls the more valuable of the two, is unfillable on exactly the
   machines the document contemplates. Riot Vanguard's residue is known to the
   byte and its committed draft cannot carry it.
-  Related, and cheaper to fix: `suggest` consumes only `added` changes, so the
-  AntiCheatExpert draft was produced by inverting a removal diff with an ad-hoc
-  script that was never committed — **that draft is not reproducible from the
-  committed artefacts.** The Vanguard draft is, because a real install diff
-  exists for it.
+  The related and cheaper problem is fixed: `suggest` consumed only `added`
+  changes, so the AntiCheatExpert draft came from a removal diff reversed by a
+  script nobody kept. `suggest --removed` (2026-10-08) reads such a diff the
+  other way round, and both committed drafts are now rebuilt from their
+  committed diffs and pinned by tests. The rebuilt AntiCheatExpert draft leaves
+  out `ACE-ADVT`, which nothing in the diff ties to the publisher, and names it
+  for a reviewer instead; its notes have the evidence to add it back.
 - The harness can describe a machine that already has an anti-cheat installed.
   That is a *detection*, not an observation: `CONTRIBUTING.md` requires a
   before/after cycle, and `docs/16` §"The uninstall-and-reinstall cycle" is the

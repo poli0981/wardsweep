@@ -499,6 +499,117 @@ pub fn compare(
     })
 }
 
+/// The same diff read the other way round: what it removed, added.
+///
+/// For a diff taken from an installed machine to an uninstalled one — the
+/// first half of the uninstall-and-reinstall cycle, and the only half of the
+/// committed `AntiCheatExpert` observation — the footprint is what was
+/// *removed*, and `suggest` drafts from additions. Every change swaps its kind, its two
+/// records and each field's two values; flags and signers are read again from
+/// the record that is now the later one.
+///
+/// The emptied lists become `None`: the reverse of "emptied" — empty before,
+/// gone or occupied after — is not something either snapshot recorded, and an
+/// empty list would claim it was.
+#[must_use]
+pub fn reversed(diff: &Diff) -> Diff {
+    fn kind(kind: ChangeKind) -> ChangeKind {
+        match kind {
+            ChangeKind::Added => ChangeKind::Removed,
+            ChangeKind::Removed => ChangeKind::Added,
+            ChangeKind::Modified => ChangeKind::Modified,
+        }
+    }
+    fn fields(fields: &[FieldChange]) -> Vec<FieldChange> {
+        fields
+            .iter()
+            .map(|field| FieldChange {
+                field: field.field.clone(),
+                before: field.after.clone(),
+                after: field.before.clone(),
+            })
+            .collect()
+    }
+    fn service(change: &ServiceChange) -> ServiceChange {
+        let later = change.before.as_ref().or(change.after.as_ref());
+        ServiceChange {
+            name: change.name.clone(),
+            kind: kind(change.kind),
+            is_driver: later.map_or(change.is_driver, ServiceRecord::is_driver),
+            is_boot_start: later.map_or(change.is_boot_start, ServiceRecord::is_boot_start),
+            before: change.after.clone(),
+            after: change.before.clone(),
+            fields: fields(&change.fields),
+        }
+    }
+    fn file(change: &FileChange) -> FileChange {
+        let later = change.before.as_ref().or(change.after.as_ref());
+        FileChange {
+            path: change.path.clone(),
+            kind: kind(change.kind),
+            signer: later.map_or_else(|| change.signer.clone(), |record| record.signer.clone()),
+            is_driver_image: change.is_driver_image,
+            before: change.after.clone(),
+            after: change.before.clone(),
+            fields: fields(&change.fields),
+        }
+    }
+
+    let files: Vec<FileChange> = diff.files.iter().map(file).collect();
+    let mut signers: BTreeMap<String, usize> = BTreeMap::new();
+    for change in &files {
+        if let Some(signer) = &change.signer {
+            *signers.entry(signer.clone()).or_insert(0) += 1;
+        }
+    }
+
+    Diff {
+        format_version: diff.format_version,
+        snapshot_format_version: diff.snapshot_format_version,
+        before_taken_utc: diff.after_taken_utc.clone(),
+        after_taken_utc: diff.before_taken_utc.clone(),
+        rebooted_between: diff.rebooted_between,
+        emptied_directories: None,
+        emptied_keys: None,
+        coverage: diff.coverage.clone(),
+        services: diff.services.iter().map(service).collect(),
+        suppressed: diff
+            .suppressed
+            .iter()
+            .map(|entry| Suppressed {
+                rule: entry.rule.clone(),
+                change: service(&entry.change),
+            })
+            .collect(),
+        files,
+        suppressed_files: diff
+            .suppressed_files
+            .iter()
+            .map(|entry| SuppressedFile {
+                rule: entry.rule.clone(),
+                change: file(&entry.change),
+            })
+            .collect(),
+        registry: diff
+            .registry
+            .iter()
+            .map(|change| RegistryChange {
+                key: change.key.clone(),
+                view: change.view.clone(),
+                kind: kind(change.kind),
+                before: change.after.clone(),
+                after: change.before.clone(),
+                fields: fields(&change.fields),
+            })
+            .collect(),
+        registry_policy_changed: diff.registry_policy_changed,
+        filesystem_policy_changed: diff.filesystem_policy_changed,
+        signers,
+        refiltered: diff.refiltered,
+        intersection_of: diff.intersection_of.clone(),
+    }
+}
+
 /// Apply this build's privacy policy to a diff that already exists.
 ///
 /// The same rule [`compare`] applies to snapshots, for a diff produced before
@@ -1715,6 +1826,41 @@ pub(crate) mod tests {
 
         // Running it again finds nothing more, so it is safe to repeat.
         assert!(refilter(&mut diff, &Policy::current()).is_empty());
+    }
+
+    #[test]
+    fn a_diff_read_the_other_way_round_turns_removals_into_additions() {
+        let installed = snapshot(vec![service("ACE-BASE")]);
+        let uninstalled = snapshot(vec![]);
+
+        let removal = compare(&installed, &uninstalled, &NoiseFilter::permissive()).unwrap();
+        let read_back = reversed(&removal);
+
+        assert_eq!(removal.services[0].kind, ChangeKind::Removed);
+        assert_eq!(read_back.services[0].kind, ChangeKind::Added);
+        assert!(read_back.services[0].before.is_none());
+        assert_eq!(read_back.before_taken_utc, removal.after_taken_utc);
+        // And back again, to the letter.
+        assert_eq!(
+            serde_json::to_value(reversed(&read_back)).unwrap(),
+            serde_json::to_value(&removal).unwrap()
+        );
+    }
+
+    #[test]
+    fn reading_a_diff_backwards_does_not_invent_emptied_lists() {
+        let mut before = snapshot(vec![]);
+        let mut after = snapshot(vec![]);
+        for side in [&mut before, &mut after] {
+            side.coverage.captured.push(Domain::Filesystem);
+            side.file_empty_directories = Some(Vec::new());
+        }
+
+        let diff = compare(&before, &after, &NoiseFilter::permissive()).unwrap();
+
+        assert_eq!(diff.emptied_directories, Some(Vec::new()));
+        // Empty before and gone after is not what either snapshot recorded.
+        assert_eq!(reversed(&diff).emptied_directories, None);
     }
 
     #[test]

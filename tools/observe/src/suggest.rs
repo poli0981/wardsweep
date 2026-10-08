@@ -1282,25 +1282,60 @@ mod tests {
     const VANGUARD_DRAFT: &str =
         include_str!("../../../observations/2026-08-19-riot-vanguard/draft.toml");
 
-    #[test]
-    fn the_committed_vanguard_draft_is_reproducible_from_its_committed_diff() {
-        // docs/PROGRESS.md: the AntiCheatExpert draft came from a script that
-        // was never committed and cannot be rebuilt. This one can, and this
-        // test is what keeps it that way. A change to the differ or to this
-        // generator that alters the draft fails here, where it has to be
-        // explained, instead of leaving a committed artefact nobody can
-        // reproduce.
-        let diff: Diff =
-            serde_json::from_str(VANGUARD_INSTALL_DIFF).expect("the committed install diff parses");
-        let generated_utc = VANGUARD_DRAFT
+    /// The committed `AntiCheatExpert` diff, which runs from installed to
+    /// uninstalled.
+    const ACE_REMOVAL_DIFF: &str =
+        include_str!("../../../observations/2026-08-19-anticheatexpert/residue.json");
+
+    /// The draft committed alongside it.
+    const ACE_DRAFT: &str =
+        include_str!("../../../observations/2026-08-19-anticheatexpert/draft.toml");
+
+    /// The timestamp a committed draft records on its first line.
+    fn generated_utc(draft: &str) -> &str {
+        draft
             .lines()
             .next()
             .and_then(|line| line.strip_prefix("# DRAFT — generated "))
-            .expect("the committed draft starts with its generation line");
+            .expect("the committed draft starts with its generation line")
+    }
 
-        let rendered = to_toml(&draft(&diff, None, Some("Riot Games, Inc.")), generated_utc)
-            .expect("the draft serialises");
+    #[test]
+    fn the_committed_vanguard_draft_is_reproducible_from_its_committed_diff() {
+        // A committed draft nobody can rebuild is an assertion, not evidence.
+        // A change to the differ or to this generator that alters the draft
+        // fails here, where it has to be explained, instead of leaving a
+        // committed artefact nobody can reproduce.
+        let diff: Diff =
+            serde_json::from_str(VANGUARD_INSTALL_DIFF).expect("the committed install diff parses");
+
+        let rendered = to_toml(
+            &draft(&diff, None, Some("Riot Games, Inc.")),
+            generated_utc(VANGUARD_DRAFT),
+        )
+        .expect("the draft serialises");
 
         assert_eq!(rendered, VANGUARD_DRAFT);
+    }
+
+    #[test]
+    fn the_committed_anticheatexpert_draft_is_reproducible_from_its_committed_diff() {
+        // Its first draft came from that diff reversed by a script nobody
+        // kept. `suggest --removed` reads it the other way round instead, and
+        // this is what it makes of it.
+        let diff: Diff =
+            serde_json::from_str(ACE_REMOVAL_DIFF).expect("the committed removal diff parses");
+
+        let rendered = to_toml(
+            &draft(
+                &crate::diff::reversed(&diff),
+                None,
+                Some("ACEVILLE PTE LTD"),
+            ),
+            generated_utc(ACE_DRAFT),
+        )
+        .expect("the draft serialises");
+
+        assert_eq!(rendered, ACE_DRAFT);
     }
 }

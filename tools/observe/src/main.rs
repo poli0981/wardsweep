@@ -107,6 +107,13 @@ enum Command {
         /// Attribute the footprint to this publisher rather than the commonest.
         #[arg(long, value_name = "CN")]
         signer: Option<String>,
+        /// Read `--diff` the other way round: its removals are the footprint.
+        ///
+        /// For a diff taken from an installed machine to an uninstalled one,
+        /// which is what the first half of the uninstall-and-reinstall cycle
+        /// produces. `--residue` is read as given.
+        #[arg(long)]
+        removed: bool,
         /// Where to write the draft.
         #[arg(short, long, value_name = "PATH")]
         output: PathBuf,
@@ -190,8 +197,9 @@ fn run(command: &Command) -> Result<u8> {
             diff,
             residue,
             signer,
+            removed,
             output,
-        } => run_suggest(diff, residue.as_ref(), signer.as_deref(), output),
+        } => run_suggest(diff, residue.as_ref(), signer.as_deref(), *removed, output),
         Command::Intersect { diffs, output } => run_intersect(diffs, output),
         Command::Refilter { input, output } => run_refilter(input, output),
         Command::Redact {
@@ -324,6 +332,7 @@ fn run_suggest(
     diff_path: &PathBuf,
     residue_path: Option<&PathBuf>,
     signer: Option<&str>,
+    removed: bool,
     output: &PathBuf,
 ) -> Result<u8> {
     let footprint: diff::Diff = read_json(diff_path)?;
@@ -344,6 +353,15 @@ fn run_suggest(
         );
     }
 
+    let footprint = if removed {
+        eprintln!(
+            "  reading {} the other way round: what it removed is the footprint",
+            diff_path.display()
+        );
+        diff::reversed(&footprint)
+    } else {
+        footprint
+    };
     let draft = suggest::draft(&footprint, residue.as_ref(), signer);
     let toml = suggest::to_toml(&draft, &clock::now_utc()).context("rendering the draft")?;
 
