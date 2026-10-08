@@ -4,9 +4,9 @@
     "net10.0-windows7.0": {
       "Meziantou.Analyzer": {
         "type": "Direct",
-        "requested": "[2.0.242, )",
-        "resolved": "2.0.242",
-        "contentHash": "M24UlaIe/gppqAtpTA96hkzs5PRGfq/lXF7auqZRdQuKrCa8aESugytgn33npgzSEygs7JuoE16ZRwIBJvWsvQ=="
+        "requested": "[3.0.294, )",
+        "resolved": "3.0.294",
+        "contentHash": "j78ENG75OozcuL0OPSIjvgLaYI4F5nS8mpK02PlXCCCXj8A4CAIfpKw27ZPvG4k8TweGqParV8Dwm2VAwBBmgg=="
       },
       "Microsoft.NET.Test.Sdk": {
         "type": "Direct",
