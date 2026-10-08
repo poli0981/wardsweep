@@ -121,14 +121,7 @@ What it did not do is in "Open, needs a maintainer decision" below.
 
 ### The same day, after the audit
 
-*Later that day the maintainer delegated the open decisions — "whatever is
-most optimal" — and they were settled as follows. **The harness ships, as a
-separate download**: `wardsweep observe` forwards to it, and releases carry it
-in a zip of its own rather than inside the installer, which keeps a binary
-that reads the whole machine away from the package whose antivirus record
-matters (see [`14`](14-DISTRIBUTION-TRUST.md)).*
-
-Pull requests #38–#43, once the maintainer approved the proposals:
+Pull requests #38 onwards, once the maintainer approved the proposals:
 
 - **The broader deny-list hardening was approved and shipped** (#38): whole
   profiles, `AppData` roots, game library containers, Windows-owned subtrees,
@@ -142,6 +135,11 @@ Pull requests #38–#43, once the maintainer approved the proposals:
   diffs were upgraded to it (#42), and `redact` no longer flattens a diff onto
   one line (#41).
 - **`observe intersect`** (#43), the last subcommand `docs/16` described.
+- **`suggest --removed`** (#45): both committed drafts are now rebuilt from
+  their committed diffs and pinned by tests.
+- **Third-party notices are generated and checked** (#46): `licenses/rust.md`
+  and `licenses/dotnet.md`, with the licence texts, regenerated offline from
+  the lock files, compared in CI, and packed into every release.
 - **CodeQL's first Rust analysis raised three alerts**, all
   `rust/cleartext-logging` and all name matches: two test loops over fake
   values in a variable called `secret`, and `keygen` printing the *path* of the
@@ -158,6 +156,25 @@ Pull requests #38–#43, once the maintainer approved the proposals:
   [`10`](10-PERF-BUDGET.md). A first run on a busy machine measured twice as
   long and was briefly recorded here; criterion's ratios are only as good as
   the moment their baseline was taken.
+
+*Later that day the maintainer delegated the open decisions — "whatever is
+most optimal" — and they were settled as follows.*
+
+- ***The harness ships, as a separate download.*** `wardsweep observe` forwards
+  to it, and releases carry it in a zip of its own rather than inside the
+  installer, which keeps a binary that reads the whole machine away from the
+  package whose antivirus record matters (see [`14`](14-DISTRIBUTION-TRUST.md)).
+- ***Unredirected registry roots stay read through both views.*** The second
+  copy is 7.9 % of a snapshot's registry records, and the whole registry walk
+  takes seconds of a capture measured in minutes, so the saving is small;
+  reading them once would change what `suggest` writes about their view and
+  need another snapshot format. Recorded in the collector.
+- ***The G3 test stays unable to tell a reader from a refuser.*** An exemption
+  for code that refuses identifiers is one a reader could later hide behind.
+  The rule instead is the one the registry collector already follows: a list
+  that refuses identifiers is data outside every `.rs` file, loaded with
+  `include_str!` and tested from the file, so naming one in Rust source stays
+  an error. Recorded in `core/tests/no_destructive_code.rs`.
 
 ## Next, in order
 
@@ -282,28 +299,6 @@ that S2 should start from rather than rediscover:
   launchers lay out today; a new standard profile folder, a new launcher's
   library layout, or a new inbox driver is not covered until someone adds it.
   Worth a review whenever a new launcher or Windows release is observed.
-- **The G3 test cannot tell a reader from a refuser, and this now matters.**
-  `core/tests/no_destructive_code.rs` fails the build if a hardware-identity
-  string appears in any `.rs` file under a shipped `src/`. That is the right
-  rule for code that *reads* an identifier and the wrong one for a deny-list
-  that *refuses* one — a G3 deny-list written in Rust is rejected by the gate it
-  enforces, and so are its tests.
-
-  The registry collector works within the rule rather than around it: the list
-  lives in `tools/observe/src/collect/g3-identity-terms.txt`, is loaded with
-  `include_str!`, and its tests are driven from the file instead of naming
-  terms. That is arguably better — a deny-list is data, shipped and reviewable,
-  the way [`16`](16-OBSERVATION-HARNESS.md) asks noise rules to be — but it
-  also means a reviewer reading the test would not expect the terms to exist
-  anywhere. **Worth a maintainer's ruling on whether the test should make the
-  distinction explicit.**
-
-- **Whether unredirected registry roots are read through one view.**
-  `HKLM\SYSTEM\CurrentControlSet\Services` and `HKCU\SOFTWARE` are walked in
-  both WOW64 views, which doubles them (see "Known gaps"). Reading them once is
-  cheaper and more honest about what was observed, but `suggest` would then
-  draft their keys as `view = "64"` rather than `"both"`, and that changes what
-  a catalog entry says.
 
 ## What S3 changed, in one place
 
@@ -393,8 +388,8 @@ consequences that outlive the spike.
   both WOW64 views although neither is redirected (apart from a few `Classes`
   subkeys), so every key under them is recorded twice, once per view: 7.9 %
   of a snapshot's registry records are the second copy. Harmless — `suggest`
-  reports such keys as `view = "both"`, which they are — but not free. Changing
-  it changes what `suggest` says about views, so it was left out of format 2.
+  reports such keys as `view = "both"`, which they are — but not free. Kept on
+  purpose: see "The same day, after the audit".
 
 - `release.yml` is unverified. It only runs on a tag, so the packaging fixes,
   action version bumps and the 2026-10-08 permission and input changes have

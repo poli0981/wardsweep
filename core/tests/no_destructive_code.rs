@@ -134,6 +134,16 @@ const PERMITTED: &[&str] = &["core/src/quar/", "core/src/exec/"];
 ///
 /// G3 is unusual in that it bans *reads* too, so a scanner that merely
 /// enumerated them for a report would already be a violation.
+///
+/// # A refusal list is data, not code
+///
+/// This scan cannot tell code that reads an identifier from code that refuses
+/// one: both have to name it. That stays so on purpose (settled 2026-10-08,
+/// `docs/PROGRESS.md`). An exemption for "refusing" code is one a reader could
+/// later hide behind, so code that refuses identifiers keeps its terms as data
+/// outside every `.rs` file instead — `tools/observe/src/collect/g3-identity-terms.txt`,
+/// loaded with `include_str!` and tested from the file — and naming one in
+/// Rust source remains an error whatever the code around it does.
 const HARDWARE_IDENTITY: &[&str] = &[
     "MachineGuid",
     "SMBIOS",
