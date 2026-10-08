@@ -27,6 +27,13 @@ updates:
     groups:
       cargo:
         update-types: [minor, patch]
+    ignore:
+      # Pinned below 0.8 on purpose: 0.8 depends on `alloca`, which needs a C
+      # toolchain for the target being built, and that ends cross-linting the
+      # workspace for Linux from Windows — the documented way to reproduce the
+      # ubuntu lint job locally. See core/benches/scan_corpus.rs.
+      - dependency-name: criterion
+        versions: ['>= 0.8']
 
   # Directory.Packages.props, the lock files restored with --locked-mode, and
   # the tool manifest in .config/dotnet-tools.json.

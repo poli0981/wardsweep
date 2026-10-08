@@ -369,7 +369,7 @@ fn hash(path: &Path) -> std::io::Result<String> {
         hasher.update(&buffer[..read]);
     }
 
-    Ok(format!("{:x}", hasher.finalize()))
+    Ok(hex::encode(hasher.finalize()))
 }
 
 #[cfg(test)]
