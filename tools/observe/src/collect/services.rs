@@ -235,8 +235,19 @@ mod win32 {
         })
     }
 
-    /// Service key names and display names, via the two-call size idiom.
+    /// Service key names and display names, read in as many calls as it takes.
+    ///
+    /// `EnumServicesStatusExW` returns at most 256 KB per call, and a service
+    /// or driver installed between the size probe and the read makes the probe
+    /// wrong. Either way it says `ERROR_MORE_DATA`, hands back what fitted, and
+    /// leaves a resume handle at the next entry. That used to fail the whole
+    /// snapshot; now the read continues from the handle until it is done.
     fn enumerate(manager: SC_HANDLE) -> Result<Vec<(String, String)>> {
+        /// A bound on the loop. A machine with tens of thousands of services
+        /// needs a few dozen calls; a hundred calls that each return nothing is
+        /// a platform misbehaving, not a large machine.
+        const MAX_CALLS: usize = 100;
+
         let mut needed = 0u32;
         let mut returned = 0u32;
         let mut resume = 0u32;
@@ -266,42 +277,60 @@ mod win32 {
             return Ok(Vec::new());
         }
 
-        let mut buffer = Aligned::new(needed as usize);
+        let mut entries = Vec::new();
+        let mut capacity = needed as usize;
         resume = 0;
-        // SAFETY: buffer is at least the size the probe asked for.
-        unsafe {
-            EnumServicesStatusExW(
-                manager,
-                SC_ENUM_PROCESS_INFO,
-                SERVICE_WIN32 | SERVICE_DRIVER,
-                SERVICE_STATE_ALL,
-                Some(buffer.as_mut_bytes()),
-                &raw mut needed,
-                &raw mut returned,
-                Some(&raw mut resume),
-                PCWSTR::null(),
-            )
-            .context("EnumServicesStatusExW")?;
-        }
+        for _ in 0..MAX_CALLS {
+            let mut buffer = Aligned::new(capacity);
+            needed = 0;
+            returned = 0;
+            // SAFETY: the buffer's byte length is what is passed as its size.
+            let result = unsafe {
+                EnumServicesStatusExW(
+                    manager,
+                    SC_ENUM_PROCESS_INFO,
+                    SERVICE_WIN32 | SERVICE_DRIVER,
+                    SERVICE_STATE_ALL,
+                    Some(buffer.as_mut_bytes()),
+                    &raw mut needed,
+                    &raw mut returned,
+                    Some(&raw mut resume),
+                    PCWSTR::null(),
+                )
+            };
 
-        let mut entries = Vec::with_capacity(returned as usize);
-        // SAFETY: the SCM wrote `returned` ENUM_SERVICE_STATUS_PROCESSW
-        // structures at the head of the buffer, with their strings pointing
-        // further into the same allocation.
-        let statuses = unsafe {
-            std::slice::from_raw_parts(
-                buffer.as_ptr::<ENUM_SERVICE_STATUS_PROCESSW>(),
-                returned as usize,
-            )
-        };
-        for status in statuses {
-            entries.push((
-                from_wide(status.lpServiceName),
-                from_wide(status.lpDisplayName),
-            ));
-        }
+            // Valid on ERROR_MORE_DATA too: the call fills what fits.
+            // SAFETY: the SCM wrote `returned` ENUM_SERVICE_STATUS_PROCESSW
+            // structures at the head of the buffer, with their strings pointing
+            // further into the same allocation.
+            let statuses = unsafe {
+                std::slice::from_raw_parts(
+                    buffer.as_ptr::<ENUM_SERVICE_STATUS_PROCESSW>(),
+                    returned as usize,
+                )
+            };
+            for status in statuses {
+                entries.push((
+                    from_wide(status.lpServiceName),
+                    from_wide(status.lpDisplayName),
+                ));
+            }
 
-        Ok(entries)
+            match result {
+                Ok(()) => {
+                    // A service added mid-read can be returned twice across a
+                    // resume. One record per name.
+                    entries.sort_by(|a, b| a.0.cmp(&b.0));
+                    entries.dedup_by(|a, b| a.0.eq_ignore_ascii_case(&b.0));
+                    return Ok(entries);
+                }
+                Err(error) if error.code().0.cast_unsigned() & 0xFFFF == ERROR_MORE_DATA.0 => {
+                    capacity = capacity.max(needed as usize);
+                }
+                Err(error) => bail!("EnumServicesStatusExW failed: {error}"),
+            }
+        }
+        bail!("EnumServicesStatusExW still had more data after {MAX_CALLS} calls")
     }
 
     /// One service's configuration.
@@ -407,5 +436,32 @@ mod win32 {
         // SAFETY: the call populated the structure.
         let info = unsafe { &*buffer.as_ptr::<SERVICE_DELAYED_AUTO_START_INFO>() };
         info.fDelayedAutostart.as_bool()
+    }
+
+    #[cfg(test)]
+    mod tests {
+        #[test]
+        fn the_live_service_list_is_read_whole() {
+            // Every Windows machine, CI runners included, has the event log
+            // service and well over a hundred services and drivers. A read that
+            // stopped at the first ERROR_MORE_DATA would have failed instead.
+            let captured = super::services().expect("the service control manager is readable");
+            assert!(
+                captured
+                    .services
+                    .iter()
+                    .any(|service| service.name.eq_ignore_ascii_case("EventLog")),
+                "EventLog missing from {} services",
+                captured.services.len()
+            );
+            assert!(captured.services.len() > 100);
+            assert!(
+                captured
+                    .services
+                    .windows(2)
+                    .all(|pair| !pair[0].name.eq_ignore_ascii_case(&pair[1].name)),
+                "a service was recorded twice"
+            );
+        }
     }
 }

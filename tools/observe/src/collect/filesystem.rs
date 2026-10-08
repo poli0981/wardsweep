@@ -144,9 +144,11 @@ pub fn walk(roots: &[PathBuf], signer: SignerLookup) -> Captured {
     let mut access_denied = Vec::new();
     let mut queue: VecDeque<PathBuf> = roots.iter().cloned().collect();
     // Every directory the walk actually read, and the subset that turned out to
-    // hold a file. A directory that could not be read enters neither: an
-    // unreadable directory is not an empty one, and reporting it as emptied
-    // residue would be inventing evidence.
+    // hold something. "Something" is a file, or anything the walk would not or
+    // could not look inside: an excluded subtree, a reparse point, an entry it
+    // could not read. Only a directory with none of those is provably empty —
+    // a junction is not nothing, and reporting its parent as emptied residue
+    // would be inventing evidence.
     let mut read_directories: Vec<PathBuf> = Vec::new();
     let mut holds_a_file: HashSet<PathBuf> = HashSet::new();
 
@@ -156,12 +158,13 @@ pub fn walk(roots: &[PathBuf], signer: SignerLookup) -> Captured {
             Err(error) => {
                 // Recorded, never skipped. A directory that could not be read is
                 // not a directory that is empty, and the diff must be able to
-                // tell the two apart.
+                // tell the two apart — nor is the directory holding it.
                 access_denied.push(AccessDenied {
                     domain: Domain::Filesystem,
                     item: directory.to_string_lossy().into_owned(),
                     reason: error.to_string(),
                 });
+                holds_a_file.insert(directory);
                 continue;
             }
         };
@@ -170,6 +173,7 @@ pub fn walk(roots: &[PathBuf], signer: SignerLookup) -> Captured {
         for entry in entries.flatten() {
             let path = entry.path();
             if is_excluded(&path) {
+                holds_any_file = true;
                 continue;
             }
 
@@ -183,6 +187,7 @@ pub fn walk(roots: &[PathBuf], signer: SignerLookup) -> Captured {
                         item: path.to_string_lossy().into_owned(),
                         reason: error.to_string(),
                     });
+                    holds_any_file = true;
                     continue;
                 }
             };
@@ -195,6 +200,7 @@ pub fn walk(roots: &[PathBuf], signer: SignerLookup) -> Captured {
                     item: path.to_string_lossy().into_owned(),
                     reason: "reparse point, not traversed".to_owned(),
                 });
+                holds_any_file = true;
                 continue;
             }
 
@@ -495,6 +501,36 @@ mod tests {
         assert!(
             !empty.iter().any(|d| d.as_str() == root.to_string_lossy()),
             "a root with files somewhere below it is not empty: {empty:?}"
+        );
+    }
+
+    #[test]
+    fn a_directory_holding_only_what_the_walk_skipped_is_not_empty() {
+        // An excluded subtree is not looked inside, so nothing can be said
+        // about whether it holds files — and the directory around it was being
+        // reported as emptied residue on every snapshot.
+        let temporary = tempfile::Builder::new()
+            .prefix("ws-observe-")
+            .tempdir_in(std::env::current_dir().unwrap())
+            .unwrap();
+        let root = temporary.path().to_path_buf();
+        let tool = root.join("SomeTool");
+        std::fs::create_dir_all(tool.join("node_modules").join("left-pad")).unwrap();
+        std::fs::write(
+            tool.join("node_modules").join("left-pad").join("index.js"),
+            b"x",
+        )
+        .unwrap();
+
+        let captured = walk(std::slice::from_ref(&root), no_signer);
+
+        assert!(
+            !captured
+                .file_empty_directories
+                .iter()
+                .any(|directory| directory.ends_with("SomeTool")),
+            "{:?}",
+            captured.file_empty_directories
         );
     }
 

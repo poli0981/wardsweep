@@ -65,7 +65,9 @@ pub use self::win32::registry;
 #[cfg(windows)]
 mod win32 {
     use anyhow::Result;
-    use windows::Win32::Foundation::{ERROR_NO_MORE_ITEMS, ERROR_SUCCESS, WIN32_ERROR};
+    use windows::Win32::Foundation::{
+        ERROR_MORE_DATA, ERROR_NO_MORE_ITEMS, ERROR_SUCCESS, WIN32_ERROR,
+    };
     use windows::Win32::System::Registry::{
         HKEY, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, KEY_READ, KEY_WOW64_32KEY, KEY_WOW64_64KEY,
         REG_SAM_FLAGS, RegCloseKey, RegEnumKeyExW, RegEnumValueW, RegOpenKeyExW,
@@ -125,6 +127,7 @@ mod win32 {
         let mut keys = Vec::new();
         let mut access_denied = Vec::new();
         let policy = Policy::current();
+        let mut buffers = Buffers::new();
 
         for (hive_name, root) in ROOTS {
             for (view_name, view) in [("64", KEY_WOW64_64KEY), ("32", KEY_WOW64_32KEY)] {
@@ -143,6 +146,7 @@ mod win32 {
                     root,
                     &mut keys,
                     &mut access_denied,
+                    &mut buffers,
                 );
             }
         }
@@ -168,6 +172,29 @@ mod win32 {
         })
     }
 
+    /// Buffers reused for every value the walk reads.
+    ///
+    /// A value name may be 16 383 characters and data is read up to
+    /// [`MAX_VALUE_BYTES`], so the two come to 36 KB. They used to be allocated
+    /// and zeroed afresh for every value, on a walk that reads hundreds of
+    /// thousands of them.
+    struct Buffers {
+        name: Vec<u16>,
+        data: Vec<u8>,
+    }
+
+    impl Buffers {
+        fn new() -> Self {
+            // Heap, not stack: the registry permits a 16 383-character value
+            // name, and a buffer that size on the stack is how a read-only tool
+            // acquires a stack overflow.
+            Self {
+                name: vec![0u16; 16_384],
+                data: vec![0u8; MAX_VALUE_BYTES],
+            }
+        }
+    }
+
     /// What stays constant for one root in one view.
     struct Walk<'a> {
         hive: HKEY,
@@ -182,6 +209,7 @@ mod win32 {
         subkey: &str,
         keys: &mut Vec<RegistryRecord>,
         access_denied: &mut Vec<AccessDenied>,
+        buffers: &mut Buffers,
     ) {
         let Walk {
             hive,
@@ -224,7 +252,20 @@ mod win32 {
             }
             let handle = Key(handle);
 
-            let (values, refused) = read_values(handle.0, policy);
+            let (values, refused, stopped) = read_values(handle.0, policy, buffers);
+            if let Some(error) = stopped {
+                // What was read is kept, and the gap is said out loud: a key
+                // whose values could not all be read is not a key whose
+                // remaining values were removed.
+                access_denied.push(AccessDenied {
+                    domain: Domain::Registry,
+                    item: format!("{display} [view {view_name}]"),
+                    reason: format!(
+                        "value enumeration stopped early: RegEnumValueW returned {}",
+                        error.0
+                    ),
+                });
+            }
             for (name, refusal) in refused {
                 // Recorded, so the refusal is auditable — the key and the value
                 // name, never the data. The name is not the fingerprint.
@@ -242,7 +283,20 @@ mod win32 {
                 });
             }
 
-            for child in child_names(handle.0) {
+            let (children, stopped) = child_names(handle.0);
+            if let Some(error) = stopped {
+                // Recorded, never skipped. Every subkey after the failure would
+                // otherwise be absent from the snapshot with nothing to say so.
+                access_denied.push(AccessDenied {
+                    domain: Domain::Registry,
+                    item: format!("{display} [view {view_name}]"),
+                    reason: format!(
+                        "subkey enumeration stopped early: RegEnumKeyExW returned {}",
+                        error.0
+                    ),
+                });
+            }
+            for child in children {
                 queue.push((format!("{display}\\{child}"), format!("{path}\\{child}")));
             }
         }
@@ -259,7 +313,9 @@ mod win32 {
         }
     }
 
-    fn child_names(handle: HKEY) -> Vec<String> {
+    /// Subkey names, and the error that stopped the enumeration early if one
+    /// did.
+    fn child_names(handle: HKEY) -> (Vec<String>, Option<WIN32_ERROR>) {
         let mut names = Vec::new();
         let mut index = 0u32;
         loop {
@@ -279,28 +335,35 @@ mod win32 {
                     None,
                 )
             };
-            if result == ERROR_NO_MORE_ITEMS || result != WIN32_ERROR(0) {
-                break;
+            if result == ERROR_NO_MORE_ITEMS {
+                return (names, None);
+            }
+            if result != ERROR_SUCCESS {
+                return (names, Some(result));
             }
             names.push(text(&buffer, length));
             index += 1;
         }
-        names
     }
 
-    fn read_values(handle: HKEY, policy: &Policy) -> (Vec<RegistryValue>, Vec<(String, Refusal)>) {
+    /// The values under a key, those refused, and the error that stopped the
+    /// enumeration early if one did.
+    fn read_values(
+        handle: HKEY,
+        policy: &Policy,
+        buffers: &mut Buffers,
+    ) -> (
+        Vec<RegistryValue>,
+        Vec<(String, Refusal)>,
+        Option<WIN32_ERROR>,
+    ) {
         let mut values = Vec::new();
         let mut refused = Vec::new();
         let mut index = 0u32;
-        loop {
-            // Heap, not stack: the registry permits a 16 383-character value
-            // name, and a buffer that size on the stack in a loop is how a
-            // read-only tool acquires a stack overflow.
-            let mut name = vec![0u16; 16384];
-            let mut name_length = u32::try_from(name.len()).unwrap_or(0);
+        let stopped = loop {
+            let mut name_length = u32::try_from(buffers.name.len()).unwrap_or(0);
             let mut kind = 0u32;
-            let mut data = vec![0u8; MAX_VALUE_BYTES];
-            let mut data_length = u32::try_from(data.len()).unwrap_or(0);
+            let mut data_length = u32::try_from(buffers.data.len()).unwrap_or(0);
 
             // SAFETY: every out-parameter is live for the call, and the two
             // lengths are the true capacities of their buffers.
@@ -308,32 +371,32 @@ mod win32 {
                 RegEnumValueW(
                     handle,
                     index,
-                    Some(PWSTR(name.as_mut_ptr())),
+                    Some(PWSTR(buffers.name.as_mut_ptr())),
                     &raw mut name_length,
                     None,
                     Some(&raw mut kind),
-                    Some(data.as_mut_ptr()),
+                    Some(buffers.data.as_mut_ptr()),
                     Some(&raw mut data_length),
                 )
             };
-            if result != WIN32_ERROR(0) {
-                // Includes ERROR_MORE_DATA for a value larger than the cap. The
-                // value is skipped rather than truncated: half a REG_BINARY blob
-                // compared against another half is worse than an honest gap, and
-                // the cap is recorded in the policy.
-                if result == ERROR_NO_MORE_ITEMS {
-                    break;
-                }
+            if result == ERROR_NO_MORE_ITEMS {
+                break None;
+            }
+            if result == ERROR_MORE_DATA {
+                // A value larger than the cap. Skipped rather than truncated:
+                // half a REG_BINARY blob compared against another half is worse
+                // than an honest gap, and the cap is recorded in the policy.
                 index += 1;
-                if index > 4096 {
-                    break;
-                }
                 continue;
             }
+            if result != ERROR_SUCCESS {
+                // Anything else will not go away by asking for the next index.
+                break Some(result);
+            }
 
-            data.truncate(data_length as usize);
-            let value_name = text(&name, name_length);
-            let rendered = render(kind, &data);
+            let length = (data_length as usize).min(buffers.data.len());
+            let value_name = text(&buffers.name, name_length);
+            let rendered = render(kind, &buffers.data[..length]);
 
             if let Some(refusal) = policy.refusal(&value_name, &rendered) {
                 // Dropped entirely. G3 bans enumerating a hardware identifier
@@ -349,11 +412,11 @@ mod win32 {
                 });
             }
             index += 1;
-        }
+        };
 
         values.sort_by(|a, b| a.name.cmp(&b.name));
         refused.sort_by(|a, b| a.0.cmp(&b.0));
-        (values, refused)
+        (values, refused, stopped)
     }
 
     fn kind_name(kind: u32) -> &'static str {
