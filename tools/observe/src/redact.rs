@@ -32,60 +32,144 @@
 //! `…\DwnlData\someone\…`.
 //!
 //! So the first pass *learns* the account names from the profile paths, and the
-//! second replaces those names wherever else they appear. Matching is on token
-//! boundaries: an account name that is also an English word — `Anon` inside
-//! `Anonymous`, say — must not be rewritten mid-word.
+//! second replaces those names wherever else they appear, in any letter case.
+//! Matching is on token boundaries: an account name that is also an English
+//! word — `Anon` inside `Anonymous`, say — must not be rewritten mid-word.
 //!
-//! That boundary rule leaves a residue by construction, so
-//! [`Report::residual`] counts what is still there and the caller says so. A
-//! redactor that quietly leaves identity behind is worse than one that refuses,
-//! because it is trusted.
+//! # Names the document cannot teach
+//!
+//! The machine's own name appears in a document without a path to learn it
+//! from, and so can an account name in a file that has already been redacted
+//! once. Both arrive as [`Extra`] names from the caller — the command line adds
+//! the local machine's computer and account names — and are replaced the same
+//! way.
+//!
+//! # E-mail addresses
+//!
+//! Two committed diffs carried the contributor's Microsoft-account address as
+//! the name of a registry key, with the account name glued to digits in front
+//! of the `@`: a token boundary rule cannot reach it, and nothing here
+//! recognised an address at all. Addresses are now replaced wherever they
+//! appear, before any name is.
+//!
+//! That boundary rule still leaves a residue by construction, so
+//! [`Report::residual`] counts what is left, in any case, and shows where it
+//! is. A redactor that quietly leaves identity behind is worse than one that
+//! refuses, because it is trusted.
 
 use std::collections::BTreeMap;
 
 /// A substitution that was applied, and how often.
 pub type Applied = BTreeMap<String, usize>;
 
+/// Names known from outside the document.
+#[derive(Debug, Clone, Default)]
+pub struct Extra {
+    /// Account names, replaced by [`USER_PLACEHOLDER`].
+    pub accounts: Vec<String>,
+    /// Computer names, replaced by [`HOST_PLACEHOLDER`].
+    pub computers: Vec<String>,
+}
+
+/// The shortest name replaced on its own.
+///
+/// A one- or two-letter name is a token in half the strings in a snapshot, and
+/// replacing it everywhere would destroy the document to protect it. Such a
+/// name is reported as not applied instead.
+pub const MIN_NAME_LEN: usize = 3;
+
 /// What a redaction pass did, and what it could not do.
 #[derive(Debug, Default)]
 pub struct Report {
     /// Substitutions applied, by placeholder.
     pub applied: Applied,
-    /// Account names discovered in profile paths.
+    /// Account names discovered in profile paths, plus any supplied.
     pub names: Vec<String>,
-    /// Occurrences of a discovered name still present afterwards, by name.
+    /// Computer names supplied by the caller.
+    pub computers: Vec<String>,
+    /// Supplied names too short to replace safely, and so left alone.
+    pub skipped: Vec<String>,
+    /// What is still present afterwards, by name.
     ///
-    /// Non-empty means the file still identifies someone. The boundary rule
-    /// that keeps `Anonymous` intact is what leaves these behind.
-    pub residual: BTreeMap<String, usize>,
+    /// Non-empty means the file may still identify someone. The boundary rule
+    /// that keeps `Anonymous` intact is what leaves these behind — and so does
+    /// an account name glued to other characters, which is how an e-mail
+    /// address survived before addresses had a rule of their own.
+    pub residual: BTreeMap<String, Residual>,
 }
+
+/// Where a name still appears after redaction.
+#[derive(Debug, Default, PartialEq, Eq)]
+pub struct Residual {
+    /// Occurrences, in any letter case, in values and in object keys.
+    pub count: usize,
+    /// A few occurrences in context, with the name itself masked, so a person
+    /// can judge them without the report repeating what it is warning about.
+    pub contexts: Vec<String>,
+}
+
+/// How many contexts a residual keeps.
+const MAX_CONTEXTS: usize = 5;
+/// Characters kept either side of an occurrence in a context.
+const CONTEXT_CHARS: usize = 24;
 
 /// Placeholder for the account name a path belongs to.
 pub const USER_PLACEHOLDER: &str = "%USER%";
 /// Placeholder for a machine-local account identifier.
 pub const SID_PLACEHOLDER: &str = "S-1-5-21-%REDACTED%";
-/// Placeholder for a computer name in a UNC path.
+/// Placeholder for a computer name.
 pub const HOST_PLACEHOLDER: &str = "%COMPUTER%";
+/// Placeholder for an e-mail address.
+pub const EMAIL_PLACEHOLDER: &str = "%EMAIL%";
 
 /// Redact a whole document: learn the account names, rewrite, then audit.
 ///
 /// Returns what it did *and* what it could not do. The second half is the
 /// point — see the module comment.
-pub fn redact_document(value: &mut serde_json::Value) -> Report {
-    let mut report = Report {
-        names: discover_names(value),
-        ..Report::default()
-    };
+pub fn redact_document(value: &mut serde_json::Value, extra: &Extra) -> Report {
+    let mut report = Report::default();
 
-    rewrite(value, &report.names, &mut report.applied);
-
-    for name in &report.names {
-        let count = count_occurrences(value, name);
-        if count > 0 {
-            report.residual.insert(name.clone(), count);
+    let mut accounts = discover_names(value);
+    let mut computers = Vec::new();
+    for (supplied, into) in [
+        (&extra.accounts, &mut accounts),
+        (&extra.computers, &mut computers),
+    ] {
+        for name in supplied {
+            let name = name.trim();
+            if name.is_empty() {
+                continue;
+            }
+            if name.len() < MIN_NAME_LEN {
+                report.skipped.push(name.to_owned());
+            } else if !into.iter().any(|known| known.eq_ignore_ascii_case(name)) {
+                into.push(name.to_owned());
+            }
         }
     }
 
+    let names: Vec<(String, &'static str)> = accounts
+        .iter()
+        .map(|name| (name.clone(), USER_PLACEHOLDER))
+        .chain(
+            computers
+                .iter()
+                .map(|name| (name.clone(), HOST_PLACEHOLDER)),
+        )
+        .collect();
+
+    rewrite(value, &names, &mut report.applied);
+
+    for (name, _) in &names {
+        let mut residual = Residual::default();
+        audit(value, name, &mut residual);
+        if residual.count > 0 {
+            report.residual.insert(name.clone(), residual);
+        }
+    }
+
+    report.names = accounts;
+    report.computers = computers;
     report
 }
 
@@ -118,18 +202,68 @@ fn collect_names(value: &serde_json::Value, names: &mut std::collections::BTreeS
     }
 }
 
-fn count_occurrences(value: &serde_json::Value, name: &str) -> usize {
+/// Count what is left of a name, in values and in object keys, and keep a
+/// few occurrences in context.
+///
+/// Object keys are never rewritten — see [`rewrite`] — and some of them are
+/// data: a diff's signer map is keyed by certificate subject. A name surviving
+/// there is still a name surviving.
+fn audit(value: &serde_json::Value, name: &str, residual: &mut Residual) {
     match value {
-        serde_json::Value::String(text) => text.matches(name).count(),
+        serde_json::Value::String(text) => record_occurrences(text, name, residual),
         serde_json::Value::Array(items) => {
-            items.iter().map(|item| count_occurrences(item, name)).sum()
+            for item in items {
+                audit(item, name, residual);
+            }
         }
-        serde_json::Value::Object(fields) => fields
-            .iter()
-            .map(|(_, field)| count_occurrences(field, name))
-            .sum(),
-        _ => 0,
+        serde_json::Value::Object(fields) => {
+            for (key, field) in fields {
+                record_occurrences(key, name, residual);
+                audit(field, name, residual);
+            }
+        }
+        _ => {}
     }
+}
+
+fn record_occurrences(text: &str, name: &str, residual: &mut Residual) {
+    for start in find_ignoring_case(text, name) {
+        residual.count += 1;
+        if residual.contexts.len() < MAX_CONTEXTS {
+            residual.contexts.push(context(text, start, name.len()));
+        }
+    }
+}
+
+/// An occurrence with a little of its surroundings, the name itself masked.
+fn context(text: &str, start: usize, len: usize) -> String {
+    let before: String = text[..start]
+        .chars()
+        .rev()
+        .take(CONTEXT_CHARS)
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+        .collect();
+    let after: String = text[start + len..].chars().take(CONTEXT_CHARS).collect();
+    let lead = if before.len() < start { "…" } else { "" };
+    let tail = if start + len + after.len() < text.len() {
+        "…"
+    } else {
+        ""
+    };
+    format!("{lead}{before}[NAME]{after}{tail}")
+}
+
+/// Byte offsets of every occurrence of `needle` in `text`, ignoring ASCII
+/// case. Lower-casing ASCII never moves a byte, so the offsets index `text`.
+fn find_ignoring_case(text: &str, needle: &str) -> Vec<usize> {
+    if needle.is_empty() || needle.len() > text.len() {
+        return Vec::new();
+    }
+    let haystack = text.to_ascii_lowercase();
+    let needle = needle.to_ascii_lowercase();
+    haystack.match_indices(&needle).map(|(at, _)| at).collect()
 }
 
 /// The account name in a path that is *rooted* at a profile directory.
@@ -183,9 +317,14 @@ fn is_shared_profile(name: &str) -> bool {
 
 /// Rewrite every string in a JSON document.
 ///
-/// Returns the counts by placeholder, so the caller can say what it did rather
+/// `names` pairs each name with its placeholder. Returns the counts by
+/// placeholder through `applied`, so the caller can say what it did rather
 /// than claim to have done something.
-pub fn rewrite(value: &mut serde_json::Value, names: &[String], applied: &mut Applied) {
+pub fn rewrite(
+    value: &mut serde_json::Value,
+    names: &[(String, &'static str)],
+    applied: &mut Applied,
+) {
     match value {
         serde_json::Value::String(text) => {
             let (replaced, hits) = redact_text_with(text, names);
@@ -223,10 +362,17 @@ pub fn redact_text(text: &str) -> (String, Vec<String>) {
 
 /// Rewrite one string, reporting which placeholders were used.
 #[must_use]
-pub fn redact_text_with(text: &str, names: &[String]) -> (String, Vec<String>) {
+pub fn redact_text_with(text: &str, names: &[(String, &'static str)]) -> (String, Vec<String>) {
     let mut applied = Vec::new();
     let mut result = text.to_owned();
 
+    // First: an address contains the account name more often than not, and
+    // once the name has been replaced inside it the address no longer looks
+    // like one.
+    if let Some(replaced) = replace_emails(&result) {
+        result = replaced;
+        applied.push(EMAIL_PLACEHOLDER.to_owned());
+    }
     if let Some(replaced) = replace_user_profiles(&result) {
         result = replaced;
         applied.push(USER_PLACEHOLDER.to_owned());
@@ -239,28 +385,94 @@ pub fn redact_text_with(text: &str, names: &[String]) -> (String, Vec<String>) {
         result = replaced;
         applied.push(HOST_PLACEHOLDER.to_owned());
     }
-    // Last, and only for names the first pass actually found on this machine.
-    // A fixed list of common account names would rewrite text that has nothing
+    // Last, and only for names this machine or this document supplied. A
+    // fixed list of common account names would rewrite text that has nothing
     // to do with anybody.
-    for name in names {
-        if let Some(replaced) = replace_bare_name(&result, name) {
+    for (name, placeholder) in names {
+        if let Some(replaced) = replace_bare_name(&result, name, placeholder) {
             result = replaced;
-            applied.push(USER_PLACEHOLDER.to_owned());
+            applied.push((*placeholder).to_owned());
         }
     }
 
     (result, applied)
 }
 
-/// Replace a learned account name where it stands as its own token.
+/// `someone@example.com` becomes `%EMAIL%`.
+///
+/// Deliberately plain: a local part of letters, digits and `._%+-`, a domain of
+/// at least two dot-separated labels ending in an alphabetic top-level label.
+/// That excludes the things in a snapshot that merely contain an `@` — a
+/// formatted resource reference like `@fmt|…`, a scoped package name, a bare
+/// `user@host` — and includes every address a person types.
+fn replace_emails(text: &str) -> Option<String> {
+    if !text.contains('@') {
+        return None;
+    }
+
+    let bytes = text.as_bytes();
+    let mut result = String::with_capacity(text.len());
+    let mut copied = 0usize;
+    let mut search = 0usize;
+    let mut hit = false;
+
+    while let Some(offset) = text[search..].find('@') {
+        let at = search + offset;
+        let local_start = bytes[copied..at]
+            .iter()
+            .rposition(|byte| !is_local_byte(*byte))
+            .map_or(copied, |index| copied + index + 1);
+        let domain_end = bytes[at + 1..]
+            .iter()
+            .position(|byte| !is_domain_byte(*byte))
+            .map_or(bytes.len(), |index| at + 1 + index);
+        // A sentence ending in an address leaves its full stop attached.
+        let domain = text[at + 1..domain_end].trim_end_matches(['.', '-']);
+
+        if local_start < at && is_email_domain(domain) {
+            result.push_str(&text[copied..local_start]);
+            result.push_str(EMAIL_PLACEHOLDER);
+            copied = at + 1 + domain.len();
+            search = copied;
+            hit = true;
+        } else {
+            search = at + 1;
+        }
+    }
+
+    result.push_str(&text[copied..]);
+    hit.then_some(result)
+}
+
+fn is_local_byte(byte: u8) -> bool {
+    byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'_' | b'%' | b'+' | b'-')
+}
+
+fn is_domain_byte(byte: u8) -> bool {
+    byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'-')
+}
+
+fn is_email_domain(domain: &str) -> bool {
+    let labels: Vec<&str> = domain.split('.').collect();
+    labels.len() >= 2
+        && labels
+            .iter()
+            .all(|label| !label.is_empty() && !label.starts_with('-') && !label.ends_with('-'))
+        && labels
+            .last()
+            .is_some_and(|top| top.len() >= 2 && top.bytes().all(|byte| byte.is_ascii_alphabetic()))
+}
+
+/// Replace a name where it stands as its own token, in any letter case.
 ///
 /// Boundaries are alphanumeric characters on either side. `Anon` inside
 /// `Anonymous` is not the account, and rewriting it would corrupt unrelated
-/// text; `L.Anon.cdp` and `\DwnlData\Anon\` are, and are rewritten. The cost
-/// of the rule is that `Anonb7a4e505` survives, which is why the caller reports
-/// a residual count rather than claiming the file is clean.
-fn replace_bare_name(text: &str, name: &str) -> Option<String> {
-    if name.is_empty() || !text.contains(name) {
+/// text; `L.Anon.cdp`, `\DwnlData\ANON\` and `anon` are, and are rewritten.
+/// The cost of the rule is that `Anonb7a4e505` survives, which is why the
+/// caller reports a residual rather than claiming the file is clean.
+fn replace_bare_name(text: &str, name: &str, placeholder: &str) -> Option<String> {
+    let starts = find_ignoring_case(text, name);
+    if starts.is_empty() {
         return None;
     }
 
@@ -269,21 +481,19 @@ fn replace_bare_name(text: &str, name: &str) -> Option<String> {
     let mut cursor = 0usize;
     let mut hit = false;
 
-    while let Some(found) = text[cursor..].find(name) {
-        let start = cursor + found;
+    for start in starts {
+        if start < cursor {
+            continue; // overlaps the previous replacement
+        }
         let end = start + name.len();
-
         let before_ok = start == 0 || !bytes[start - 1].is_ascii_alphanumeric();
         let after_ok = end >= bytes.len() || !bytes[end].is_ascii_alphanumeric();
-
-        result.push_str(&text[cursor..start]);
         if before_ok && after_ok {
-            result.push_str(USER_PLACEHOLDER);
+            result.push_str(&text[cursor..start]);
+            result.push_str(placeholder);
+            cursor = end;
             hit = true;
-        } else {
-            result.push_str(name);
         }
-        cursor = end;
     }
 
     result.push_str(&text[cursor..]);
@@ -396,6 +606,10 @@ fn replace_unc_hosts(text: &str) -> Option<String> {
 mod tests {
     use super::*;
 
+    fn redact(document: &mut serde_json::Value) -> Report {
+        redact_document(document, &Extra::default())
+    }
+
     #[test]
     fn a_user_profile_path_is_replaced() {
         let (out, hits) = redact_text("C:\\Users\\Anon\\AppData\\Local\\Riot Games\\x.log");
@@ -445,9 +659,42 @@ mod tests {
         // Running it twice must not mangle its own placeholders — a redacted
         // file is exactly the kind of thing that gets redacted again by someone
         // who is not sure whether it was.
-        let once = redact_text("C:\\Users\\Anon\\x — S-1-5-21-1-2-3-1001").0;
+        let once = redact_text("C:\\Users\\Anon\\x — S-1-5-21-1-2-3-1001 — anon42@example.com").0;
         let twice = redact_text(&once).0;
         assert_eq!(once, twice);
+    }
+
+    #[test]
+    fn an_e_mail_address_is_replaced_wherever_it_appears() {
+        // The shape that reached a committed diff: the address as the last
+        // component of a registry key, the account name glued to digits.
+        let key =
+            r"HKCU\SOFTWARE\Microsoft\IdentityCRL\UserExtendedProperties\anon10092@outlook.com";
+        let (out, hits) = redact_text(key);
+        assert_eq!(
+            out,
+            r"HKCU\SOFTWARE\Microsoft\IdentityCRL\UserExtendedProperties\%EMAIL%"
+        );
+        assert_eq!(hits, vec![EMAIL_PLACEHOLDER]);
+
+        let (out, _) = redact_text("mailto:first.last+tag@sub.example.co.uk; and x@y.org.");
+        assert_eq!(out, "mailto:%EMAIL%; and %EMAIL%.");
+    }
+
+    #[test]
+    fn things_that_merely_contain_an_at_sign_are_left_alone() {
+        for text in [
+            "@fmt|AnonymousData",
+            "@types/node",
+            "user@localhost",
+            "@%SystemRoot%\\system32\\shell32.dll,-21787",
+            "version 1.2@3",
+            "a@b.c1",
+        ] {
+            let (out, hits) = redact_text(text);
+            assert_eq!(out, text, "{text} should be unchanged");
+            assert!(hits.is_empty(), "{text}");
+        }
     }
 
     #[test]
@@ -462,12 +709,30 @@ mod tests {
                 { "path": "C:\\ProgramData\\ConnectedDevicesPlatform\\L.Anon.cdp" }
             ]
         });
-        let report = redact_document(&mut document);
+        let report = redact(&mut document);
 
         assert_eq!(report.names, vec!["Anon".to_owned()]);
         let text = document.to_string();
         assert!(!text.contains("Anon."), "{text}");
         assert!(!text.contains("Pictures\\\\Anon"), "{text}");
+    }
+
+    #[test]
+    fn a_learned_name_is_replaced_in_any_letter_case() {
+        // Windows account names are case-insensitive, and applications write
+        // them however they like.
+        let mut document = serde_json::json!({
+            "files": [
+                { "path": "C:\\Users\\Anon\\AppData\\Local\\x" },
+                { "path": "C:\\ProgramData\\Vendor\\ANON\\settings.json" },
+                { "data": "last user: anon" }
+            ]
+        });
+        let report = redact(&mut document);
+
+        let text = document.to_string();
+        assert!(!text.to_ascii_lowercase().contains("anon"), "{text}");
+        assert!(report.residual.is_empty());
     }
 
     #[test]
@@ -508,23 +773,40 @@ mod tests {
                 { "path": "C:\\Sql\\Create Anonymous Remote Service.sql" }
             ]
         });
-        redact_document(&mut document);
+        redact(&mut document);
         assert!(document.to_string().contains("Anonymous"));
     }
 
     #[test]
-    fn what_could_not_be_removed_is_counted_rather_than_ignored() {
-        // The boundary rule leaves this behind by construction. Reporting it is
-        // the difference between a tool that is honest and one that is trusted
-        // wrongly.
+    fn what_could_not_be_removed_is_counted_and_shown_in_context() {
+        // The boundary rule leaves this behind by construction. Reporting it,
+        // and showing where, is the difference between a tool that is honest
+        // and one that is trusted wrongly — the previous report said only that
+        // a residue was "`Anonymous` and the like", and it was an address.
         let mut document = serde_json::json!({
             "files": [
                 { "path": "C:\\Users\\Anon\\x" },
                 { "path": "C:\\JetBrains\\fileHistory\\Anonb7a4e505-ngram" }
             ]
         });
-        let report = redact_document(&mut document);
-        assert_eq!(report.residual.get("Anon"), Some(&1));
+        let report = redact(&mut document);
+
+        let residual = &report.residual["Anon"];
+        assert_eq!(residual.count, 1);
+        assert_eq!(
+            residual.contexts,
+            vec!["…:\\JetBrains\\fileHistory\\[NAME]b7a4e505-ngram"]
+        );
+    }
+
+    #[test]
+    fn a_residual_in_another_case_or_in_an_object_key_is_still_counted() {
+        let mut document = serde_json::json!({
+            "files": [{ "path": "C:\\Users\\Anon\\x" }, { "path": "D:\\ANONb7\\y" }],
+            "signers": { "Anon Signing CA": 1 }
+        });
+        let report = redact(&mut document);
+        assert_eq!(report.residual["Anon"].count, 2);
     }
 
     #[test]
@@ -532,8 +814,37 @@ mod tests {
         let mut document = serde_json::json!({
             "files": [{ "path": "C:\\Users\\Anon\\AppData\\Local\\x" }]
         });
-        let report = redact_document(&mut document);
+        let report = redact(&mut document);
         assert!(report.residual.is_empty());
+    }
+
+    #[test]
+    fn supplied_names_are_replaced_too_and_short_ones_are_refused() {
+        // A redacted file teaches no name, and a computer name never had a
+        // path to be learned from. Both come from the caller.
+        let mut document = serde_json::json!({
+            "values": [
+                { "name": "HostNameCollection", "data": "DESKTOP-ANON7;ANON-PC" },
+                { "name": "UserNameCollection", "data": "someone" }
+            ]
+        });
+        let extra = Extra {
+            accounts: vec!["someone".to_owned(), "jo".to_owned()],
+            computers: vec!["ANON-PC".to_owned()],
+        };
+        let report = redact_document(&mut document, &extra);
+
+        let text = document.to_string();
+        assert!(
+            !text.contains("ANON-PC") && !text.contains("someone"),
+            "{text}"
+        );
+        assert!(
+            text.contains("%COMPUTER%") && text.contains("%USER%"),
+            "{text}"
+        );
+        assert_eq!(report.skipped, vec!["jo".to_owned()]);
+        assert_eq!(report.computers, vec!["ANON-PC".to_owned()]);
     }
 
     #[test]
@@ -545,7 +856,7 @@ mod tests {
             "nested": { "deep": ["C:\\Users\\Anon\\b", {"newer": "C:\\Users\\Anon\\c"}] },
             "number": 42
         });
-        let report = redact_document(&mut document);
+        let report = redact(&mut document);
 
         let text = document.to_string();
         assert!(!text.contains("Anon"), "{text}");
@@ -557,7 +868,7 @@ mod tests {
         // Rewriting a key would produce a document that no longer deserialises
         // into the model it came from.
         let mut document = serde_json::json!({ "C:\\Users\\Anon": "C:\\Users\\Anon" });
-        redact_document(&mut document);
+        redact(&mut document);
 
         let object = document.as_object().unwrap();
         assert!(object.contains_key("C:\\Users\\Anon"));
