@@ -179,6 +179,16 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
   rebuilt with it from its committed diff and pinned by a test, as the Vanguard
   draft already was; the rebuild leaves out `ACE-ADVT`, which nothing in the
   diff ties to the publisher, and names it for a reviewer instead.
+- Generated third-party notices, checked by CI. `licenses/rust.md` comes from
+  `cargo about` over `Cargo.lock` and `licenses/dotnet.md` from the interface's
+  `packages.lock.json` and the restored packages, with Velopack included
+  because its installer and updater ship in every release. Both carry the
+  licence texts, which the hand-kept tables they replace did not — and those
+  tables listed `rusqlite`, Serilog and an About page that WardSweep does not
+  have. `.github/scripts/notices.py` regenerates them offline; `rust-ci.yml`
+  and `dotnet-ci.yml` fail when either is stale or when `about.toml` and
+  `deny.toml` stop agreeing on the accepted licences; and `release.yml` packs
+  them, with `LICENSE`, into every release.
 
 ### Changed
 - `docs/08-IPC-PROTOCOL.md` amended from the S3 findings, in five places. Events
@@ -393,10 +403,6 @@ maintainer decision with rationale before it changes.
   that file is state. Updated after the 2026-10-08 audit.
 
 ### Known gaps
-- `THIRD-PARTY-NOTICES.md` staleness is not checked by CI, although both that
-  file and `COPYING.md` previously claimed it was. Both now say so plainly.
-  Wiring the check needs `cargo-about` configuration and a
-  `dotnet-project-licenses` run, and is worth doing before the first release.
 - `Strings.ja.resx` does not exist. `CLAUDE.md` lists EN/VI/JA, but
   `docs/19-ROADMAP.md` defers Japanese to v1.x, and a resource file full of
   English would look finished while shipping a locale that is not Japanese.

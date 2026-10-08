@@ -45,7 +45,7 @@
     <!--
       Reproducible builds; see docs/14-DISTRIBUTION-TRUST.md. An unsigned binary
       has one trust story: anyone can rebuild it and get the same bytes. The
-      lock file is also what THIRD-PARTY-NOTICES.md is generated against.
+      lock file is also what licenses/dotnet.md is generated against.
     -->
     <Deterministic>true</Deterministic>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>

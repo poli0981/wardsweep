@@ -21,9 +21,9 @@ on:
     branches: [main]
     # .github/scripts/** too: the bench job runs check_bench_budget.py on push
     # only, so a change to the script alone was never executed anywhere.
-    paths: ['core/**', 'cli/**', 'tools/**', 'Cargo.*', 'catalog/**', 'rust-toolchain.toml', 'clippy.toml', 'rustfmt.toml', 'deny.toml', 'observations/**', '.github/workflows/rust-ci.yml', '.github/scripts/**']
+    paths: ['core/**', 'cli/**', 'tools/**', 'Cargo.*', 'catalog/**', 'rust-toolchain.toml', 'clippy.toml', 'rustfmt.toml', 'deny.toml', 'observations/**', 'about.toml', 'about.hbs', 'licenses/**', '.github/workflows/rust-ci.yml', '.github/scripts/**']
   pull_request:
-    paths: ['core/**', 'cli/**', 'tools/**', 'Cargo.*', 'catalog/**', 'rust-toolchain.toml', 'clippy.toml', 'rustfmt.toml', 'deny.toml', 'observations/**', '.github/workflows/rust-ci.yml', '.github/scripts/**']
+    paths: ['core/**', 'cli/**', 'tools/**', 'Cargo.*', 'catalog/**', 'rust-toolchain.toml', 'clippy.toml', 'rustfmt.toml', 'deny.toml', 'observations/**', 'about.toml', 'about.hbs', 'licenses/**', '.github/workflows/rust-ci.yml', '.github/scripts/**']
   workflow_dispatch:
 
 permissions:
@@ -92,6 +92,32 @@ jobs:
       - uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2.1.1
         with:
           command: check advisories bans licenses sources
+
+  notices:
+    # licenses/rust.md is what every release carries to meet the licences of
+    # the crates in it, so a dependency change that leaves it stale fails here
+    # rather than at release time. cargo-about reads the crates' own licence
+    # files offline; the same Cargo.lock always gives the same bytes.
+    name: third-party notices (rust)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Install the pinned toolchain
+        run: rustup show
+
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+
+      - name: Install cargo-about
+        # Pinned: a different version may lay the same licences out
+        # differently, and the check compares bytes.
+        run: cargo install cargo-about --locked --version 0.9.2 --features cli
+
+      - run: cargo fetch --locked
+
+      - run: python3 .github/scripts/notices.py --check rust
 
   bench:
     # docs/10-PERF-BUDGET.md: "Budgets are enforced, not aspirational."

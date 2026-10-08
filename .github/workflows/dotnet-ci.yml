@@ -8,9 +8,9 @@ name: .NET CI
 on:
   push:
     branches: [main]
-    paths: ['ui/**', '*.sln', 'Directory.Build.props', 'Directory.Packages.props', 'global.json', 'nuget.config', 'Settings.XamlStyler', '.config/dotnet-tools.json', '.github/workflows/dotnet-ci.yml']
+    paths: ['ui/**', '*.sln', 'Directory.Build.props', 'Directory.Packages.props', 'global.json', 'nuget.config', 'Settings.XamlStyler', '.config/dotnet-tools.json', 'licenses/**', '.github/scripts/notices.py', '.github/workflows/dotnet-ci.yml']
   pull_request:
-    paths: ['ui/**', '*.sln', 'Directory.Build.props', 'Directory.Packages.props', 'global.json', 'nuget.config', 'Settings.XamlStyler', '.config/dotnet-tools.json', '.github/workflows/dotnet-ci.yml']
+    paths: ['ui/**', '*.sln', 'Directory.Build.props', 'Directory.Packages.props', 'global.json', 'nuget.config', 'Settings.XamlStyler', '.config/dotnet-tools.json', 'licenses/**', '.github/scripts/notices.py', '.github/workflows/dotnet-ci.yml']
   workflow_dispatch:
 
 permissions:
@@ -104,6 +104,28 @@ jobs:
             exit 1
           }
           Write-Host "no vulnerable packages"
+
+  notices:
+    # licenses/dotnet.md is read from the restored packages' own nuspecs and
+    # licence files, so a package change that leaves it stale fails here.
+    name: third-party notices (.NET)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - run: dotnet restore WardSweep.sln --locked-mode
+
+      - name: Restore the pinned tools
+        # Velopack's package carries its licence, and vpk is a tool.
+        run: dotnet tool restore
+
+      - run: python .github/scripts/notices.py --check dotnet
 
   xaml-style:
     name: XamlStyler

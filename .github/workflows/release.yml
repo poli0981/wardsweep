@@ -93,6 +93,12 @@ jobs:
           New-Item -ItemType Directory -Force artifacts/publish/catalog | Out-Null
           Copy-Item catalog/catalog.toml     artifacts/publish/catalog/ -Force
           Copy-Item catalog/catalog.toml.sig artifacts/publish/catalog/ -Force
+          # The licences: WardSweep's own, and every third-party component's,
+          # with the texts their licences require to travel with the binaries.
+          # CI has already checked the generated lists against the lock files.
+          Copy-Item LICENSE, THIRD-PARTY-NOTICES.md artifacts/publish/ -Force
+          New-Item -ItemType Directory -Force artifacts/publish/licenses | Out-Null
+          Copy-Item licenses/*.md artifacts/publish/licenses/ -Force
           Get-ChildItem artifacts/publish
 
       - name: Package (Velopack)

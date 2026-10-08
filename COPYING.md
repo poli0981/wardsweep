@@ -23,13 +23,11 @@ taking on GPL obligations. Attribution: "WardSweep anti-cheat catalog".
 
 ## Third-party notices
 
-Generated into `THIRD-PARTY-NOTICES.md` via `cargo-about` (Rust) and
-`dotnet-project-licenses` (C#), and regenerated before every release.
-
-> **Not yet enforced by CI.** No workflow currently checks the committed
-> file against a fresh generation, so a stale file will not fail a build.
-> Wiring that check up is tracked in `CHANGELOG.md`; until it exists,
-> regenerating is a release-checklist item and nothing more.
+Listed in `THIRD-PARTY-NOTICES.md`, which points to two generated files:
+`licenses/rust.md` (by `cargo-about`, from `Cargo.lock`) and
+`licenses/dotnet.md` (from the interface's `packages.lock.json` and the packages
+as restored). CI regenerates both and fails when either differs from what is
+committed, and every release carries them.
 
 Anti-cheat product names (Vanguard, Easy Anti-Cheat, BattlEye, ACE, GameGuard,
 Xigncode, Denuvo, Ricochet, PunkBuster, and others) are trademarks of their

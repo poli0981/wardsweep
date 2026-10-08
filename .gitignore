@@ -10,7 +10,7 @@ spikes/**/target/
 *.pdb
 
 # Cargo.lock IS committed: this workspace produces binaries, and
-# THIRD-PARTY-NOTICES.md is generated from it. Do not ignore it.
+# licenses/rust.md is generated from it. Do not ignore it.
 
 # --- .NET ---------------------------------------------------------------
 # Scoped to where MSBuild actually writes, NOT a bare `**/bin/`. Cargo puts
