@@ -36,7 +36,7 @@ tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 # default-features off drops plotters and its image stack. The lint job builds
 # --all-targets on ubuntu, so benches are compiled there too and every avoidable
 # dependency is avoidable build time.
-criterion = { version = "0.7.0", default-features = false, features = ["cargo_bench_support"] }
+criterion = { version = "0.8.2", default-features = false, features = ["cargo_bench_support"] }
 
 # Windows API surface. Kept out of [workspace.dependencies] consumers except
 # behind [target.'cfg(windows)'.dependencies] — the clippy job runs on ubuntu
