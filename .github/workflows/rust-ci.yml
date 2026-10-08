@@ -9,12 +9,14 @@
 # portfolio, and they are not reliably inherited.
 name: Rust CI
 
+# observations/** is here because a test rebuilds a committed draft catalog
+# entry from its committed diff, so a change to either has to re-run it.
 on:
   push:
     branches: [main]
-    paths: ['core/**', 'cli/**', 'tools/**', 'Cargo.*', 'catalog/**', 'rust-toolchain.toml', 'clippy.toml', 'rustfmt.toml', 'deny.toml', '.github/workflows/rust-ci.yml']
+    paths: ['core/**', 'cli/**', 'tools/**', 'Cargo.*', 'catalog/**', 'rust-toolchain.toml', 'clippy.toml', 'rustfmt.toml', 'deny.toml', 'observations/**', '.github/workflows/rust-ci.yml']
   pull_request:
-    paths: ['core/**', 'cli/**', 'tools/**', 'Cargo.*', 'catalog/**', 'rust-toolchain.toml', 'clippy.toml', 'rustfmt.toml', 'deny.toml', '.github/workflows/rust-ci.yml', '.github/scripts/**']
+    paths: ['core/**', 'cli/**', 'tools/**', 'Cargo.*', 'catalog/**', 'rust-toolchain.toml', 'clippy.toml', 'rustfmt.toml', 'deny.toml', 'observations/**', '.github/workflows/rust-ci.yml', '.github/scripts/**']
   workflow_dispatch:
 
 permissions:
