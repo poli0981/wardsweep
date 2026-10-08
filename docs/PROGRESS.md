@@ -396,9 +396,6 @@ consequences that outlive the spike.
   reports such keys as `view = "both"`, which they are — but not free. Changing
   it changes what `suggest` says about views, so it was left out of format 2.
 
-- `THIRD-PARTY-NOTICES.md` staleness is not checked by CI. Needs `cargo-about`
-  configuration and a `dotnet-project-licenses` run. Worth closing before the
-  first release, since it is a GPL obligation.
 - `release.yml` is unverified. It only runs on a tag, so the packaging fixes,
   action version bumps and the 2026-10-08 permission and input changes have
   never executed.

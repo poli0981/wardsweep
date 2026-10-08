@@ -1,0 +1,33 @@
+# cargo-about: which licences the Rust components may be under, and which
+# crates count as shipped. Generates licenses/rust.md; see
+# .github/scripts/notices.py, which runs it, and THIRD-PARTY-NOTICES.md.
+
+# The same list as deny.toml's [licenses] allow, so a crate cargo-deny accepts
+# is never one this refuses to describe. Keep the two in step.
+accepted = [
+  "Apache-2.0",
+  "Apache-2.0 WITH LLVM-exception",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "BSL-1.0",
+  "CC0-1.0",
+  "ISC",
+  "MIT",
+  "MIT-0",
+  "MPL-2.0",
+  "Unicode-3.0",
+  "Unlicense",
+  "Zlib",
+]
+
+# Every binary ships for this target only, and the dependency graph differs by
+# target: the `windows` crates exist here and nowhere else.
+targets = ["x86_64-pc-windows-msvc"]
+
+# Neither is linked into anything distributed.
+ignore-build-dependencies = true
+ignore-dev-dependencies = true
+
+# WardSweep's own crates are GPL-3.0-or-later and described by LICENSE, not
+# listed as third-party components.
+private = { ignore = true }
