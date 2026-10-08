@@ -24,6 +24,7 @@ mod clock;
 mod collect;
 mod diff;
 mod model;
+mod policy;
 mod redact;
 mod suggest;
 
@@ -110,6 +111,21 @@ enum Command {
         output: PathBuf,
     },
 
+    /// Apply this build's privacy policy to a diff that already exists.
+    ///
+    /// Drops what the current build refuses to keep — account identity,
+    /// hardware identifiers, activity history — from a diff produced before the
+    /// rule existed. `diff` applies the same policy to both snapshots, so this
+    /// is only needed for a diff that is already written.
+    Refilter {
+        /// The diff to refilter.
+        #[arg(long = "in", value_name = "PATH")]
+        input: PathBuf,
+        /// Where to write the refiltered diff.
+        #[arg(short, long, value_name = "PATH")]
+        output: PathBuf,
+    },
+
     /// Replace usernames, machine-local SIDs and host names with placeholders.
     ///
     /// Required before a raw snapshot may be shared, per `docs/16`. It removes
@@ -152,8 +168,37 @@ fn run(command: &Command) -> Result<u8> {
             signer,
             output,
         } => run_suggest(diff, residue.as_ref(), signer.as_deref(), output),
+        Command::Refilter { input, output } => run_refilter(input, output),
         Command::Redact { input, output } => run_redact(input, output),
     }
+}
+
+fn run_refilter(input: &PathBuf, output: &PathBuf) -> Result<u8> {
+    let mut diff: diff::Diff = read_json(input)?;
+    let report = diff::refilter(&mut diff, &policy::Policy::current());
+
+    write_diff(output, &diff)?;
+
+    eprintln!("refiltered diff written to {}", output.display());
+    if report.is_empty() {
+        eprintln!("  nothing in it is refused by this build's policy");
+    } else {
+        report_refiltered(&report);
+    }
+    Ok(exit::SUCCESS)
+}
+
+/// Say what the privacy policy removed. Never silent: a diff that lost records
+/// must say so, or a reader will take their absence for "nothing changed".
+fn report_refiltered(report: &diff::Refiltered) {
+    if report.is_empty() {
+        return;
+    }
+    eprintln!(
+        "  removed by this build's privacy policy (identity, hardware identifiers, activity \
+         history): {} registry record(s), {} value(s), {} unreadable-item record(s)",
+        report.registry_records, report.registry_values, report.access_denied
+    );
 }
 
 fn run_suggest(
@@ -316,6 +361,7 @@ fn run_diff(before: &PathBuf, after: &PathBuf, output: &PathBuf, no_filter: bool
         diff.files.len(),
         diff.registry.len()
     );
+    report_refiltered(&diff.refiltered);
     if diff.registry_policy_changed {
         eprintln!(
             "  WARNING: the two snapshots used different registry policies. \

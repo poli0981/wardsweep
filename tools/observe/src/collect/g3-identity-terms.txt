@@ -52,3 +52,14 @@ processorid
 computersystemproduct
 biosuuid
 systemuuid
+
+# Added after reading what the walk actually reaches on a real machine, rather
+# than what a Windows identifier is usually called.
+#
+# The DHCPv6 unique identifier under Services\Tcpip6\Parameters embeds a MAC
+# address, under a name no MAC-address term would match.
+dhcpv6duid
+# Network signatures record the default gateway's MAC address.
+defaultgatewaymac
+# A volume GUID path in value data: \\?\Volume{...}\.
+volume{

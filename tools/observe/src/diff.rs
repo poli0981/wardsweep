@@ -19,11 +19,13 @@
 //! catalog entry is then wrong in the direction of missing something — which is
 //! how a user ends up with a driver WardSweep said was gone.
 
+use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet};
 
 use serde::{Deserialize, Serialize};
 
-use crate::model::{Coverage, FileRecord, RegistryRecord, ServiceRecord, Snapshot};
+use crate::model::{Coverage, Domain, FileRecord, RegistryRecord, ServiceRecord, Snapshot};
+use crate::policy::Policy;
 
 /// Wire-format version of a diff file.
 pub const DIFF_FORMAT_VERSION: u32 = 1;
@@ -138,6 +140,41 @@ pub struct SuppressedFile {
     pub change: FileChange,
 }
 
+/// What this build's privacy policy removed before anything was compared.
+///
+/// See [`crate::policy`]. Every count is of something an older build read and
+/// this one refuses to keep, so a non-zero value means at least one snapshot
+/// predates a rule — and that the rule, not the snapshot, decided what the diff
+/// may say.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Refiltered {
+    /// Registry records dropped whole: an excluded key, or one whose every
+    /// value was refused.
+    #[serde(default)]
+    pub registry_records: usize,
+    /// Values dropped from registry records that were otherwise kept.
+    #[serde(default)]
+    pub registry_values: usize,
+    /// `access_denied` items that named an excluded key.
+    #[serde(default)]
+    pub access_denied: usize,
+}
+
+impl Refiltered {
+    /// Whether nothing was removed.
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        *self == Self::default()
+    }
+
+    fn absorb(&mut self, other: Self) {
+        self.registry_records += other.registry_records;
+        self.registry_values += other.registry_values;
+        self.access_denied += other.access_denied;
+    }
+}
+
 /// The result of comparing two snapshots.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -210,6 +247,10 @@ pub struct Diff {
     /// count is usually the whole footprint.
     #[serde(default)]
     pub signers: BTreeMap<String, usize>,
+    /// What this build's privacy policy removed from the snapshots, or from the
+    /// diff itself, before anything was written. See [`Refiltered`].
+    #[serde(default, skip_serializing_if = "Refiltered::is_empty")]
+    pub refiltered: Refiltered,
 }
 
 impl Diff {
@@ -285,7 +326,15 @@ pub fn compare(
         }
     }
 
-    let coverage = before.coverage.intersect(&after.coverage);
+    // Applied to both sides before anything is compared. A snapshot taken by an
+    // older build may hold what this build refuses to read — an account's
+    // e-mail address in a key name, a host name, a record of every program the
+    // user ran — and a diff is written to be committed.
+    let policy = Policy::current();
+    let mut refiltered = Refiltered::default();
+
+    let mut coverage = before.coverage.intersect(&after.coverage);
+    refiltered.access_denied = drop_excluded_denials(&mut coverage);
 
     // Only diff a domain both sides actually captured. Comparing a snapshot
     // that walked the filesystem against one that did not would report every
@@ -303,7 +352,7 @@ pub fn compare(
     let registry_policy_changed = before.registry_policy != after.registry_policy;
 
     let registry = if coverage.covers(crate::model::Domain::Registry) {
-        compare_registry(&before.registry, &after.registry)
+        compare_registry(&before.registry, &after.registry, &policy, &mut refiltered)
     } else {
         Vec::new()
     };
@@ -334,7 +383,97 @@ pub fn compare(
         registry,
         registry_policy_changed,
         signers,
+        refiltered,
     })
+}
+
+/// Apply this build's privacy policy to a diff that already exists.
+///
+/// The same rule [`compare`] applies to snapshots, for a diff produced before
+/// the rule existed: drop every change under an excluded key, drop refused
+/// values from the records that remain, and recompute what is left — a
+/// modification whose only differences were refused values is no longer a
+/// change at all. This is what makes cleaning a committed diff reproducible from
+/// committed code rather than from a script nobody kept.
+pub fn refilter(diff: &mut Diff, policy: &Policy) -> Refiltered {
+    let mut report = Refiltered {
+        access_denied: drop_excluded_denials(&mut diff.coverage),
+        ..Refiltered::default()
+    };
+
+    let mut kept = Vec::with_capacity(diff.registry.len());
+    for change in std::mem::take(&mut diff.registry) {
+        let before = admit_owned(policy, change.before, &mut report);
+        let after = admit_owned(policy, change.after, &mut report);
+        let rebuilt = match (before, after) {
+            (None, None) => None,
+            (None, Some(record)) => Some(RegistryChange {
+                key: record.key.clone(),
+                view: record.view.clone(),
+                kind: ChangeKind::Added,
+                before: None,
+                after: Some(record),
+                fields: Vec::new(),
+            }),
+            (Some(record), None) => Some(RegistryChange {
+                key: record.key.clone(),
+                view: record.view.clone(),
+                kind: ChangeKind::Removed,
+                before: Some(record),
+                after: None,
+                fields: Vec::new(),
+            }),
+            (Some(old), Some(new)) => {
+                let fields = value_changes(&old, &new);
+                (!fields.is_empty()).then(|| RegistryChange {
+                    key: new.key.clone(),
+                    view: new.view.clone(),
+                    kind: ChangeKind::Modified,
+                    before: Some(old),
+                    after: Some(new),
+                    fields,
+                })
+            }
+        };
+        kept.extend(rebuilt);
+    }
+    diff.registry = kept;
+
+    diff.refiltered.absorb(report);
+    report
+}
+
+/// One side of a registry change, as the policy allows it.
+fn admit_owned(
+    policy: &Policy,
+    record: Option<RegistryRecord>,
+    report: &mut Refiltered,
+) -> Option<RegistryRecord> {
+    let record = record?;
+    let admitted = policy.admit(&record);
+    report.registry_values += admitted.refused_values;
+    let replacement = match admitted.record {
+        None => {
+            report.registry_records += 1;
+            return None;
+        }
+        Some(Cow::Borrowed(_)) => None,
+        Some(Cow::Owned(owned)) => Some(owned),
+    };
+    Some(replacement.unwrap_or(record))
+}
+
+/// Remove `access_denied` items that name an excluded registry key.
+///
+/// The item itself can be the identity: the Microsoft account cache names its
+/// keys after the account's e-mail address, and a key that could not be opened
+/// is recorded by its full path.
+fn drop_excluded_denials(coverage: &mut Coverage) -> usize {
+    let before = coverage.access_denied.len();
+    coverage.access_denied.retain(|item| {
+        !(item.domain == Domain::Registry && crate::policy::excludes_denied_item(&item.item))
+    });
+    before - coverage.access_denied.len()
 }
 
 /// Directories that hold no file now and held one before.
@@ -391,24 +530,40 @@ fn rebooted_between(before: &Snapshot, after: &Snapshot) -> Option<bool> {
     Some(earlier.started_unix_ms.abs_diff(later.started_unix_ms) > SAME_BOOT_TOLERANCE_MS)
 }
 
-fn compare_registry(before: &[RegistryRecord], after: &[RegistryRecord]) -> Vec<RegistryChange> {
+/// Index registry records by key and view, keeping only what the policy allows.
+fn admitted_index<'a>(
+    records: &'a [RegistryRecord],
+    policy: &Policy,
+    refiltered: &mut Refiltered,
+) -> BTreeMap<(String, String), Cow<'a, RegistryRecord>> {
+    let mut index = BTreeMap::new();
+    for record in records {
+        let admitted = policy.admit(record);
+        refiltered.registry_values += admitted.refused_values;
+        match admitted.record {
+            Some(record) => {
+                index.insert(
+                    (record.key.to_ascii_lowercase(), record.view.clone()),
+                    record,
+                );
+            }
+            None => refiltered.registry_records += 1,
+        }
+    }
+    index
+}
+
+fn compare_registry(
+    before: &[RegistryRecord],
+    after: &[RegistryRecord],
+    policy: &Policy,
+    refiltered: &mut Refiltered,
+) -> Vec<RegistryChange> {
     // Keyed by path *and* view: the same logical key read through the 32-bit
     // and 64-bit views is two artifacts, and collapsing them would report a
     // value present in one view and absent in the other as no change at all.
-    let index = |records: &[RegistryRecord]| -> BTreeMap<(String, String), RegistryRecord> {
-        records
-            .iter()
-            .map(|record| {
-                (
-                    (record.key.to_ascii_lowercase(), record.view.clone()),
-                    record.clone(),
-                )
-            })
-            .collect()
-    };
-
-    let before_index = index(before);
-    let after_index = index(after);
+    let before_index = admitted_index(before, policy, refiltered);
+    let after_index = admitted_index(after, policy, refiltered);
     let identities: BTreeSet<&(String, String)> =
         before_index.keys().chain(after_index.keys()).collect();
 
@@ -423,14 +578,14 @@ fn compare_registry(before: &[RegistryRecord], after: &[RegistryRecord]) -> Vec<
                     view: record.view.clone(),
                     kind: ChangeKind::Added,
                     before: None,
-                    after: Some(record.clone()),
+                    after: Some(record.as_ref().clone()),
                     fields: Vec::new(),
                 }),
                 (Some(record), None) => Some(RegistryChange {
                     key: record.key.clone(),
                     view: record.view.clone(),
                     kind: ChangeKind::Removed,
-                    before: Some(record.clone()),
+                    before: Some(record.as_ref().clone()),
                     after: None,
                     fields: Vec::new(),
                 }),
@@ -443,8 +598,8 @@ fn compare_registry(before: &[RegistryRecord], after: &[RegistryRecord]) -> Vec<
                         key: new.key.clone(),
                         view: new.view.clone(),
                         kind: ChangeKind::Modified,
-                        before: Some(old.clone()),
-                        after: Some(new.clone()),
+                        before: Some(old.as_ref().clone()),
+                        after: Some(new.as_ref().clone()),
                         fields,
                     })
                 }
@@ -1161,6 +1316,140 @@ pub(crate) mod tests {
 
         assert_eq!(diff.coverage.captured, vec![Domain::Services]);
         assert!(diff.coverage.not_captured.contains(&Domain::Registry));
+    }
+
+    fn record(key: &str, values: &[(&str, &str)]) -> RegistryRecord {
+        RegistryRecord {
+            key: key.to_owned(),
+            view: "64".to_owned(),
+            values: values
+                .iter()
+                .map(|(name, data)| crate::model::RegistryValue {
+                    name: (*name).to_owned(),
+                    kind: "sz".to_owned(),
+                    data: (*data).to_owned(),
+                })
+                .collect(),
+        }
+    }
+
+    fn registry_snapshot(records: Vec<RegistryRecord>) -> Snapshot {
+        let mut side = snapshot(vec![]);
+        side.coverage.captured.push(Domain::Registry);
+        side.registry = records;
+        side
+    }
+
+    const ACCOUNT_KEY: &str =
+        r"HKCU\SOFTWARE\Microsoft\IdentityCRL\UserExtendedProperties\someone@example.invalid";
+    const TCPIP_KEY: &str = r"HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters";
+
+    #[test]
+    fn what_this_build_refuses_never_reaches_a_diff_of_older_snapshots() {
+        // Both snapshots predate the policy, so both hold the account cache and
+        // the host name — which is exactly how a committed diff came to carry
+        // an e-mail address. Neither may reach the diff.
+        let before = registry_snapshot(vec![
+            record(ACCOUNT_KEY, &[("cid", "1")]),
+            record(TCPIP_KEY, &[("Domain", "a"), ("Hostname", "host-before")]),
+        ]);
+        let mut after = registry_snapshot(vec![
+            record(ACCOUNT_KEY, &[("cid", "2")]),
+            record(TCPIP_KEY, &[("Domain", "b"), ("Hostname", "host-after")]),
+            record(r"HKLM\SOFTWARE\Riot Vanguard", &[("Version", "1")]),
+        ]);
+        after
+            .coverage
+            .access_denied
+            .push(crate::model::AccessDenied {
+                domain: Domain::Registry,
+                item: format!("{ACCOUNT_KEY} [view 64]"),
+                reason: "RegOpenKeyExW returned 5".to_owned(),
+            });
+
+        let diff = compare(&before, &after, &NoiseFilter::permissive()).unwrap();
+
+        let text = serde_json::to_string(&diff).unwrap();
+        for secret in ["someone@example.invalid", "host-before", "host-after"] {
+            assert!(!text.contains(secret), "{secret} reached the diff: {text}");
+        }
+        // The footprint and the ordinary change both survive.
+        assert_eq!(diff.registry.len(), 2, "{:?}", diff.registry);
+        let tcpip = diff.registry.iter().find(|c| c.key == TCPIP_KEY).unwrap();
+        assert_eq!(tcpip.fields.len(), 1);
+        assert_eq!(tcpip.fields[0].field, "Domain");
+        // And the removal is counted, never silent.
+        assert_eq!(
+            diff.refiltered,
+            Refiltered {
+                registry_records: 2,
+                registry_values: 2,
+                access_denied: 1,
+            }
+        );
+    }
+
+    #[test]
+    fn refiltering_a_written_diff_drops_what_compare_now_refuses() {
+        // A diff written by a build that had no policy: start from a clean one
+        // and add what that build would have recorded.
+        let mut diff = compare(
+            &registry_snapshot(vec![]),
+            &registry_snapshot(vec![record(
+                r"HKLM\SOFTWARE\Riot Vanguard",
+                &[("Version", "1")],
+            )]),
+            &NoiseFilter::permissive(),
+        )
+        .unwrap();
+        let modified = |old: RegistryRecord, new: RegistryRecord| RegistryChange {
+            key: new.key.clone(),
+            view: new.view.clone(),
+            kind: ChangeKind::Modified,
+            fields: value_changes(&old, &new),
+            before: Some(old),
+            after: Some(new),
+        };
+        diff.registry.push(modified(
+            record(ACCOUNT_KEY, &[("cid", "1")]),
+            record(ACCOUNT_KEY, &[("cid", "2")]),
+        ));
+        // Only the host name moved: no change at all once it is refused.
+        diff.registry.push(modified(
+            record(TCPIP_KEY, &[("Domain", "a"), ("Hostname", "host-before")]),
+            record(TCPIP_KEY, &[("Domain", "a"), ("Hostname", "host-after")]),
+        ));
+        diff.coverage
+            .access_denied
+            .push(crate::model::AccessDenied {
+                domain: Domain::Registry,
+                item: format!("{ACCOUNT_KEY} :: cid [view 32]"),
+                reason: "refused".to_owned(),
+            });
+
+        let report = refilter(&mut diff, &Policy::current());
+
+        let text = serde_json::to_string(&diff).unwrap();
+        for secret in ["someone@example.invalid", "host-before", "host-after"] {
+            assert!(!text.contains(secret), "{secret} survived: {text}");
+        }
+        assert_eq!(diff.registry.len(), 1);
+        assert_eq!(diff.registry[0].key, r"HKLM\SOFTWARE\Riot Vanguard");
+        assert_eq!(
+            report,
+            Refiltered {
+                registry_records: 2,
+                registry_values: 2,
+                access_denied: 1,
+            }
+        );
+        assert_eq!(
+            diff.refiltered, report,
+            "the diff records what was done to it"
+        );
+
+        // Running it again finds nothing more, so it is safe to repeat.
+        assert!(refilter(&mut diff, &Policy::current()).is_empty());
     }
 
     #[test]
