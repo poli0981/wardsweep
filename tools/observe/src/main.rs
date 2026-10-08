@@ -223,6 +223,21 @@ fn run_suggest(
     let footprint: diff::Diff = read_json(diff_path)?;
     let residue: Option<diff::Diff> = residue_path.map(read_json).transpose()?;
 
+    // The same refusal `diff` applies to a snapshot it does not implement: a
+    // diff whose shape this build does not know would be read, not refused,
+    // whenever its fields happened to line up.
+    for (path, read) in
+        std::iter::once((diff_path, &footprint)).chain(residue_path.zip(residue.as_ref()))
+    {
+        anyhow::ensure!(
+            read.format_version == diff::DIFF_FORMAT_VERSION,
+            "{} is diff format version {}, and this build implements {}",
+            path.display(),
+            read.format_version,
+            diff::DIFF_FORMAT_VERSION
+        );
+    }
+
     if footprint.filesystem_policy_changed || footprint.registry_policy_changed {
         eprintln!(
             "  WARNING: this diff was produced from snapshots taken under different \
