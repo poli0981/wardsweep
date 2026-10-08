@@ -243,6 +243,33 @@ maintainer decision with rationale before it changes.
   `VolumeSerialNumber` appears in shipped source. The five prohibitions
   themselves are unchanged.
 
+- **The deny-list's canonicalisation and its carve-outs were narrowed
+  (maintainer sign-off, 2026-10-08).** Four spellings that Win32 resolves to
+  protected locations — checked with `GetFullPathNameW` on Windows 11 —
+  canonicalised to paths the deny-list allowed: `C:\ProgramData\Microsoft .`
+  and `Microsoft. .` (trailing dots and spaces were stripped in one order
+  only), `C:\ProgramData\MICROS~1 .` (which also hid the 8.3 alias), and
+  `C:\ProgramData\...`, which opens `C:\ProgramData` itself. A fifth,
+  `C:\ProgramData\Microsoft::$INDEX_ALLOCATION`, is the directory reached
+  through its index stream. Trailing dots and spaces are now stripped in any
+  mix, a component of only dots and spaces is refused, `:` after the drive
+  letter is refused, and only an exact `..` pops a level.
+
+  Separately, `check_denylist` built one set of carve-outs for the whole
+  catalog and applied it to game entries as well, so a game could name another
+  entry's driver file or service key and pass — and removing that game would
+  then remove an anti-cheat other games still reference, which is G1.
+  Carve-outs are now earned per anti-cheat entry for its own footprint, and a
+  game earns none. `check_denylist` also fails a path it cannot expand or
+  canonicalise instead of skipping it as "already reported by `validate`",
+  since each CI check runs on its own, and `validate` refuses catalog paths
+  written with a relative component or a trailing dot or space.
+
+  Every change narrows the gate; none widens it. The broader container
+  hardening raised in the same review (profile and `AppData` roots, library
+  roots, `HKLM\SYSTEM` beyond `Services`) was not taken and is recorded in
+  `docs/PROGRESS.md` for a separate decision.
+
 ### Continuous integration
 - **The CI workflows now exist.** Rust CI, .NET CI and CodeQL were caller stubs
   delegating to `poli0981/.github/.github/workflows/*@main`. That repository is

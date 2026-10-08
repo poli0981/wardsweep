@@ -43,6 +43,23 @@ pub enum PathError {
     /// A UNC path without both a host and a share.
     #[error("malformed UNC path: {0}")]
     MalformedUnc(String),
+    /// A component made only of dots and spaces, other than `.` and `..`.
+    ///
+    /// Win32 strips such a component away entirely when it is the last one —
+    /// `C:\ProgramData\...` opens `C:\ProgramData` — and keeps it as a name
+    /// anywhere else, while the NT layer keeps it everywhere. The layers
+    /// disagree about what it means, so it is refused rather than resolved
+    /// either way.
+    #[error("path has a component made only of dots and spaces: {0}")]
+    DotsOnlyComponent(String),
+    /// A `:` inside a component of a drive-rooted or UNC path.
+    ///
+    /// That is NTFS stream syntax, and it is not inert:
+    /// `C:\ProgramData\Microsoft::$INDEX_ALLOCATION` is the directory itself,
+    /// reached through its index stream, while the string names a component
+    /// the deny-list has never heard of.
+    #[error("path uses NTFS stream syntax: {0}")]
+    StreamSyntax(String),
 }
 
 /// A path reduced to one unambiguous form.
@@ -100,7 +117,10 @@ impl CanonicalPath {
         self.resolved_via_handle
     }
 
-    /// The canonical rendering, preserving the original casing for display.
+    /// The canonical rendering: root prefix as given, components upper-cased.
+    ///
+    /// Upper-cased because two spellings of one location must render — and
+    /// compare — the same.
     #[must_use]
     pub fn as_str(&self) -> &str {
         &self.text
@@ -141,7 +161,8 @@ impl fmt::Display for CanonicalPath {
 /// # Errors
 ///
 /// Returns [`PathError`] when the input is empty, relative, contains a NUL,
-/// escapes its own root through `..`, or is a malformed UNC path.
+/// escapes its own root through `..`, is a malformed UNC path, has a component
+/// made only of dots and spaces, or uses NTFS stream syntax.
 pub fn canonicalise_syntactic(input: &str) -> Result<CanonicalPath, PathError> {
     if input.contains('\0') {
         return Err(PathError::EmbeddedNul);
@@ -153,7 +174,7 @@ pub fn canonicalise_syntactic(input: &str) -> Result<CanonicalPath, PathError> {
     }
 
     let (kind, root, rest) = split_root(trimmed)?;
-    let (components, short_name) = normalise_components(rest, trimmed)?;
+    let (components, short_name) = normalise_components(rest, trimmed, kind)?;
 
     let text = render(kind, &root, &components);
     let drive = match kind {
@@ -257,14 +278,22 @@ fn unc_root<'a>(rest: &'a str, original: &str) -> Result<(PathKind, String, &'a 
 }
 
 /// Drop `.`, apply `..`, uppercase for comparison, and flag 8.3 aliases.
-fn normalise_components(rest: &str, original: &str) -> Result<(Vec<String>, bool), PathError> {
+///
+/// Every rule here was checked against `GetFullPathNameW` on Windows 11, and
+/// every one of them resolves an ambiguity towards the *protected* reading: a
+/// spelling may be mapped onto a protected form, never away from one.
+fn normalise_components(
+    rest: &str,
+    original: &str,
+    kind: PathKind,
+) -> Result<(Vec<String>, bool), PathError> {
     let mut out: Vec<String> = Vec::new();
     let mut short_name = false;
     for raw in rest.split('\\') {
-        // Trailing separators and doubled separators produce empty segments.
-        let segment = raw.trim_end_matches(' ').trim_end_matches('.');
-        // A segment that was only dots is `.` or `..`; recover that first.
-        match raw.trim() {
+        // Decided on the raw segment. Only an exact `.` or `..` is relative:
+        // ` ..` is a name Win32 keeps in the middle of a path and strips to
+        // nothing at the end of one, which is no reason to pop a level.
+        match raw {
             // Empty segments come from doubled or trailing separators; `.` is
             // the current directory. Both are noise.
             "" | "." => continue,
@@ -276,11 +305,21 @@ fn normalise_components(rest: &str, original: &str) -> Result<(Vec<String>, bool
             }
             _ => {}
         }
-        let segment = if segment.is_empty() {
-            raw.trim()
-        } else {
-            segment
-        };
+
+        // Win32 strips trailing dots and spaces, in any mix, from the last
+        // component — `Microsoft .` and `Microsoft. .` both open `Microsoft` —
+        // and a single trailing dot from the others. Stripping both from every
+        // component is the superset.
+        let segment = raw.trim_end_matches(['.', ' ']);
+        if segment.is_empty() {
+            return Err(PathError::DotsOnlyComponent(original.to_owned()));
+        }
+        // A drive or UNC remainder never legitimately holds a `:`. The device
+        // and NT namespaces do (`\\.\C:\…`), and the deny-list refuses those
+        // forms as a whole.
+        if kind != PathKind::Device && segment.contains(':') {
+            return Err(PathError::StreamSyntax(original.to_owned()));
+        }
         if is_short_name(segment) {
             short_name = true;
         }
@@ -557,6 +596,80 @@ mod tests {
         // same directory. Treating them as different would be a deny-list bypass.
         let dotted = canonicalise_syntactic(r"C:\Windows.\System32 ").expect("valid path");
         assert_eq!(dotted.components(), ["WINDOWS", "SYSTEM32"]);
+    }
+
+    #[test]
+    fn trailing_dots_and_spaces_in_any_mix_are_stripped() {
+        // Each of these opens C:\ProgramData\Microsoft through Win32, checked
+        // with GetFullPathNameW. Before, `Microsoft .` canonicalised to the
+        // component `MICROSOFT ` and slipped past the deny-list's prefix rule.
+        for spelling in [
+            r"C:\ProgramData\Microsoft .",
+            r"C:\ProgramData\Microsoft. .",
+            r"C:\ProgramData\Microsoft. ",
+            r"C:\ProgramData\Microsoft..",
+        ] {
+            let path = canonicalise_syntactic(spelling).expect("valid path");
+            assert_eq!(
+                path.components(),
+                ["PROGRAMDATA", "MICROSOFT"],
+                "{spelling}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_component_of_only_dots_and_spaces_is_refused() {
+        // `C:\ProgramData\...` opens C:\ProgramData through Win32, and used to
+        // canonicalise to a child of it named `...`.
+        for spelling in [
+            r"C:\ProgramData\...",
+            r"C:\ProgramData\. .",
+            r"C:\ProgramData\ ..",
+            r"C:\ProgramData\Microsoft\ ..\x",
+            r"C:\ProgramData\   \x",
+        ] {
+            assert!(
+                matches!(
+                    canonicalise_syntactic(spelling),
+                    Err(PathError::DotsOnlyComponent(_))
+                ),
+                "{spelling}"
+            );
+        }
+    }
+
+    #[test]
+    fn ntfs_stream_syntax_is_refused_on_drive_and_unc_paths() {
+        // The first of these *is* the directory, opened through its index
+        // stream.
+        for spelling in [
+            r"C:\ProgramData\Microsoft::$INDEX_ALLOCATION",
+            r"C:\ProgramData\Microsoft:x",
+            r"\\localhost\C$\ProgramData\Microsoft::$DATA",
+        ] {
+            assert!(
+                matches!(
+                    canonicalise_syntactic(spelling),
+                    Err(PathError::StreamSyntax(_))
+                ),
+                "{spelling}"
+            );
+        }
+        // The device namespace carries a drive letter in its remainder, and is
+        // refused as a whole by the deny-list rather than here.
+        assert_eq!(
+            canonicalise_syntactic(r"\\.\C:\Windows")
+                .expect("device paths still canonicalise")
+                .kind(),
+            PathKind::Device
+        );
+    }
+
+    #[test]
+    fn an_alias_behind_a_trailing_dot_and_space_is_still_an_alias() {
+        let path = canonicalise_syntactic(r"C:\ProgramData\MICROS~1 .").expect("valid path");
+        assert!(path.contains_short_name());
     }
 
     #[test]

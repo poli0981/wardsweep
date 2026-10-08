@@ -49,17 +49,20 @@ impl std::fmt::Display for Problem {
     }
 }
 
-/// The carve-outs this catalog's own entries earn.
+/// The carve-outs one anti-cheat entry earns, for its own footprint only.
 ///
-/// A catalog that declares `drivers = ["vgk.sys"]` and `services = ["vgk"]`
-/// unlocks exactly those two names in the deny-list's two carve-outs, and
-/// nothing else. See [`crate::safety::denylist::Exceptions`].
+/// An entry that declares `drivers = ["vgk.sys"]` and `services = ["vgk"]`
+/// unlocks exactly those two names in the deny-list's two carve-outs, for its
+/// own paths and registry keys, and nothing else. See
+/// [`crate::safety::denylist::Exceptions`].
+///
+/// Per entry, never per catalog. A catalog-wide set let a *game* entry name
+/// another entry's driver file or service key and pass, and removing that game
+/// would then remove an anti-cheat other installed games still reference —
+/// Safety Gate G1. A game earns no carve-out at all; see [`check_denylist`].
 #[must_use]
-pub fn exceptions_for(catalog: &Catalog) -> Exceptions {
-    Exceptions::new(
-        catalog.anticheat.iter().flat_map(|ac| ac.drivers.iter()),
-        catalog.anticheat.iter().flat_map(|ac| ac.services.iter()),
-    )
+pub fn exceptions_for(ac: &AntiCheat) -> Exceptions {
+    Exceptions::new(&ac.drivers, &ac.services)
 }
 
 /// Schema and field-level validation.
@@ -288,6 +291,9 @@ fn check_paths(
                 format!("wildcards are not allowed in a path: {}", entry.path),
             ));
         }
+        if let Some(problem) = non_canonical_component(&entry.path) {
+            problems.push(Problem::new(&at, problem));
+        }
 
         match expand_for_validation(&entry.path) {
             Err(error) => problems.push(Problem::new(&at, error.to_string())),
@@ -303,6 +309,30 @@ fn check_paths(
             }
         }
     }
+}
+
+/// A component a catalog path must not be written with.
+///
+/// Catalog paths are written the way Windows would resolve them. A relative
+/// component, or one ending in a dot or space, means the text and the location
+/// differ — `Microsoft .` opens `Microsoft` — and that difference is exactly
+/// where a deny-list check and an execution can disagree. Canonicalisation
+/// resolves both towards the protected reading; refusing them here means a
+/// reviewer never has to.
+fn non_canonical_component(template: &str) -> Option<String> {
+    template.split(['\\', '/']).find_map(|component| {
+        if component == "." || component == ".." {
+            Some(format!(
+                "`{template}` has a relative component `{component}`; write the path it means"
+            ))
+        } else if component.ends_with('.') || component.ends_with(' ') {
+            Some(format!(
+                "`{template}` has a component ending in a dot or space, which Windows strips: `{component}`"
+            ))
+        } else {
+            None
+        }
+    })
 }
 
 fn check_registry(at: &str, entries: &[RegistryEntry], problems: &mut Vec<Problem>) {
@@ -368,79 +398,118 @@ pub fn check_refs(catalog: &Catalog) -> Vec<Problem> {
 /// `docs/04-CATALOG-SCHEMA.md`: entries are expanded **before** the deny-list
 /// check, and a catalog naming a protected location fails verification as a
 /// whole. This is that check.
+///
+/// Carve-outs are earned per anti-cheat entry and apply to that entry's own
+/// footprint; game entries earn none. A path or key this check cannot judge —
+/// one that does not expand or canonicalise — fails it, even though `validate`
+/// reports the same entry: each check runs on its own in CI, and a check that
+/// skips what it cannot read passes it.
 #[must_use]
 pub fn check_denylist(catalog: &Catalog) -> Vec<Problem> {
-    let exceptions = exceptions_for(catalog);
     let mut problems = Vec::new();
 
-    let path_groups = catalog
-        .anticheat
-        .iter()
-        .map(|ac| (format!("anticheat `{}`", ac.id), "paths", &ac.paths))
-        .chain(catalog.game.iter().flat_map(|g| {
-            [
-                (
-                    format!("game `{}`", g.id),
-                    "install_hints",
-                    &g.install_hints,
-                ),
-                (format!("game `{}`", g.id), "residue", &g.residue),
-                (format!("game `{}`", g.id), "saves", &g.saves),
-            ]
-        }));
+    for ac in &catalog.anticheat {
+        let owner = format!("anticheat `{}`", ac.id);
+        let exceptions = exceptions_for(ac);
+        check_denylist_paths(&owner, "paths", &ac.paths, &exceptions, &mut problems);
+        check_denylist_keys(&owner, &ac.registry, &exceptions, &mut problems);
+    }
 
-    for (owner, field, entries) in path_groups {
-        for (index, entry) in entries.iter().enumerate() {
-            let at = format!("{owner}.{field}[{index}]");
-            let Ok(expansions) = expand_for_validation(&entry.path) else {
-                continue; // already reported by `validate`
-            };
-            for expansion in expansions {
-                let Ok(canonical) = canonicalise_syntactic(&expansion) else {
-                    continue; // already reported by `validate`
-                };
-                if let Err(reason) =
-                    denylist::check_path(&canonical, &exceptions, Stage::CatalogLoad)
-                {
+    // A game earns no carve-out. Driver files and service keys are anti-cheat
+    // footprint, removed only through the entry that owns them and only when
+    // its reference count allows; a game naming one would remove it with the
+    // game.
+    let none = Exceptions::none();
+    for game in &catalog.game {
+        let owner = format!("game `{}`", game.id);
+        for (field, entries) in [
+            ("install_hints", &game.install_hints),
+            ("residue", &game.residue),
+            ("saves", &game.saves),
+        ] {
+            check_denylist_paths(&owner, field, entries, &none, &mut problems);
+        }
+        check_denylist_keys(&owner, &game.registry, &none, &mut problems);
+    }
+
+    problems
+}
+
+fn check_denylist_paths(
+    owner: &str,
+    field: &str,
+    entries: &[PathEntry],
+    exceptions: &Exceptions,
+    problems: &mut Vec<Problem>,
+) {
+    for (index, entry) in entries.iter().enumerate() {
+        let at = format!("{owner}.{field}[{index}]");
+        let expansions = match expand_for_validation(&entry.path) {
+            Ok(expansions) => expansions,
+            Err(error) => {
+                problems.push(Problem::new(
+                    &at,
+                    format!(
+                        "`{}` cannot be checked against the deny-list: {error}",
+                        entry.path
+                    ),
+                ));
+                continue;
+            }
+        };
+        for expansion in expansions {
+            let canonical = match canonicalise_syntactic(&expansion) {
+                Ok(canonical) => canonical,
+                Err(error) => {
                     problems.push(Problem::new(
                         &at,
                         format!(
-                            "`{}` resolves to {canonical}, which is denied: {reason}",
+                            "`{}` cannot be checked against the deny-list: {error}",
                             entry.path
                         ),
+                    ));
+                    continue;
+                }
+            };
+            if let Err(reason) = denylist::check_path(&canonical, exceptions, Stage::CatalogLoad) {
+                problems.push(Problem::new(
+                    &at,
+                    format!(
+                        "`{}` resolves to {canonical}, which is denied: {reason}",
+                        entry.path
+                    ),
+                ));
+            }
+        }
+    }
+}
+
+fn check_denylist_keys(
+    owner: &str,
+    entries: &[RegistryEntry],
+    exceptions: &Exceptions,
+    problems: &mut Vec<Problem>,
+) {
+    for (index, entry) in entries.iter().enumerate() {
+        let at = format!("{owner}.registry[{index}]");
+        match canonicalise_reg_key(&entry.key) {
+            Err(error) => problems.push(Problem::new(
+                &at,
+                format!(
+                    "`{}` cannot be checked against the deny-list: {error}",
+                    entry.key
+                ),
+            )),
+            Ok(canonical) => {
+                if let Err(reason) = denylist::check_registry_key(&canonical, exceptions) {
+                    problems.push(Problem::new(
+                        &at,
+                        format!("`{}` is denied: {reason}", entry.key),
                     ));
                 }
             }
         }
     }
-
-    let registry_groups = catalog
-        .anticheat
-        .iter()
-        .map(|ac| (format!("anticheat `{}`", ac.id), &ac.registry))
-        .chain(
-            catalog
-                .game
-                .iter()
-                .map(|g| (format!("game `{}`", g.id), &g.registry)),
-        );
-
-    for (owner, entries) in registry_groups {
-        for (index, entry) in entries.iter().enumerate() {
-            let at = format!("{owner}.registry[{index}]");
-            let Ok(canonical) = canonicalise_reg_key(&entry.key) else {
-                continue; // already reported by `validate`
-            };
-            if let Err(reason) = denylist::check_registry_key(&canonical, &exceptions) {
-                problems.push(Problem::new(
-                    &at,
-                    format!("`{}` is denied: {reason}", entry.key),
-                ));
-            }
-        }
-    }
-
-    problems
 }
 
 /// Audit `shared = false` claims.
@@ -508,6 +577,12 @@ mod tests {
             r"C:\\ProgramData\\Microsoft\\Windows",
             r"\\\\localhost\\C$\\Windows",
             r"C:\\",
+            // Spellings Win32 resolves to protected locations, checked with
+            // GetFullPathNameW. Each of them used to pass.
+            r"%ProgramData%\\Microsoft .",
+            r"%ProgramData%\\MICROS~1 .",
+            r"%ProgramData%\\...",
+            r"%ProgramData%\\Microsoft::$INDEX_ALLOCATION",
         ] {
             let body = format!(
                 "{HEADER}\n[[anticheat]]\n\
@@ -537,6 +612,84 @@ mod tests {
         );
         let catalog = catalog_from(&body);
         assert!(!check_denylist(&catalog).is_empty());
+    }
+
+    #[test]
+    fn a_game_cannot_borrow_an_anti_cheats_carve_outs() {
+        // The anti-cheat may name its own driver file and service key. A game
+        // referencing it may not: removing the game would remove the
+        // anti-cheat with it, whoever else still uses it — G1.
+        let body = format!(
+            "{HEADER}\n[[anticheat]]\n\
+             id = \"vanguard-like\"\ndisplay = \"Example\"\nkind = \"kernel\"\n\
+             shared = true\nrisk = \"critical\"\n\
+             drivers = [\"vgk.sys\"]\nservices = [\"vgk\"]\n\
+             paths = [{{ path = \"%SystemRoot%\\\\System32\\\\drivers\\\\vgk.sys\", class = \"install\" }}]\n\
+             registry = [{{ key = \"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\vgk\", view = \"64\", class = \"service\" }}]\n\
+             [[game]]\nid = \"a-game\"\ndisplay = \"A Game\"\nanticheat = [\"vanguard-like\"]\n\
+             residue = [{{ path = \"%SystemRoot%\\\\System32\\\\drivers\\\\vgk.sys\", class = \"install\" }}]\n\
+             registry = [{{ key = \"HKLM\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\vgk\", view = \"64\", class = \"service\" }}]\n"
+        );
+        let problems = check_denylist(&catalog_from(&body));
+        assert_eq!(problems.len(), 2, "{problems:?}");
+        assert!(
+            problems
+                .iter()
+                .all(|problem| problem.location().starts_with("game `a-game`")),
+            "the anti-cheat's own entries must stay allowed: {problems:?}"
+        );
+    }
+
+    #[test]
+    fn an_anti_cheat_cannot_borrow_another_ones_carve_outs() {
+        let body = format!(
+            "{HEADER}\n\
+             [[anticheat]]\nid = \"first\"\ndisplay = \"First\"\nkind = \"kernel\"\n\
+             shared = true\nrisk = \"high\"\ndrivers = [\"first.sys\"]\nservices = [\"First\"]\n\
+             [[anticheat]]\nid = \"second\"\ndisplay = \"Second\"\nkind = \"usermode\"\n\
+             shared = true\nrisk = \"low\"\n\
+             paths = [{{ path = \"%SystemRoot%\\\\System32\\\\drivers\\\\first.sys\", class = \"install\" }}]\n"
+        );
+        let problems = check_denylist(&catalog_from(&body));
+        assert_eq!(problems.len(), 1, "{problems:?}");
+        assert!(problems[0].location().starts_with("anticheat `second`"));
+    }
+
+    #[test]
+    fn a_path_the_deny_list_cannot_judge_fails_the_deny_list_check() {
+        // Each CI check runs on its own. A path that does not canonicalise used
+        // to be skipped here as "already reported by validate", which made
+        // `check-denylist` pass a catalog it never looked at.
+        let body = format!(
+            "{HEADER}\n[[anticheat]]\n\
+             id = \"odd\"\ndisplay = \"Odd\"\nkind = \"usermode\"\n\
+             shared = true\nrisk = \"low\"\n\
+             paths = [{{ path = \"relative\\\\path\", class = \"install\" }}, \
+                      {{ path = \"%NOSUCH%\\\\x\", class = \"install\" }}]\n\
+             registry = [{{ key = \"HKPD\\\\x\\\\y\", view = \"64\", class = \"config\" }}]\n"
+        );
+        assert_eq!(check_denylist(&catalog_from(&body)).len(), 3);
+    }
+
+    #[test]
+    fn catalog_paths_are_written_canonically() {
+        for template in [
+            r"%ProgramData%\\Vendor.",
+            r"%ProgramData%\\Vendor \\logs",
+            r"%ProgramData%\\Vendor\\..\\Other",
+            r"%ProgramData%\\.\\Vendor",
+        ] {
+            let body = format!(
+                "{HEADER}\n[[anticheat]]\n\
+                 id = \"odd\"\ndisplay = \"Odd\"\nkind = \"usermode\"\n\
+                 shared = true\nrisk = \"low\"\n\
+                 paths = [{{ path = \"{template}\", class = \"install\" }}]\n"
+            );
+            assert!(
+                !validate(&catalog_from(&body)).is_empty(),
+                "{template} should be refused"
+            );
+        }
     }
 
     #[test]
