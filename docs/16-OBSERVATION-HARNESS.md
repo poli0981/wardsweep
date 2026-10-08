@@ -430,10 +430,39 @@ the differences are per-title integration.
 
 ```powershell
 wardsweep observe intersect --diff a.json --diff b.json --diff c.json -o shared.json
+wardsweep observe suggest --diff shared.json -o draft.toml
 ```
 
 This is how a `shared = true` entry gets its footprint right, and it directly
 feeds spike S2.
+
+The result is a diff like any other, so `suggest` drafts from it, and it says
+it is an intersection: `intersection_of` lists each footprint by its two
+snapshot times and its change count — never by file name, which is whatever the
+contributor called it under whatever profile they keep it. The rules:
+
+- **Matched by identity, never by content.** A service matches by name, a file
+  by path and a registry key by path and view, ignoring case. Two titles
+  routinely ship different builds of one anti-cheat, so matching on hash or
+  image path would find nothing shared at all. The record kept is the first
+  footprint's.
+- **A change kept anywhere stays kept.** The noise filter is not recorded in a
+  diff, so footprints made with different filters can disagree about a change;
+  it is shown as suppressed only if every footprint suppressed it.
+- **Coverage is what every footprint covered.** A domain one footprint never
+  captured cannot be shown to be shared, and is reported as not captured rather
+  than as empty. `emptied_directories` and `emptied_keys` follow the same rule.
+- **Refused material never passes through.** Each footprint is brought under the
+  current privacy policy first, and `refiltered` sums what was removed from
+  each.
+- **Refused outright:** fewer than two footprints, the same footprint twice
+  (one title counted as two), a footprint that is itself an intersection, and
+  footprints whose snapshots differ in format.
+
+A title observed with the anti-cheat **already installed** has it missing from
+its footprint, and then so does the intersection. That errs towards too little
+— a shared footprint without the anti-cheat's own service is conspicuous — but
+it means every title's "before" snapshot has to be genuinely clean.
 
 ## The uninstall-and-reinstall cycle
 

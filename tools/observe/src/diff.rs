@@ -191,12 +191,28 @@ impl Refiltered {
         *self == Self::default()
     }
 
-    fn absorb(&mut self, other: Self) {
+    /// Add another count to this one.
+    pub(crate) fn absorb(&mut self, other: Self) {
         self.registry_records += other.registry_records;
         self.registry_values += other.registry_values;
         self.access_denied += other.access_denied;
         self.emptied_keys += other.emptied_keys;
     }
+}
+
+/// One footprint an intersection was computed from.
+///
+/// Times and a count, never a path: a footprint's file name is whatever the
+/// contributor called it, under whatever profile they keep it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Footprint {
+    /// When that footprint's earlier snapshot was taken.
+    pub before_taken_utc: String,
+    /// When its later snapshot was taken.
+    pub after_taken_utc: String,
+    /// The changes it held, kept and suppressed, across every domain.
+    pub changes: usize,
 }
 
 /// The result of comparing two snapshots.
@@ -297,6 +313,15 @@ pub struct Diff {
     /// diff itself, before anything was written. See [`Refiltered`].
     #[serde(default, skip_serializing_if = "Refiltered::is_empty")]
     pub refiltered: Refiltered,
+    /// For an intersection of footprints, the footprints, in the order given;
+    /// `None` for a diff of two snapshots. See [`crate::intersect`].
+    ///
+    /// An intersection is a diff like any other, so `suggest` drafts from it,
+    /// and this is what tells a reader that it is one: its timestamps span
+    /// every footprint, its changes are only those all of them hold, and its
+    /// `refiltered` sums what the policy removed from each.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub intersection_of: Option<Vec<Footprint>>,
 }
 
 impl Diff {
@@ -470,6 +495,7 @@ pub fn compare(
         registry_policy_changed,
         signers,
         refiltered,
+        intersection_of: None,
     })
 }
 

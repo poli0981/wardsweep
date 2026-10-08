@@ -67,7 +67,7 @@ compare against. A third would probably be worth more than the next feature.
 | CI — Rust, .NET, CodeQL (C#, Rust, Actions), Catalog Verify, weekly dependency audit | Done, inline in this repository, least-privilege, third-party actions pinned to SHAs, all green |
 | Spike S3 — split-privilege architecture | **PASS.** All six criteria measured — 23 checks, 0 failed. `spikes/S3-RESULT.md`. Throwaway code in `spikes/s3-split-privilege/`, unreachable from either build. |
 | `observations/2026-08-19-anticheatexpert/` | **First real observation.** Uninstall half of the `docs/16` cycle, committed with its diff, draft entry and notes. Reinstall half pending. |
-| `tools/observe/` — the observation harness | **`snapshot`, `diff`, `suggest`, `redact`, `refilter`.** Services, filesystem and registry, with Authenticode signer clustering and both WOW64 views. Never records account identity, activity history or G3 material, and the differ re-applies that policy to older snapshots. A draft entry is generated from the shipped schema, is proven to load through the real parser, and the committed Vanguard draft is pinned by a test to its committed diff. Scheduled tasks, firewall, event sources and environment are named as `not_captured` rather than omitted; `intersect` is not written. |
+| `tools/observe/` — the observation harness | **`snapshot`, `diff`, `suggest`, `intersect`, `redact`, `refilter`.** Services, filesystem and registry, with Authenticode signer clustering and both WOW64 views. Never records account identity, activity history or G3 material, and the differ re-applies that policy to older snapshots. A draft entry is generated from the shipped schema, is proven to load through the real parser, and the committed Vanguard draft is pinned by a test to its committed diff. Scheduled tasks, firewall, event sources and environment are named as `not_captured` rather than omitted. |
 
 Enforced by tests rather than by review:
 
@@ -175,10 +175,12 @@ observation records the later reading and calls it the fact. The endpoints are
 measured; the transition between them has never been caught, and a 35-minute
 poll straight after the install saw no change at all.
 
-**3. `observe intersect`.**
-The last unwritten subcommand. The intersection of the same anti-cheat observed
-across three titles is what makes a `shared = true` footprint right, and it
-feeds S2 directly.
+**3. Feed `observe intersect`.**
+Written on 2026-10-08 and waiting for input: it turns footprints of one
+anti-cheat under several titles into the shared footprint, which is what makes
+a `shared = true` entry right and what S2 starts from. It needs at least two
+titles' footprints, each from a machine where the anti-cheat was not already
+installed — item 2 is the first such pair.
 
 **4. Run S1 and S2**, which S3 unblocked, in parallel. **Read
 [`15`](15-TEST-MACHINE-PROTOCOL.md) before S1 touches real hardware** — the

@@ -148,8 +148,14 @@ merely intended. Arguments are passed through unchanged, so
 wardsweep observe snapshot -o before.json
 wardsweep observe snapshot -o after.json
 wardsweep observe diff --before before.json --after after.json -o diff.json
-wardsweep observe suggest --diff diff.json          # emits a draft catalog entry
+wardsweep observe suggest --diff diff.json -o draft.toml   # a draft catalog entry
+wardsweep observe intersect --diff a.json --diff b.json -o shared.json
+wardsweep observe refilter --in diff.json -o diff.json     # current policy and format
+wardsweep observe redact --in diff.json -o shared-diff.json
 ```
+
+The passthrough itself is not written yet: today the harness is run as
+`wardsweep-observe`, under exactly the same arguments.
 
 ## Exit codes
 
