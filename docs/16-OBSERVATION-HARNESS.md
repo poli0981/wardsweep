@@ -382,8 +382,8 @@ application's notification counts, the last program to run full screen and the
 last to open a game controller — another game, in this diff — Windows Backup's
 lists of installed applications and pinned tiles, Start's rotating record of
 recently added shortcuts, whose slot still named the game that held it before,
-the display strings Explorer resolved, and Windows' cache of signed-in
-identities. The walk also leaves out
+the display strings Explorer resolved, the files each Store application keeps
+lasting access to, and Windows' cache of signed-in identities. The walk also leaves out
 Windows' licensing state, which keeps the product key in plain text: on this
 machine the edition's published generic key, on one activated by a retail or
 OEM key the key itself.
@@ -621,3 +621,13 @@ cannot reach and the old report described as "`Anonymous` and the like":
 - The local machine's computer and account names are removed too, because a
   document has no reliable path to learn them from; `--also-name` adds another,
   for a file that has been redacted once already and so teaches nothing.
+
+A fourth came from the EA AntiCheat install diff, which carried the account name
+72 times inside registry binaries: shell links in a Store application's storage
+table, written as hex. No text rule could see them, and the report said no name
+remained.
+
+- **A value written as hex is decoded and searched too**, for each name as
+  ASCII and as UTF-16. A name found there is replaced by its placeholder in the
+  same encoding, on the same token boundaries as text, and what is left is
+  counted with the rest. The storage table itself is no longer walked.

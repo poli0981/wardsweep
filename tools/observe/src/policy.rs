@@ -191,6 +191,10 @@ pub const EXCLUDED_FRAGMENTS: &[&str] = &[
     "\\currentversion\\ufh\\shc\\",
     // Display strings resolved for the programs and items Explorer showed.
     "\\local settings\\muicache\\",
+    // The files and folders each Store application keeps lasting access to,
+    // as shell links that carry their full paths — the account name among
+    // them, in bytes no text rule reads.
+    "\\persistedstorageitemtable\\",
     // Host Activity Manager: how long each application was in use, kept per
     // package under AppModel\SystemAppData\<package>\HAM and as a commit history.
     "\\ham\\",
@@ -445,6 +449,7 @@ mod tests {
             "HKCU\\SOFTWARE\\Classes\\Local Settings\\MuiCache\\2ee\\52C64B7E",
             "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\SoftwareProtectionPlatform",
             "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\UFH\\SHC",
+            "HKCU\\SOFTWARE\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\SystemAppData\\Some.App_x\\PersistedStorageItemTable\\System\\x",
         ] {
             assert!(is_excluded(key), "{key} must not be walked");
         }

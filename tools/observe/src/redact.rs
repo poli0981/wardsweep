@@ -286,6 +286,22 @@ fn record_occurrences(text: &str, name: &str, residual: &mut Residual) {
             residual.contexts.push(context(text, start, name.len()));
         }
     }
+    // Inside a value written as hex, on any boundary: what the rewrite left
+    // because it was glued to something is exactly what this must report.
+    if let Some(bytes) = decode_hex(text) {
+        for wide in [false, true] {
+            for _ in find_encoded(&bytes, name, wide, false) {
+                residual.count += 1;
+                if residual.contexts.len() < MAX_CONTEXTS {
+                    let encoding = if wide { "UTF-16" } else { "ASCII" };
+                    residual.contexts.push(format!(
+                        "[NAME] as {encoding} inside a {}-byte binary value",
+                        bytes.len()
+                    ));
+                }
+            }
+        }
+    }
 }
 
 /// An occurrence with a little of its surroundings, the name itself masked.
@@ -495,8 +511,124 @@ pub fn redact_text_with(text: &str, names: &[(String, &'static str)]) -> (String
             applied.push((*placeholder).to_owned());
         }
     }
+    if let Some((replaced, placeholders)) = replace_in_hex(&result, names) {
+        result = replaced;
+        applied.extend(placeholders);
+    }
 
     (result, applied)
+}
+
+/// Replace names inside a value written as hex.
+///
+/// A registry binary reaches a document as hex digits, and a path inside one —
+/// a shell link, a recent-items entry — carries the account name as ASCII or
+/// UTF-16 bytes that no text rule can see. A Store application's storage table
+/// carried 72 of them in one diff. Each is replaced by its placeholder in the
+/// same encoding, on the same token boundaries as text, so the value keeps its
+/// shape and says where a name was.
+fn replace_in_hex(text: &str, names: &[(String, &'static str)]) -> Option<(String, Vec<String>)> {
+    if names.is_empty() {
+        return None;
+    }
+    let mut bytes = decode_hex(text)?;
+    let mut applied = Vec::new();
+    for (name, placeholder) in names {
+        for wide in [false, true] {
+            let starts = find_encoded(&bytes, name, wide, true);
+            if starts.is_empty() {
+                continue;
+            }
+            let width = encode(name, wide).len();
+            let replacement = encode(placeholder, wide);
+            let mut rebuilt = Vec::with_capacity(bytes.len());
+            let mut copied = 0;
+            for start in starts {
+                rebuilt.extend_from_slice(&bytes[copied..start]);
+                rebuilt.extend_from_slice(&replacement);
+                copied = start + width;
+            }
+            rebuilt.extend_from_slice(&bytes[copied..]);
+            bytes = rebuilt;
+            applied.push((*placeholder).to_owned());
+        }
+    }
+    if applied.is_empty() {
+        return None;
+    }
+    let upper = text.bytes().any(|byte| byte.is_ascii_uppercase());
+    Some((encode_hex(&bytes, upper), applied))
+}
+
+/// The bytes a string of hex digits spells, when it is one: an even number of
+/// digits and nothing else. An ordinary word made of the letters a to f decodes
+/// too, harmlessly — a name has to be found inside it before anything changes.
+fn decode_hex(text: &str) -> Option<Vec<u8>> {
+    if text.len() < 2
+        || !text.len().is_multiple_of(2)
+        || !text.bytes().all(|byte| byte.is_ascii_hexdigit())
+    {
+        return None;
+    }
+    (0..text.len())
+        .step_by(2)
+        .map(|at| u8::from_str_radix(&text[at..at + 2], 16).ok())
+        .collect()
+}
+
+fn encode_hex(bytes: &[u8], upper: bool) -> String {
+    const LOWER: &[u8; 16] = b"0123456789abcdef";
+    const UPPER: &[u8; 16] = b"0123456789ABCDEF";
+    let digits = if upper { UPPER } else { LOWER };
+    let mut text = String::with_capacity(bytes.len() * 2);
+    for byte in bytes {
+        text.push(char::from(digits[usize::from(byte >> 4)]));
+        text.push(char::from(digits[usize::from(byte & 0x0f)]));
+    }
+    text
+}
+
+/// A string's bytes as UTF-8, or as UTF-16LE.
+fn encode(text: &str, wide: bool) -> Vec<u8> {
+    if wide {
+        text.encode_utf16().flat_map(u16::to_le_bytes).collect()
+    } else {
+        text.as_bytes().to_vec()
+    }
+}
+
+/// Offsets of `name` in `bytes`, ASCII case ignored, encoded as UTF-8 or as
+/// UTF-16LE. With `bounded`, only where it stands on its own as
+/// [`replace_bare_name`] requires of text: no letter or digit, in the same
+/// encoding, on either side.
+fn find_encoded(bytes: &[u8], name: &str, wide: bool, bounded: bool) -> Vec<usize> {
+    let pattern = encode(name, wide);
+    if pattern.is_empty() || pattern.len() > bytes.len() {
+        return Vec::new();
+    }
+    let unit = if wide { 2 } else { 1 };
+    let is_word = |at: usize| {
+        bytes.get(at).is_some_and(u8::is_ascii_alphanumeric)
+            && (!wide || bytes.get(at + 1) == Some(&0))
+    };
+
+    let mut found = Vec::new();
+    let mut at = 0;
+    while at + pattern.len() <= bytes.len() {
+        let matches = bytes[at..at + pattern.len()]
+            .iter()
+            .zip(&pattern)
+            .all(|(byte, expected)| byte.eq_ignore_ascii_case(expected));
+        let alone =
+            !bounded || ((at < unit || !is_word(at - unit)) && !is_word(at + pattern.len()));
+        if matches && alone {
+            found.push(at);
+            at += pattern.len();
+        } else {
+            at += 1;
+        }
+    }
+    found
 }
 
 /// `someone@example.com` becomes `%EMAIL%`.
@@ -873,6 +1005,49 @@ mod tests {
         let once = redact_text("C:\\Users\\Anon\\x — S-1-5-21-1-2-3-1001 — anon42@example.com").0;
         let twice = redact_text(&once).0;
         assert_eq!(once, twice);
+    }
+
+    #[test]
+    fn a_name_inside_a_binary_value_is_replaced_in_its_own_encoding() {
+        // A shell link's path, as a Store application's storage table held it:
+        // the account name in UTF-16, and once more in ASCII.
+        let path = "C:\\Users\\Anon\\AppData\\Local\\x";
+        let mut bytes = vec![0x4c, 0, 0, 0];
+        bytes.extend(path.encode_utf16().flat_map(u16::to_le_bytes));
+        bytes.extend_from_slice(b"\0anon\\cache\0Anonymous\0");
+        let names = vec![("Anon".to_owned(), USER_PLACEHOLDER)];
+
+        let (out, hits) = redact_text_with(&encode_hex(&bytes, false), &names);
+
+        let decoded = decode_hex(&out).expect("still hex");
+        let text = String::from_utf16_lossy(
+            &decoded[4..]
+                .chunks_exact(2)
+                .map(|pair| u16::from_le_bytes([pair[0], pair[1]]))
+                .collect::<Vec<_>>(),
+        );
+        assert!(text.starts_with("C:\\Users\\%USER%\\AppData"), "{text}");
+        let narrow = String::from_utf8_lossy(&decoded);
+        assert!(narrow.contains("\0%USER%\\cache"), "{narrow}");
+        // The boundary rule holds in bytes as in text.
+        assert!(narrow.contains("Anonymous"), "{narrow}");
+        assert_eq!(hits, vec![USER_PLACEHOLDER, USER_PLACEHOLDER]);
+
+        // And what a rewrite cannot reach is still reported.
+        let mut residual = Residual::default();
+        record_occurrences(&out, "anon", &mut residual);
+        assert_eq!(residual.count, 1, "{:?}", residual.contexts);
+        assert!(residual.contexts[0].contains("binary value"));
+    }
+
+    #[test]
+    fn hex_that_spells_no_name_is_left_as_it_was() {
+        let names = vec![("Anon".to_owned(), USER_PLACEHOLDER)];
+        for text in ["0114020000000000C0", "deadbeef", "cafe", "abc"] {
+            let (out, hits) = redact_text_with(text, &names);
+            assert_eq!(out, text);
+            assert!(hits.is_empty(), "{text}");
+        }
     }
 
     #[test]

@@ -301,6 +301,13 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
 - `redact` read an image's display-scale suffix — `arrow-down@2x.png`, of which
   the EA app ships a row — as an e-mail address, and masked the file name. A
   scale suffix on an image is no longer an address. No committed diff held one.
+- `redact` could not see a name inside a registry binary. The EA AntiCheat
+  install diff carried the account name 72 times in shell links that a Store
+  application's storage table keeps, written as hex, and the report said no
+  name remained. A hex value is now decoded and searched for each name as ASCII
+  and as UTF-16, a name found there is replaced in the same encoding, and what
+  is left is counted. The storage table is no longer walked. No committed diff
+  held a name in a binary value.
 - `observe diff` compared services whether or not both snapshots captured them,
   collapsed two per-user service instances into one record and dropped the
   other, and cloned every record of both snapshots to build its indexes.
