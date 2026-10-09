@@ -303,6 +303,9 @@ observation records the later reading and calls it the fact.
 > What is safe to say is the narrow version: **the value differs between a
 > freshly installed or freshly booted machine and one that has been running for
 > hours, and a single reading cannot tell you which you have.**
+>
+> *The transition has since been observed, from the event log rather than a
+> poll — see "The transition, read from the event log" below.*
 
 **The maintainer's account, which fits every reading taken so far:** Vanguard
 re-evaluates and rewrites its state **on a reboot**, and not otherwise.
@@ -321,6 +324,60 @@ It also makes a prediction the next session can check in one step: **reboot, and
 `vgk` should read `SYSTEM_START` immediately afterwards and `demand` some
 minutes later.** If it does not, the account is wrong and the endpoint readings
 still stand on their own.
+
+### The transition, read from the event log (2026-10-09)
+
+The prediction was checked without a reboot. Windows' System log records every
+change to a service's start type (Service Control Manager event 7040) and every
+service installation (7045), each with the account that made it, and the boot
+it fell in can be read from Kernel-General event 12. On this machine the log
+reached back three weeks, to 2026-09-18, across 54 boots. Nothing was changed
+to take the reading — no reboot, no service touched, read-only queries only.
+Times are given relative to the boot they fell in; the boot times themselves
+are not recorded here, because a list of when a machine was switched on is
+activity history.
+
+| What | How often | Change | Made by |
+|---|---|---|---|
+| Vanguard installed (7045) | 4, all on 2026-10-09, while the maintainer was repairing it | `vgk` at `system start`, `vgc` at `demand start` | a user account |
+| **`vgk` lowered (7040)** | **3** | **`system` → `demand` twice, `auto` → `demand` once** | **SYSTEM** |
+| `vgk` raised by hand (7040) | 1 | `demand` → `auto` | a user account |
+| `vgc` raised (7040) | 2 | `demand` → `auto` | a user account |
+| Any `vgk` change in the 46 boots up to the first reinstall | 0 | — | — |
+
+The three lowerings came **4 min 7 s, 4 min 11 s and 10 min 21 s** after a
+boot.
+
+What that settles:
+
+- **The prediction holds.** Every time `vgk` was seen to begin a boot above
+  `demand`, it was lowered to `demand` a few minutes in. Two boots that followed
+  an install ended after 3.6 and 9.2 minutes without a lowering, inside the
+  delay observed, so they are not evidence against it. One lowering came two
+  minutes after a reinstall in the same boot, four minutes after the boot
+  began; that one cannot say whether the boot or the install set it off.
+- **Vanguard does it to itself.** Every lowering was made by the SYSTEM account.
+  The maintainer's own changes are logged under a user account, and this
+  harness never writes a service, so neither made them; of what Vanguard
+  installs, only `vgc` runs as LocalSystem. The account is measured — which
+  SYSTEM process it was is an inference.
+- **Nothing raised it back.** In three weeks the only writes of `system start`
+  were the installer's. On this machine, in this window, the cycle runs one
+  way: installed at `system`, lowered to `demand` minutes into a boot, and left
+  there.
+
+What it does not settle: Vanguard was **not working** in this window. `vgc`
+terminated with error 1 ("Incorrect function") once on 2026-09-21, once on
+2026-10-08 and 38 times on 2026-10-09, and unexpectedly twice more; no Code
+Integrity event names either Vanguard image, so the driver was not being
+blocked from loading. A working install may raise `vgk` again before a reboot —
+a game launch would need it to — and that half has still never been seen.
+
+For WardSweep, the consequence two sections up stops being hypothetical: the
+anti-cheat's own SYSTEM-account service rewrites its driver's start type minutes
+after a boot. A plan that sets `Start = SERVICE_DISABLED` and reboots has to
+expect the value to have moved by the time the broker resumes, if that service
+still runs — which is what `docs/03`'s re-verification on resume is for.
 
 Two consequences hold either way. `docs/06` Stage 3 sets
 `Start = SERVICE_DISABLED` and then reboots — straight into the moment an

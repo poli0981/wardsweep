@@ -178,24 +178,27 @@ most optimal" — and they were settled as follows.*
 
 ## Next, in order
 
-**0. One reboot settles an open question, and costs nothing.**
-The maintainer's account is that **Vanguard rewrites its state on a reboot and
-not otherwise**, which fits all three readings of `vgk`'s start type taken on
-2026-08-19 and is the only offered explanation that does. It predicts:
-immediately after a reboot `vgk` reads `SYSTEM_START`, and some minutes later
-`demand`. Check it the next time the machine restarts for any reason — no
-uninstall, no game launch, two `sc qc vgk` calls. If it holds, the observation
-note stops carrying an unverified mechanism; if it does not, the endpoint
-readings still stand and the mechanism is still open.
+**0. Settled: Vanguard lowers its own driver minutes into a boot.**
+Read on 2026-10-09 from the System event log rather than by rebooting: `vgk`
+was lowered to `demand` three times, each 4–10 minutes into a boot that began
+with it higher, and each by the SYSTEM account — Vanguard's own service, not the
+maintainer and not the harness. The only boots that began higher without a
+lowering ended inside ten minutes. In three weeks nothing but the installer
+wrote `system start`. The maintainer's account is confirmed for the lowering;
+whether a working install raises it again before a reboot is still unseen.
+Detail in `observations/2026-08-19-riot-vanguard/notes.md`.
 
-Note that Vanguard is **installed and running** on this machine again: the Riot
-Client autostarts at logon and reinstalled it unprompted at 21:21 on 2026-08-19.
-It cannot be kept uninstalled across a reboot.
+Vanguard is **installed but not working** on this machine: its service
+terminated with error 1 thirty-eight times on 2026-10-09, four reinstalls that
+day did not change that, and no Code Integrity block explains it. Until it
+works, step 2 cannot be done here.
 
 **1. Finish the AntiCheatExpert observation — now a full cycle.**
 The uninstall half is done and committed at
-`observations/2026-08-19-anticheatexpert/`. The plan was one game launch and a
-diff against the `01-uninstalled` snapshot, but the raw snapshots are no longer
+`observations/2026-08-19-anticheatexpert/`. ACE is not installed on this
+machine at present (checked 2026-10-09), so the cycle starts with the game
+client installing it — the step that failed twice in August. The plan was one
+game launch and a diff against the `01-uninstalled` snapshot, but the raw snapshots are no longer
 at `%LOCALAPPDATA%\WardSweep\observations\` (checked 2026-10-08), and a format
 1 snapshot cannot be diffed against a format 2 one anyway. So: snapshot with
 ACE installed, uninstall through the official uninstaller, snapshot, start
@@ -207,7 +210,8 @@ The half that already exists is the one [`16`](16-OBSERVATION-HARNESS.md) says
 leaves nothing of its own**. A project that sweeps residue has to report that as
 readily as the opposite.
 
-**2. A second title carrying Riot Vanguard.**
+**2. A second title carrying Riot Vanguard** — blocked on this machine while
+Vanguard is failing (step 0).
 The Vanguard cycle is complete — both halves — and committed at
 `observations/2026-08-19-riot-vanguard/` with a `draft.toml`. What the draft
 cannot have is `shared = false`, and it must not get it from one title:
