@@ -1,0 +1,89 @@
+# DRAFT — generated 2026-10-09T18:10:13.637Z
+# REVIEW EVERY FIELD BEFORE SUBMITTING.
+#
+# This is a hypothesis produced from an observation diff, not an entry.
+# CONTRIBUTING.md rejects entries that are not derived from a diff; it does
+# not accept one that was derived from a diff and never read.
+#
+# Publishers seen in this diff:
+#     117 file(s)  Electronic Arts, Inc.
+#     103 file(s)  Microsoft Corporation
+#      20 file(s)  Microsoft Windows Software Compatibility Publisher
+#       1 file(s)  Epic Games Inc.
+#       1 file(s)  Valve Corp.
+#
+# Before submitting:
+#   - attribution was limited with --only to what mentions `eaanticheat` or
+#     `ea\ac` or `javelin`. Everything else this publisher signed was left out
+#     on purpose; check that nothing of the anti-cheat's was among it.
+#   - service `EABackgroundService` (image `C:\Program Files\Electronic Arts\EA
+#     Desktop\EA Desktop\EABackgroundService.exe`) was added but nothing ties it
+#     to Electronic Arts, Inc., so it was left out. Add it back only if it is
+#     this anti-cheat's.
+#   - `EAAntiCheat` is a driver registered in the registry
+#     (`HKLM\SYSTEM\CurrentControlSet\Services\EAAntiCheat`, image
+#     `system32\drivers\eaanticheat.sys`) that the service control manager does
+#     not list, so a scan that trusts SCM alone never finds it (docs/05). It is
+#     in `services` and `drivers` so the entry names it; confirm it is this
+#     anti-cheat's.
+#   - a driver was observed but not at boot start. Vanguard has been seen
+#     configured either way, so confirm the start type rather than assuming this
+#     one generalises.
+#   - 1171 added file(s) could not be attributed to this publisher and were left
+#     out. That is ordinary machine churn between the two snapshots; check the
+#     diff if the footprint looks short.
+#   - 204 added registry key(s) could not be attributed to this anti-cheat and
+#     were left out.
+#   - event log source `Application\EA Javelin Anticheat` was registered and
+#     nothing ties its name to this anti-cheat, so it is not in `event_sources`.
+#     Add it if it is this anti-cheat's.
+#   - no residue diff was given, so every path is classified from the install
+#     diff alone. docs/16 calls the residue diff the more valuable of the two
+#     — it is the exact set of things the vendor's uninstaller leaves behind.
+#   - `shared` is `true` and must stay so until at least two titles have been
+#     observed. docs/04: a wrong `shared = false` is the G1 violation this
+#     project exists to prevent.
+#   - verify every signer with `signtool verify /v /pa <file>` and paste the
+#     output into the pull request, per the docs/16 checklist.
+
+[[anticheat]]
+id = "REVIEW-me"
+display = "REVIEW: Electronic Arts, Inc."
+vendor = "Electronic Arts, Inc."
+kind = "kernel"
+shared = true
+risk = "high"
+authenticode_cn = ["Electronic Arts, Inc."]
+file_hashes = []
+services = [
+    "EAAntiCheatService",
+    "EAAntiCheat",
+]
+drivers = ["eaanticheat.sys"]
+tasks = []
+firewall_rules = []
+event_sources = []
+
+[[anticheat.paths]]
+path = '%ProgramFiles%\EA\AC'
+class = "data"
+
+[[anticheat.registry]]
+key = 'HKCU\SOFTWARE\EA\AC'
+view = "both"
+class = "config"
+
+[[anticheat.registry]]
+key = 'HKLM\SOFTWARE\EA\AC'
+view = "both"
+class = "config"
+
+[[anticheat.registry]]
+key = 'HKLM\SYSTEM\CurrentControlSet\Services\EAAntiCheat'
+view = "both"
+class = "config"
+
+[[anticheat.registry]]
+key = 'HKLM\SYSTEM\CurrentControlSet\Services\EAAntiCheatService'
+view = "both"
+class = "config"

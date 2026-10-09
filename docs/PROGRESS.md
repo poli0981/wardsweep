@@ -27,7 +27,8 @@ architecture survived contact, its protocol did not survive it unamended.
 Two anti-cheats have since been observed through their own uninstallers, one of
 them through a full uninstall-and-reinstall cycle. AntiCheatExpert left
 **nothing of its own**; Riot Vanguard left two files and two empty directories,
-which its own reinstall did not reset either. **That is the honest scale of the
+which its own reinstall did not reset either. A third, EA AntiCheat, has been
+observed installing from a clean baseline; its uninstall is next. **That is the honest scale of the
 residue problem so far**, and it is a long way from what the subject is usually
 claimed to be. Anyone picking this up should know that before deciding how loud
 the product's claims are allowed to be.
@@ -67,7 +68,8 @@ compare against. A third would probably be worth more than the next feature.
 | CI — Rust, .NET, CodeQL (C#, Rust, Actions), Catalog Verify, weekly dependency audit | Done, inline in this repository, least-privilege, third-party actions pinned to SHAs, all green |
 | Spike S3 — split-privilege architecture | **PASS.** All six criteria measured — 23 checks, 0 failed. `spikes/S3-RESULT.md`. Throwaway code in `spikes/s3-split-privilege/`, unreachable from either build. |
 | `observations/2026-08-19-anticheatexpert/` | **First real observation.** Uninstall half of the `docs/16` cycle, committed with its diff, draft entry and notes. The reinstall half now needs a new full cycle: its raw snapshots are gone (next step 1). |
-| `tools/observe/` — the observation harness | **`snapshot`, `diff`, `suggest`, `intersect`, `redact`, `refilter`.** Services, filesystem and registry, with Authenticode signer clustering and both WOW64 views. Never records account identity, credentials, activity history or G3 material, in the registry or on disk, and the differ re-applies that policy to older snapshots. Snapshot format 2 also records registry keys left standing with no value and oversized values by size, and `diff` refuses to compare across formats. A draft entry is generated from the shipped schema, is proven to load through the real parser, and the committed Vanguard draft is pinned by a test to its committed diff. Scheduled tasks, firewall, event sources and environment are named as `not_captured` rather than omitted. |
+| `observations/2026-10-09-ea-anticheat/` | **First observation from a clean baseline.** EA AntiCheat's install, by FC 26's first launch through Steam's install script: a service, a minifilter driver SCM does not list and whose image is absent while no game runs, and EA's own record of the games that installed it. Draft scoped with `--only` and pinned by a test. The residue half is next (step 1). |
+| `tools/observe/` — the observation harness | **`snapshot`, `diff`, `suggest`, `intersect`, `redact`, `refilter`.** Services, filesystem and registry, with Authenticode signer clustering and both WOW64 views. Never records account identity, credentials, activity history or G3 material, in the registry or on disk, and the differ re-applies that policy to older snapshots. Snapshot format 2 also records registry keys left standing with no value and oversized values by size, and `diff` refuses to compare across formats. A draft entry is generated from the shipped schema, is proven to load through the real parser, and each committed draft is pinned by a test to its committed diff. Scheduled tasks, firewall, event sources and environment are named as `not_captured` rather than omitted. |
 
 Enforced by tests rather than by review:
 
@@ -193,7 +195,21 @@ terminated with error 1 thirty-eight times on 2026-10-09, four reinstalls that
 day did not change that, and no Code Integrity block explains it. Until it
 works, step 2 cannot be done here.
 
-**1. Finish the AntiCheatExpert observation — now a full cycle.**
+**1. Finish the 2026-10-09 cycle: ACE and EA AntiCheat.**
+Every snapshot in it comes from one collector, pinned for the cycle. `00` is
+the baseline and `01` followed FC 26's first launch; the diff between them is
+EA AntiCheat's install footprint, committed. Next:
+
+- Neverness To Everness finishes updating (done by 17:27Z on 2026-10-09) and is
+  launched once, which installs ACE. Snapshot `02`; the diff from `01` is ACE's
+  install footprint.
+- Uninstall FC 26 through Steam, whose install script runs EA's uninstaller.
+  Snapshot `03`; the diff from `02` is EA AntiCheat's residue.
+- Uninstall NTE, and ACE through its own uninstaller. Snapshot `04`; the diff
+  from `03` is ACE's residue.
+- After the cycle, restart and ask SCM about `EAAntiCheat` again.
+
+**Earlier plan for ACE, which the cycle above replaces:**
 The uninstall half is done and committed at
 `observations/2026-08-19-anticheatexpert/`. ACE is not installed on this
 machine at present (checked 2026-10-09), so the cycle starts with the game
@@ -285,6 +301,10 @@ that S2 should start from rather than rediscover:
 - Three kernel-class anti-cheats were found on one ordinary developer machine
   (Vanguard, AntiCheatExpert, EA Javelin), two of them only by enumerating
   rather than by looking for names already known.
+- EA AntiCheat keeps a record of the games that installed it under
+  `HKLM\SOFTWARE\EA\AC\Installs`, one name per game. That makes it a lead for the
+  resolver to cross-check, never a count: the ACE uninstall entry above was a
+  vendor record too, and it named a game that was gone.
 
 ## Open, needs a maintainer decision
 
