@@ -107,6 +107,13 @@ enum Command {
         /// Attribute the footprint to this publisher rather than the commonest.
         #[arg(long, value_name = "CN")]
         signer: Option<String>,
+        /// Keep only what mentions this text. Repeatable.
+        ///
+        /// For a publisher that signs a launcher as well as its anti-cheat:
+        /// `--only eaanticheat` keeps EA's anti-cheat and leaves the EA app
+        /// out. Compared without regard to case.
+        #[arg(long = "only", value_name = "TEXT")]
+        only: Vec<String>,
         /// Read `--diff` the other way round: its removals are the footprint.
         ///
         /// For a diff taken from an installed machine to an uninstalled one,
@@ -197,9 +204,17 @@ fn run(command: &Command) -> Result<u8> {
             diff,
             residue,
             signer,
+            only,
             removed,
             output,
-        } => run_suggest(diff, residue.as_ref(), signer.as_deref(), *removed, output),
+        } => run_suggest(
+            diff,
+            residue.as_ref(),
+            signer.as_deref(),
+            only,
+            *removed,
+            output,
+        ),
         Command::Intersect { diffs, output } => run_intersect(diffs, output),
         Command::Refilter { input, output } => run_refilter(input, output),
         Command::Redact {
@@ -332,6 +347,7 @@ fn run_suggest(
     diff_path: &PathBuf,
     residue_path: Option<&PathBuf>,
     signer: Option<&str>,
+    only: &[String],
     removed: bool,
     output: &PathBuf,
 ) -> Result<u8> {
@@ -362,7 +378,7 @@ fn run_suggest(
     } else {
         footprint
     };
-    let draft = suggest::draft(&footprint, residue.as_ref(), signer);
+    let draft = suggest::draft_scoped(&footprint, residue.as_ref(), signer, only);
     let toml = suggest::to_toml(&draft, &clock::now_utc()).context("rendering the draft")?;
 
     ensure_parent(output)?;
