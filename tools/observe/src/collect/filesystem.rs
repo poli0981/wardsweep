@@ -100,6 +100,12 @@ pub const EXCLUDED_FRAGMENTS: &[&str] = &[
     // Windows Timeline: the activity history database, in a folder and in files
     // named after the account's identifier.
     "\\appdata\\local\\connecteddevicesplatform\\",
+    // Recent items: a shortcut named after every document and folder opened
+    // lately, and each application's jump list.
+    "\\microsoft\\windows\\recent\\",
+    // Windows Error Reporting: a report for every program that crashed or
+    // hung, named after it.
+    "\\microsoft\\windows\\wer\\",
     // Microsoft account sign-in state: the authentication library's account
     // records, named after the account's identifier, and the token cache.
     "\\appdata\\local\\microsoft\\oneauth\\",
@@ -456,6 +462,9 @@ mod tests {
             "C:\\Users\\x\\AppData\\Local\\Microsoft\\OneDrive\\logs\\Common\\x.odl",
             "C:\\Users\\x\\AppData\\Local\\Origin\\AvatarsCache\\1234567890.jpg",
             "C:\\Users\\x\\AppData\\Roaming\\Claude\\claude-code-sessions\\a\\b.json",
+            "C:\\Users\\x\\AppData\\Roaming\\Microsoft\\Windows\\Recent\\Some document.docx.lnk",
+            "C:\\ProgramData\\Microsoft\\Windows\\WER\\ReportArchive\\AppCrash_game.exe_1\\Report.wer",
+            "C:\\Users\\x\\AppData\\Local\\Microsoft\\Windows\\WER\\ReportQueue\\x",
             "C:\\Program Files (x86)\\Steam\\userdata\\1234\\config\\localconfig.vdf",
             "C:\\Program Files (x86)\\Steam\\appcache\\stats\\UserGameStats_1234_5678.bin",
             "C:\\Program Files (x86)\\Steam\\depotcache\\5679_1.manifest",

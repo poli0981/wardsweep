@@ -753,36 +753,6 @@
       },
       {
         "domain": "filesystem",
-        "item": "C:\\ProgramData\\Microsoft\\Windows\\WER\\ReportArchive\\AppCrash_NTEGlobalBrowser_71d1384fbbda1af9a9e83d1c9112f9c92f8f9f_a0513388_cab_07c30700-e3a0-4232-95f8-eb02eb361916",
-        "reason": "Access is denied. (os error 5)"
-      },
-      {
-        "domain": "filesystem",
-        "item": "C:\\ProgramData\\Microsoft\\Windows\\WER\\ReportArchive\\AppCrash_c000000e_8e3cfff7981eb3af72b21999bb2fdbe07aa15ec_838c2ad8_cab_e3261195-afcd-4d68-affa-5949fdf743f4",
-        "reason": "Access is denied. (os error 5)"
-      },
-      {
-        "domain": "filesystem",
-        "item": "C:\\ProgramData\\Microsoft\\Windows\\WER\\ReportArchive\\NonCritical_MicrosoftEdgeUpd_43753d36c02ae0e8d28952fff9d3dd1b4424211_00000000_20a126ff-8ce8-488d-9e14-b50c272c0859",
-        "reason": "Access is denied. (os error 5)"
-      },
-      {
-        "domain": "filesystem",
-        "item": "C:\\ProgramData\\Microsoft\\Windows\\WER\\ReportArchive\\NonCritical_MicrosoftEdgeUpd_43753d36c02ae0e8d28952fff9d3dd1b4424211_00000000_257e378b-ac40-4385-9b2a-017d708edee0",
-        "reason": "Access is denied. (os error 5)"
-      },
-      {
-        "domain": "filesystem",
-        "item": "C:\\ProgramData\\Microsoft\\Windows\\WER\\ReportArchive\\NonCritical_setup.exe_61f3651de71546d1cd53d18f51c2fc472054e2c3_00000000_56986694-1656-45a8-b125-b4aebf48da9b",
-        "reason": "Access is denied. (os error 5)"
-      },
-      {
-        "domain": "filesystem",
-        "item": "C:\\ProgramData\\Microsoft\\Windows\\WER\\ReportArchive\\NonCritical_setup.exe_61f3651de71546d1cd53d18f51c2fc472054e2c3_00000000_7b408808-b55d-49a7-8a33-24b544f4776b",
-        "reason": "Access is denied. (os error 5)"
-      },
-      {
-        "domain": "filesystem",
         "item": "C:\\ProgramData\\Microsoft\\Windows\\WSAIFabric\\Temp",
         "reason": "Access is denied. (os error 5)"
       },
@@ -1084,11 +1054,6 @@
       {
         "domain": "registry",
         "item": "HKLM\\SOFTWARE\\Microsoft\\EAPSIMMethods\\50\\FastReauthContext [view 64]",
-        "reason": "RegOpenKeyExW returned 5"
-      },
-      {
-        "domain": "registry",
-        "item": "HKLM\\SOFTWARE\\Microsoft\\IdentityStore\\Cache\\S-1-5-99-486568272-975562994-1883531608-2732234258-332540751 [view 64]",
         "reason": "RegOpenKeyExW returned 5"
       },
       {
@@ -4751,18 +4716,6 @@
       "fields": []
     },
     {
-      "path": "C:\\Users\\%USER%\\AppData\\Roaming\\Microsoft\\Windows\\Recent\\CustomDestinations\\9a165f62edbfa161.customDestinations-ms",
-      "kind": "added",
-      "is_driver_image": false,
-      "before": null,
-      "after": {
-        "path": "C:\\Users\\%USER%\\AppData\\Roaming\\Microsoft\\Windows\\Recent\\CustomDestinations\\9a165f62edbfa161.customDestinations-ms",
-        "size": 3932,
-        "modified_utc": "2026-08-19T13:46:01.310Z"
-      },
-      "fields": []
-    },
-    {
       "path": "C:\\Users\\%USER%\\AppData\\Roaming\\Proton Mail\\logs\\main.log",
       "kind": "modified",
       "is_driver_image": false,
@@ -6874,8 +6827,8 @@
   "refiltered": {
     "registry_records": 109,
     "registry_values": 0,
-    "access_denied": 10,
+    "access_denied": 17,
     "emptied_keys": 0,
-    "files": 20
+    "files": 21
   }
 }

@@ -522,9 +522,12 @@ still rebuilds byte for byte.
 
 The walk's exclusions grew the same way (`docs/16`, "Personal identity and
 activity history are not recorded either"), and the differ now applies them to
-existing diffs. `observe refilter` removed 29 file changes and one emptied
-directory from `install.json` and 14 file changes from `residue.json`: the
-Claude desktop app's caches and session state, whose folder names are session
-identifiers, and four entries of Windows' token cache. In `draft.toml` the
-count of added files the draft could not attribute fell from 66 to 58; nothing
-else in it changed.
+existing diffs. `observe refilter` removed from `install.json` 29 file changes,
+an emptied directory, one application's notification counts and seven
+unreadable items, and from `residue.json` 15 file changes and seven unreadable
+items: the Claude desktop app's caches and session state, whose folder names
+are session identifiers; four entries of Windows' token cache and a recent
+item; crash reports named after the programs that crashed; and Windows' cache
+of signed-in identities, named after an identity's identifier. In `draft.toml`
+the count of added files the draft could not attribute fell from 66 to 58;
+nothing else in it changed.

@@ -147,6 +147,9 @@ pub const EXCLUDED_FRAGMENTS: &[&str] = &[
     "\\microsoft\\office\\common\\userinfo\\",
     // Names of every network the machine has joined.
     "\\networklist\\profiles\\",
+    // Windows' cache of the identities signed in to the machine, keyed by
+    // their security identifiers.
+    "\\microsoft\\identitystore\\",
     // --- Activity history --------------------------------------------------
     // Every program run, keyed by its path.
     "\\appcompatflags\\compatibility assistant\\",
@@ -169,6 +172,20 @@ pub const EXCLUDED_FRAGMENTS: &[&str] = &[
     // Background activity moderator: last-run time of every executable.
     "\\services\\bam\\state\\",
     "\\services\\dam\\state\\",
+    // Which programs used the camera, microphone, location or screen capture,
+    // and when.
+    "\\capabilityaccessmanager\\consentstore\\",
+    // How often each application raised a notification and when it last did;
+    // the last program to run full screen; the last program to open a game
+    // controller, and when.
+    "\\currentversion\\notifications\\settings\\",
+    "\\notifications\\quiethours\\",
+    "\\directinput\\mostrecentapplication\\",
+    // Windows Backup's lists of installed applications and pinned tiles, a
+    // Steam game's launch link among them.
+    "\\currentversion\\applistbackup\\",
+    // Display strings resolved for the programs and items Explorer showed.
+    "\\local settings\\muicache\\",
     // Host Activity Manager: how long each application was in use, kept per
     // package under AppModel\SystemAppData\<package>\HAM and as a commit history.
     "\\ham\\",
@@ -410,6 +427,13 @@ mod tests {
             "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Diagnostics\\DiagTrack\\HeartBeats\\Default",
             "HKCU\\SOFTWARE\\Microsoft\\VisualStudio\\Telemetry\\PersistentPropertyBag",
             "HKCU\\SOFTWARE\\Valve\\Steam\\Apps\\1234",
+            "HKLM\\SOFTWARE\\Microsoft\\IdentityStore\\Cache\\S-1-5-21-%REDACTED%\\IdentityCache",
+            "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\microphone\\NonPackaged\\x",
+            "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Notifications\\Settings\\Some.App",
+            "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Notifications\\QuietHours",
+            "HKCU\\SOFTWARE\\Microsoft\\DirectInput\\MostRecentApplication",
+            "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\AppListBackup\\ListOfTaskBackedUpTiles_1",
+            "HKCU\\SOFTWARE\\Classes\\Local Settings\\MuiCache\\2ee\\52C64B7E",
         ] {
             assert!(is_excluded(key), "{key} must not be walked");
         }
@@ -436,6 +460,11 @@ mod tests {
             "HKLM\\SOFTWARE\\Valve\\Steam\\Apps\\3405690",
             "HKLM\\SOFTWARE\\WOW6432Node\\Valve\\Steam\\Apps\\3405690",
             "HKCU\\SOFTWARE\\Valve\\Steam",
+            // A game's own controller settings are left behind when it goes,
+            // beside the record of the last program to open a controller.
+            "HKCU\\SOFTWARE\\Microsoft\\DirectInput\\FC26.EXE6A6AC0701B12BB70",
+            // Windows' notification state data, not a per-application record.
+            "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Notifications\\Data",
         ] {
             assert!(!is_excluded(key), "{key} is footprint and must be walked");
         }

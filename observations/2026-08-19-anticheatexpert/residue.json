@@ -758,16 +758,6 @@
       },
       {
         "domain": "filesystem",
-        "item": "C:\\ProgramData\\Microsoft\\Windows\\WER\\ReportArchive\\NonCritical_MicrosoftEdgeUpd_43753d36c02ae0e8d28952fff9d3dd1b4424211_00000000_20a126ff-8ce8-488d-9e14-b50c272c0859",
-        "reason": "Access is denied. (os error 5)"
-      },
-      {
-        "domain": "filesystem",
-        "item": "C:\\ProgramData\\Microsoft\\Windows\\WER\\ReportArchive\\NonCritical_setup.exe_61f3651de71546d1cd53d18f51c2fc472054e2c3_00000000_56986694-1656-45a8-b125-b4aebf48da9b",
-        "reason": "Access is denied. (os error 5)"
-      },
-      {
-        "domain": "filesystem",
         "item": "C:\\ProgramData\\Microsoft\\Windows\\WSAIFabric\\Temp",
         "reason": "Access is denied. (os error 5)"
       },
@@ -1069,11 +1059,6 @@
       {
         "domain": "registry",
         "item": "HKLM\\SOFTWARE\\Microsoft\\EAPSIMMethods\\50\\FastReauthContext [view 64]",
-        "reason": "RegOpenKeyExW returned 5"
-      },
-      {
-        "domain": "registry",
-        "item": "HKLM\\SOFTWARE\\Microsoft\\IdentityStore\\Cache\\S-1-5-99-486568272-975562994-1883531608-2732234258-332540751 [view 64]",
         "reason": "RegOpenKeyExW returned 5"
       },
       {
@@ -5836,7 +5821,7 @@
   "refiltered": {
     "registry_records": 54,
     "registry_values": 0,
-    "access_denied": 10,
+    "access_denied": 13,
     "emptied_keys": 0,
     "files": 43
   }
