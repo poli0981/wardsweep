@@ -174,12 +174,7 @@ pub fn intersect(mut footprints: Vec<Diff>) -> Result<Diff, IntersectError> {
             coverage.intersect(&other.coverage)
         });
 
-    let mut signers: BTreeMap<String, usize> = BTreeMap::new();
-    for change in &files {
-        if let Some(signer) = &change.signer {
-            *signers.entry(signer.clone()).or_insert(0) += 1;
-        }
-    }
+    let signers = crate::diff::signer_counts(&files);
 
     Ok(Diff {
         format_version: DIFF_FORMAT_VERSION,

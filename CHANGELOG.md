@@ -271,6 +271,24 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
   identifiers, Edge's preference hashes and session identifiers — and were
   refiltered and redacted again; no authentication cookie or sync-store record
   had been committed, and both committed drafts rebuild unchanged.
+- The same diff showed the filesystem's share: the Steam account's identifier
+  in folder and file names, Windows Timeline's store, the Microsoft account's
+  sign-in records and token cache, EA's avatar cache and the Claude desktop
+  app's session state. The walk no longer reads them, nor Steam's per-account
+  list of library games under `HKCU\SOFTWARE\Valve\Steam\Apps`, and values
+  holding Steam's sign-in name and account identifier are refused. The differ
+  now applies the directory exclusions to older snapshots as it does the
+  registry policy, and `refilter` applies them to an existing diff. The
+  committed diffs held the Claude app's session state — folder names that are
+  session identifiers — and token-cache entries, and were refiltered; each
+  draft's count of files it could not attribute fell, and nothing else in them
+  changed. `redact --also-id` masks an identifier a review finds that no rule
+  knows.
+- `observe refilter` recomputed every registry modification, so an identifier
+  `redact` had masked on both sides of a change read as unchanged and was
+  dropped without being counted. A change the policy leaves alone is now kept
+  as written. No committed diff was affected: each was refiltered before it was
+  redacted.
 - `observe diff` compared services whether or not both snapshots captured them,
   collapsed two per-user service instances into one record and dropped the
   other, and cloned every record of both snapshots to build its indexes.

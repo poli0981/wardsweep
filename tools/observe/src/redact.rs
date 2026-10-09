@@ -78,6 +78,10 @@ pub struct Extra {
     pub accounts: Vec<String>,
     /// Computer names, replaced by [`HOST_PLACEHOLDER`].
     pub computers: Vec<String>,
+    /// Opaque identifiers a review found and no rule knows — an account number
+    /// in a game's file name, a folder named after a hash of one — replaced by
+    /// [`ID_PLACEHOLDER`].
+    pub identifiers: Vec<String>,
 }
 
 /// The shortest name replaced on its own.
@@ -96,6 +100,9 @@ pub struct Report {
     pub names: Vec<String>,
     /// Computer names supplied by the caller.
     pub computers: Vec<String>,
+    /// How many identifiers the caller supplied. Counted rather than listed:
+    /// the caller has them already, and a report is something people paste.
+    pub identifiers: usize,
     /// Supplied names too short to replace safely, and so left alone.
     pub skipped: Vec<String>,
     /// What is still present afterwards, by name.
@@ -158,9 +165,11 @@ pub fn redact_document(value: &mut serde_json::Value, extra: &Extra) -> Report {
 
     let mut accounts = discover_names(value);
     let mut computers = Vec::new();
+    let mut identifiers = Vec::new();
     for (supplied, into) in [
         (&extra.accounts, &mut accounts),
         (&extra.computers, &mut computers),
+        (&extra.identifiers, &mut identifiers),
     ] {
         for name in supplied {
             let name = name.trim();
@@ -183,6 +192,7 @@ pub fn redact_document(value: &mut serde_json::Value, extra: &Extra) -> Report {
                 .iter()
                 .map(|name| (name.clone(), HOST_PLACEHOLDER)),
         )
+        .chain(identifiers.iter().map(|id| (id.clone(), ID_PLACEHOLDER)))
         .collect();
 
     rewrite(value, &names, &mut report.applied);
@@ -197,6 +207,7 @@ pub fn redact_document(value: &mut serde_json::Value, extra: &Extra) -> Report {
 
     report.names = accounts;
     report.computers = computers;
+    report.identifiers = identifiers.len();
     report
 }
 
@@ -701,6 +712,31 @@ mod tests {
     }
 
     #[test]
+    fn an_identifier_a_review_supplies_is_masked_on_token_boundaries() {
+        let mut document = serde_json::json!({
+            "files": [
+                {"path": "C:\\Users\\%USER%\\AppData\\Local\\Game\\cache\\playtime_3299311611.json"},
+                {"path": "C:\\Game\\data\\13299311611.bin"}
+            ]
+        });
+        let extra = Extra {
+            identifiers: vec!["3299311611".to_owned()],
+            ..Extra::default()
+        };
+
+        let report = redact_document(&mut document, &extra);
+
+        let text = serde_json::to_string(&document).unwrap();
+        assert!(text.contains("playtime_%ID%.json"), "{text}");
+        assert_eq!(report.applied.get(ID_PLACEHOLDER), Some(&1));
+        assert_eq!(report.identifiers, 1);
+        // Inside a longer number it is left alone, and reported for a person
+        // to judge rather than passed over in silence.
+        assert!(text.contains("13299311611.bin"), "{text}");
+        assert_eq!(report.residual.get("3299311611").map(|r| r.count), Some(1));
+    }
+
+    #[test]
     fn an_identifier_value_keeps_its_name_and_loses_its_data() {
         let mut document = serde_json::json!({
             "registry": [{
@@ -986,6 +1022,7 @@ mod tests {
         let extra = Extra {
             accounts: vec!["someone".to_owned(), "jo".to_owned()],
             computers: vec!["ANON-PC".to_owned()],
+            ..Extra::default()
         };
         let report = redact_document(&mut document, &extra);
 

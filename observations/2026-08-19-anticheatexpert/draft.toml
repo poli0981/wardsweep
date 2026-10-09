@@ -20,7 +20,7 @@
 #   - a driver was observed but not at boot start. Vanguard has been seen
 #     configured either way, so confirm the start type rather than assuming this
 #     one generalises.
-#   - 15 added file(s) could not be attributed to this publisher and were left
+#   - 1 added file(s) could not be attributed to this publisher and were left
 #     out. That is ordinary machine churn between the two snapshots; check the
 #     diff if the footprint looks short.
 #   - `C:\WINDOWS\System32\drivers` was dropped: the deny-list refuses it. A

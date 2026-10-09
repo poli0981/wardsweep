@@ -373,3 +373,13 @@ recorded either"). `observe refilter` removed 18 more registry records from
 per-machine telemetry identifiers — and `observe redact` masked 8 session
 identifiers as `%ID%`, keeping the value names. Nothing that names the
 anti-cheat changed, and `draft.toml` still rebuilds byte for byte.
+
+### Refiltered again on 2026-10-10
+
+The walk's exclusions grew the same way (`docs/16`, "Personal identity and
+activity history are not recorded either"), and the differ now applies them to
+existing diffs. `observe refilter` removed 35 file changes from `residue.json`:
+the Claude desktop app's caches and session state, whose folder names are
+session identifiers, and two entries of Windows' token cache. In `draft.toml`
+the count of added files the draft could not attribute fell from 15 to 1;
+nothing else in it changed.

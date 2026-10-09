@@ -359,13 +359,37 @@ the name: EA's anti-cheat stores two session identifiers under its own key,
 and the key and the names are footprint while the identifiers mean something
 only to the vendor.
 
+The same diff showed the filesystem's share, and the walk leaves that out too:
+Windows Timeline's activity store, the Microsoft account's sign-in records and
+token cache, and OneDrive's folder; the Steam client's per-account data, caches
+and download manifests, which carry the Steam account's identifier in folder
+and file names and between them list every game it owns; EA's cache of account
+avatars, named after the accounts' identifiers; and the Claude desktop app's
+session state. Steam's per-application state under
+`HKCU\SOFTWARE\Valve\Steam\Apps` is the registry side of the same list and
+is excluded. The machine-wide key of the same shape under `HKLM` is not, because
+it is footprint: Steam's record of which steps of a game's install script have
+run, and the step that installs EA's anti-cheat is one of them. Values named
+`AutoLoginUser`, `ActiveUser` and `LastGameNameUsed` — Steam's remembered
+sign-in name, the signed-in account's identifier and a persona name — are
+refused wherever they appear. The directories are listed beside the walk, in
+`tools/observe/src/collect/filesystem.rs`.
+
+Some identifiers belong to no store a rule can name: an account number in a
+game's own file name, a launcher's folder named after a hash. Finding those is
+the review's job, and `redact --also-id <TEXT>` masks each one as `%ID%`
+wherever it stands on its own.
+
 Two consequences:
 
-- **The differ applies the rules to both snapshots before comparing them**, so a
-  snapshot taken by an older build cannot carry what the current build refuses
-  into a new diff. What was removed is counted in the diff's `refiltered`
-  field and printed, never dropped silently. `observe refilter` applies the same
-  rules to a diff that already exists.
+- **The differ applies the rules to both snapshots before comparing them** —
+  the registry policy and the walk's directory exclusions alike — so a snapshot
+  taken by an older build cannot carry what the current build refuses into a
+  new diff. What was removed is counted in the diff's `refiltered` field and
+  printed, never dropped silently. `observe refilter` applies the same rules to
+  a diff that already exists, and keeps a change it has nothing to remove from
+  exactly as written: an identifier `redact` masked on both sides reads as
+  unchanged, and recomputing the change would lose it.
 - **One class of evidence is now out of view by design.** An observation once
   found that the harness itself had left the anti-cheat's directory in
   Explorer's `TypedPaths`, which a name-matching residue scanner would have
@@ -467,6 +491,8 @@ The generated draft is a hypothesis. Before it becomes a catalog entry:
 - [ ] Confirm `shared` against at least two titles, or leave it `true`
 - [ ] Test the `official_uninstall` command manually and record what it does
 - [ ] Cross-check the residue diff: what did the official uninstaller leave?
+- [ ] Read the diff for identifiers no rule knows — account numbers and hashes
+      in file and folder names — and mask each with `redact --also-id`
 - [ ] Attach the diff JSON to the PR
 
 ## Multi-title observation

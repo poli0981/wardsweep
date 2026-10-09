@@ -100,6 +100,12 @@ const PERSONAL_IDENTITY_VALUE_NAMES: &[&str] = &[
     "registeredowner",
     "registeredorganization",
     "useremail",
+    // Steam's remembered sign-in name and the signed-in account's identifier,
+    // kept beside its own settings in `HKCU\SOFTWARE\Valve\Steam`, and the
+    // persona name some clients keep there too.
+    "autologinuser",
+    "activeuser",
+    "lastgamenameused",
 ];
 
 /// Whether a value's name marks it as personal identity.
@@ -174,6 +180,12 @@ pub const EXCLUDED_FRAGMENTS: &[&str] = &[
     // Studio's per-machine telemetry identifiers.
     "\\diagnostics\\diagtrack\\",
     "\\visualstudio\\telemetry\\",
+    // Steam's state for each application in the signed-in account's library —
+    // installed, running, updating — which lists the library. Named from its
+    // hive: the machine-wide key of the same shape is footprint, Steam's record
+    // of which install-script steps a game has run, and an anti-cheat
+    // installer is one of those steps.
+    "\\hkcu\\software\\valve\\steam\\apps\\",
     // --- Credentials ---------------------------------------------------------
     // Microsoft account authentication cookies.
     "\\microsoft\\authcookies\\",
@@ -194,7 +206,9 @@ pub const EXCLUDED_FRAGMENTS: &[&str] = &[
 /// Whether a key path falls inside an excluded fragment.
 #[must_use]
 pub fn is_excluded(key: &str) -> bool {
-    let lowered = format!("{}\\", key.to_ascii_lowercase());
+    // A separator at each end, so a fragment can name a subtree from its hive
+    // as well as from anywhere below it.
+    let lowered = format!("\\{}\\", key.to_ascii_lowercase());
     EXCLUDED_FRAGMENTS
         .iter()
         .any(|fragment| lowered.contains(fragment))
@@ -395,6 +409,7 @@ mod tests {
             "HKCU\\SOFTWARE\\Chromium\\PreferenceMACs\\Default",
             "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Diagnostics\\DiagTrack\\HeartBeats\\Default",
             "HKCU\\SOFTWARE\\Microsoft\\VisualStudio\\Telemetry\\PersistentPropertyBag",
+            "HKCU\\SOFTWARE\\Valve\\Steam\\Apps\\1234",
         ] {
             assert!(is_excluded(key), "{key} must not be walked");
         }
@@ -415,6 +430,12 @@ mod tests {
             "HKLM\\SOFTWARE\\EA\\AC",
             "HKCU\\SOFTWARE\\EA\\AC",
             "HKLM\\SYSTEM\\CurrentControlSet\\Services\\EAAntiCheat",
+            // Where Steam records that a game's install script ran EA's
+            // anti-cheat installer, under both of the names the 32-bit view
+            // goes by. Only the per-account state beside it is excluded.
+            "HKLM\\SOFTWARE\\Valve\\Steam\\Apps\\3405690",
+            "HKLM\\SOFTWARE\\WOW6432Node\\Valve\\Steam\\Apps\\3405690",
+            "HKCU\\SOFTWARE\\Valve\\Steam",
         ] {
             assert!(!is_excluded(key), "{key} is footprint and must be walked");
         }
@@ -520,6 +541,13 @@ mod tests {
             policy.refusal("registeredOwner", "x"),
             Some(Refusal::PersonalIdentity)
         );
+        for steam in ["AutoLoginUser", "ActiveUser", "LastGameNameUsed"] {
+            assert_eq!(
+                policy.refusal(steam, "x"),
+                Some(Refusal::PersonalIdentity),
+                "{steam}"
+            );
+        }
         // Exact, not substring: a value that merely mentions a host is footprint.
         assert_eq!(policy.refusal("HostNameResolutionTimeout", "5"), None);
     }

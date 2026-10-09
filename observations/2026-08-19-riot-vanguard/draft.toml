@@ -14,7 +14,7 @@
 #   - a driver was observed but not at boot start. Vanguard has been seen
 #     configured either way, so confirm the start type rather than assuming this
 #     one generalises.
-#   - 66 added file(s) could not be attributed to this publisher and were left
+#   - 58 added file(s) could not be attributed to this publisher and were left
 #     out. That is ordinary machine churn between the two snapshots; check the
 #     diff if the footprint looks short.
 #   - 12 added registry key(s) could not be attributed to this anti-cheat and

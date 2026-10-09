@@ -45,12 +45,18 @@ pub const HASHED_EXTENSIONS: &[&str] = &[
 
 /// Path fragments that stop the walk, matched case-insensitively.
 ///
-/// `docs/16-OBSERVATION-HARNESS.md` §"Reducing noise" names most of these.
-/// Every one is a directory whose contents change on their own, so including
-/// them would bury the install under its own churn — and unlike the service
-/// filter, an excluded directory is never walked at all, so it cannot be
-/// recovered from the snapshot afterwards. The list is therefore short, names
-/// caches rather than applications, and is recorded in the snapshot.
+/// Two kinds. Most are directories whose contents change on their own —
+/// `docs/16-OBSERVATION-HARNESS.md` §"Reducing noise" names them — so including
+/// them would bury the install under its own churn. The rest hold personal
+/// identity, credentials or activity history: the filesystem's share of what
+/// [`crate::policy`] keeps out of the registry walk.
+///
+/// Unlike the service filter, an excluded directory is never walked at all, so
+/// it cannot be recovered from the snapshot afterwards. The list is therefore
+/// short, names caches and stores rather than applications, and is recorded in
+/// the snapshot. The differ applies the current list to both snapshots again,
+/// so a directory added here is dropped from a diff of snapshots taken before
+/// it was.
 pub const EXCLUDED_FRAGMENTS: &[&str] = &[
     // Windows servicing and defence, both of which version their own directories.
     "\\windows defender\\platform\\",
@@ -73,11 +79,13 @@ pub const EXCLUDED_FRAGMENTS: &[&str] = &[
     "\\nv_cache\\",
     "\\gluecache\\",
     "\\shadercache\\",
-    // Browsers keep their profiles under the roots we walk.
+    // Browsers keep their profiles under the roots we walk, and so does the
+    // browser built into the Steam client.
     "\\google\\chrome\\user data\\",
     "\\microsoft\\edge\\user data\\",
     "\\mozilla\\firefox\\profiles\\",
     "\\bravesoftware\\",
+    "\\appdata\\local\\steam\\htmlcache\\",
     // Package and build caches.
     "\\npm-cache\\",
     "\\node_modules\\",
@@ -88,6 +96,28 @@ pub const EXCLUDED_FRAGMENTS: &[&str] = &[
     // Named in full: a bare `\packages\` fragment also excluded every game's
     // own `Packages` directory, which is footprint.
     "\\appdata\\local\\packages\\",
+    // --- Personal identity, credentials and activity history -----------------
+    // Windows Timeline: the activity history database, in a folder and in files
+    // named after the account's identifier.
+    "\\appdata\\local\\connecteddevicesplatform\\",
+    // Microsoft account sign-in state: the authentication library's account
+    // records, named after the account's identifier, and the token cache.
+    "\\appdata\\local\\microsoft\\oneauth\\",
+    "\\appdata\\local\\microsoft\\tokenbroker\\",
+    // OneDrive, for the reason the registry walk leaves out its key.
+    "\\appdata\\local\\microsoft\\onedrive\\",
+    // The Steam client's data for the signed-in account, in a folder named
+    // after the account's identifier; its caches, whose statistics files carry
+    // the same identifier and whose library cache holds every game the account
+    // owns; and the content manifests of everything it has downloaded.
+    "\\steam\\userdata\\",
+    "\\steam\\appcache\\",
+    "\\steam\\depotcache\\",
+    // EA's launcher caches account avatars under the accounts' identifiers.
+    "\\origin\\avatarscache\\",
+    // The Claude desktop app: session state in folders named after session
+    // identifiers, and a browser profile of its own.
+    "\\appdata\\roaming\\claude\\",
 ];
 
 /// How the walk finds a file's Authenticode signer.
@@ -398,6 +428,56 @@ mod tests {
         assert!(is_excluded(Path::new(
             "C:\\Users\\x\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Cache\\z"
         )));
+    }
+
+    #[test]
+    fn every_fragment_names_whole_components_in_lower_case() {
+        // A fragment without its separators would match inside a longer name,
+        // which is how a noise rule eats footprint; an upper-case one would
+        // match nothing, because paths are lowered before comparison.
+        for fragment in EXCLUDED_FRAGMENTS {
+            assert!(
+                fragment.starts_with('\\') && fragment.ends_with('\\'),
+                "{fragment}"
+            );
+            assert_eq!(*fragment, fragment.to_ascii_lowercase(), "{fragment}");
+        }
+    }
+
+    #[test]
+    fn account_data_and_activity_history_are_excluded_and_a_library_is_not() {
+        // Found in the 2026-10-09 EA AntiCheat install diff: account
+        // identifiers as folder and file names — the Steam account's, the
+        // Microsoft account's, EA accounts' — session identifiers, and a token
+        // cache.
+        for path in [
+            "C:\\Users\\x\\AppData\\Local\\Microsoft\\OneAuth\\accounts\\0123456789abcdef",
+            "C:\\Users\\x\\AppData\\Local\\Microsoft\\TokenBroker\\Cache\\0a1b2c.tbres",
+            "C:\\Users\\x\\AppData\\Local\\Microsoft\\OneDrive\\logs\\Common\\x.odl",
+            "C:\\Users\\x\\AppData\\Local\\Origin\\AvatarsCache\\1234567890.jpg",
+            "C:\\Users\\x\\AppData\\Roaming\\Claude\\claude-code-sessions\\a\\b.json",
+            "C:\\Program Files (x86)\\Steam\\userdata\\1234\\config\\localconfig.vdf",
+            "C:\\Program Files (x86)\\Steam\\appcache\\stats\\UserGameStats_1234_5678.bin",
+            "C:\\Program Files (x86)\\Steam\\depotcache\\5679_1.manifest",
+            "C:\\Users\\x\\AppData\\Local\\Steam\\htmlcache\\Default\\Cache\\f_000001",
+            "C:\\Users\\x\\AppData\\Local\\ConnectedDevicesPlatform\\0123456789abcdef\\ActivitiesCache.db",
+        ] {
+            assert!(is_excluded(Path::new(path)), "{path} must not be walked");
+        }
+        // The library is footprint: a game's files, the manifest Steam keeps
+        // for it, and the client itself.
+        for path in [
+            "D:\\SteamLibrary\\steamapps\\appmanifest_3405690.acf",
+            "D:\\SteamLibrary\\steamapps\\common\\FC 26\\EAAntiCheat.Installer.exe",
+            "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Some Game\\game.exe",
+            "C:\\Program Files (x86)\\Steam\\steam.exe",
+            "C:\\Users\\x\\AppData\\Local\\Origin\\Origin.exe",
+        ] {
+            assert!(
+                !is_excluded(Path::new(path)),
+                "{path} is footprint and must be walked"
+            );
+        }
     }
 
     #[test]
