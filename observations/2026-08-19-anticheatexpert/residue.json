@@ -4348,18 +4348,6 @@
       ]
     },
     {
-      "path": "C:\\Users\\%USER%\\AppData\\Local\\WardSweep\\observations\\00-current.snapshot.json",
-      "kind": "added",
-      "is_driver_image": false,
-      "before": null,
-      "after": {
-        "path": "C:\\Users\\%USER%\\AppData\\Local\\WardSweep\\observations\\00-current.snapshot.json",
-        "size": 265055088,
-        "modified_utc": "2026-08-19T11:46:03.984Z"
-      },
-      "fields": []
-    },
-    {
       "path": "C:\\WINDOWS\\System32\\drivers\\ACE-ADVT.sys",
       "kind": "removed",
       "signer": "Microsoft Windows Hardware Compatibility Publisher",
@@ -5823,6 +5811,6 @@
     "registry_values": 0,
     "access_denied": 13,
     "emptied_keys": 0,
-    "files": 43
+    "files": 44
   }
 }

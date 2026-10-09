@@ -279,8 +279,8 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
   `HKCU\SOFTWARE\Valve\Steam\Apps`, nor more of the registry's activity
   history: camera, microphone and screen-capture use by program, notification
   counts, the last full-screen program and the last to open a game controller,
-  Windows Backup's application lists, resolved display strings and the cache of
-  signed-in identities; nor Windows' licensing state, which keeps the product
+  Windows Backup's application lists, Start's record of recently added
+  shortcuts, resolved display strings and the cache of signed-in identities; nor Windows' licensing state, which keeps the product
   key in plain text. Values holding Steam's sign-in name and account identifier
   are refused. The differ now applies the directory exclusions to
   older snapshots as it does the registry policy, and `refilter` applies them

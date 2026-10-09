@@ -184,6 +184,11 @@ pub const EXCLUDED_FRAGMENTS: &[&str] = &[
     // Windows Backup's lists of installed applications and pinned tiles, a
     // Steam game's launch link among them.
     "\\currentversion\\applistbackup\\",
+    // Start's rotating record of recently added shortcuts and the command
+    // lines they launch: a slot the observed install takes still names the
+    // program that held it before. Its machine-wide twin, `UFH\ARP`, names
+    // uninstall keys and is footprint: an uninstaller removes its own entry.
+    "\\currentversion\\ufh\\shc\\",
     // Display strings resolved for the programs and items Explorer showed.
     "\\local settings\\muicache\\",
     // Host Activity Manager: how long each application was in use, kept per
@@ -439,6 +444,7 @@ mod tests {
             "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\AppListBackup\\ListOfTaskBackedUpTiles_1",
             "HKCU\\SOFTWARE\\Classes\\Local Settings\\MuiCache\\2ee\\52C64B7E",
             "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\SoftwareProtectionPlatform",
+            "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\UFH\\SHC",
         ] {
             assert!(is_excluded(key), "{key} must not be walked");
         }
@@ -470,6 +476,9 @@ mod tests {
             "HKCU\\SOFTWARE\\Microsoft\\DirectInput\\FC26.EXE6A6AC0701B12BB70",
             // Windows' notification state data, not a per-application record.
             "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Notifications\\Data",
+            // Where an installer's uninstall key is recorded for Start, which
+            // Vanguard's uninstaller removes along with its own key.
+            "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\UFH\\ARP",
         ] {
             assert!(!is_excluded(key), "{key} is footprint and must be walked");
         }

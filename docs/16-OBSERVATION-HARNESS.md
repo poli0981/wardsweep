@@ -380,8 +380,10 @@ It showed more of the registry's activity history as well, now excluded: which
 programs used the camera, microphone or screen capture and when, each
 application's notification counts, the last program to run full screen and the
 last to open a game controller — another game, in this diff — Windows Backup's
-lists of installed applications and pinned tiles, the display strings Explorer
-resolved, and Windows' cache of signed-in identities. The walk also leaves out
+lists of installed applications and pinned tiles, Start's rotating record of
+recently added shortcuts, whose slot still named the game that held it before,
+the display strings Explorer resolved, and Windows' cache of signed-in
+identities. The walk also leaves out
 Windows' licensing state, which keeps the product key in plain text: on this
 machine the edition's published generic key, on one activated by a retail or
 OEM key the key itself.

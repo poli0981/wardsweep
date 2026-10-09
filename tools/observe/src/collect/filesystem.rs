@@ -96,6 +96,10 @@ pub const EXCLUDED_FRAGMENTS: &[&str] = &[
     // Named in full: a bare `\packages\` fragment also excluded every game's
     // own `Packages` directory, which is footprint.
     "\\appdata\\local\\packages\\",
+    // The harness's own storage, where docs/16 keeps raw snapshots: a snapshot
+    // taken earlier in the cycle would otherwise read as a file the install
+    // added.
+    "\\appdata\\local\\wardsweep\\observations\\",
     // --- Personal identity, credentials and activity history -----------------
     // Windows Timeline: the activity history database, in a folder and in files
     // named after the account's identifier.
@@ -122,8 +126,9 @@ pub const EXCLUDED_FRAGMENTS: &[&str] = &[
     // EA's launcher caches account avatars under the accounts' identifiers.
     "\\origin\\avatarscache\\",
     // The Claude desktop app: session state in folders named after session
-    // identifiers, and a browser profile of its own.
+    // identifiers, a browser profile of its own, and its logs.
     "\\appdata\\roaming\\claude\\",
+    "\\appdata\\local\\claude\\",
 ];
 
 /// How the walk finds a file's Authenticode signer.
@@ -462,6 +467,8 @@ mod tests {
             "C:\\Users\\x\\AppData\\Local\\Microsoft\\OneDrive\\logs\\Common\\x.odl",
             "C:\\Users\\x\\AppData\\Local\\Origin\\AvatarsCache\\1234567890.jpg",
             "C:\\Users\\x\\AppData\\Roaming\\Claude\\claude-code-sessions\\a\\b.json",
+            "C:\\Users\\x\\AppData\\Local\\Claude\\logs\\main.log",
+            "C:\\Users\\x\\AppData\\Local\\WardSweep\\observations\\cycle\\00-before.json",
             "C:\\Users\\x\\AppData\\Roaming\\Microsoft\\Windows\\Recent\\Some document.docx.lnk",
             "C:\\ProgramData\\Microsoft\\Windows\\WER\\ReportArchive\\AppCrash_game.exe_1\\Report.wer",
             "C:\\Users\\x\\AppData\\Local\\Microsoft\\Windows\\WER\\ReportQueue\\x",

@@ -6410,30 +6410,6 @@
       "fields": []
     },
     {
-      "path": "C:\\Users\\%USER%\\AppData\\Local\\WardSweep\\observations\\14-noise-floor.snapshot.json",
-      "kind": "added",
-      "is_driver_image": false,
-      "before": null,
-      "after": {
-        "path": "C:\\Users\\%USER%\\AppData\\Local\\WardSweep\\observations\\14-noise-floor.snapshot.json",
-        "size": 267764945,
-        "modified_utc": "2026-08-19T14:13:49.527Z"
-      },
-      "fields": []
-    },
-    {
-      "path": "C:\\Users\\%USER%\\AppData\\Local\\WardSweep\\observations\\noise-floor-diff.json",
-      "kind": "added",
-      "is_driver_image": false,
-      "before": null,
-      "after": {
-        "path": "C:\\Users\\%USER%\\AppData\\Local\\WardSweep\\observations\\noise-floor-diff.json",
-        "size": 274464,
-        "modified_utc": "2026-08-19T14:14:11.092Z"
-      },
-      "fields": []
-    },
-    {
       "path": "C:\\Users\\%USER%\\AppData\\Roaming\\Proton Mail\\logs\\main.log",
       "kind": "modified",
       "is_driver_image": false,
@@ -13102,7 +13078,7 @@
     "registry_values": 8,
     "access_denied": 17,
     "emptied_keys": 0,
-    "files": 40,
+    "files": 42,
     "emptied_directories": 1
   }
 }
