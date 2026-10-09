@@ -49,6 +49,20 @@
 //! item that cannot be attributed is left out and named, never kept quietly:
 //! the inference table resolves towards the entry that removes less.
 //!
+//! # A third observation, and what the first two had hidden
+//!
+//! EA's anti-cheat, observed beside the EA app it is installed with, broke the
+//! rules above in four places at once. Its service binary is too large to have
+//! its signature read, so nothing signed sat at its image — only beside it. Its
+//! kernel driver is registered in the registry and nowhere else, invisible to
+//! the service control manager. The EA app is a large program whose folders are
+//! called `settings` and `universal`, and every folder name used to become an
+//! identifier. And one publisher signs both. So: a file beside a signed one is
+//! attributed; identifiers come from the product's own folder, not from every
+//! folder inside it; a driver found only in the registry is found, named, and
+//! counted; and `--only` narrows a draft to one product when a publisher ships
+//! two.
+//!
 //! And the draft is checked against the **same deny-list the broker enforces at
 //! runtime**, not a copy of its intent. A generator that proposes a path the
 //! runtime would refuse has produced an entry that cannot work, and the person
@@ -64,7 +78,7 @@ use wardsweep_core::catalog::schema::{
 use wardsweep_core::safety::denylist::{Exceptions, Stage, check_path, check_registry_key};
 use wardsweep_core::safety::paths::{canonicalise_reg_key, canonicalise_syntactic};
 
-use crate::diff::{ChangeKind, Diff, FileChange, ServiceChange};
+use crate::diff::{ChangeKind, Diff, FileChange, RegistryChange, ServiceChange};
 
 /// Machine-wide prefixes replaced by the `%VAR%` templates `docs/04` allows.
 ///
@@ -99,8 +113,25 @@ pub struct Draft {
 /// set of things the vendor's own uninstaller leaves behind — which is the
 /// entire reason WardSweep exists". Anything in it is footprint the official
 /// uninstaller misses, and is therefore what a catalog entry is *for*.
+#[cfg(test)]
 #[must_use]
 pub fn draft(footprint: &Diff, residue: Option<&Diff>, signer: Option<&str>) -> Draft {
+    draft_scoped(footprint, residue, signer, &[])
+}
+
+/// A draft, limited to what mentions one of `only` when any are given.
+///
+/// One publisher often signs a launcher as well as its anti-cheat, and a
+/// signature cannot tell them apart. Every path, key and service the draft
+/// takes must then also contain one of these texts, compared without regard to
+/// case: `--only eaanticheat` keeps EA's anti-cheat and leaves the EA app out.
+#[must_use]
+pub fn draft_scoped(
+    footprint: &Diff,
+    residue: Option<&Diff>,
+    signer: Option<&str>,
+    only: &[String],
+) -> Draft {
     let mut review = Vec::new();
 
     let mut signers: Vec<(String, usize)> = footprint
@@ -129,9 +160,17 @@ pub fn draft(footprint: &Diff, residue: Option<&Diff>, signer: Option<&str>) -> 
         ));
     }
 
+    let only: Vec<String> = only
+        .iter()
+        .map(|text| text.trim().to_ascii_lowercase())
+        .filter(|text| !text.is_empty())
+        .collect();
+    note_scope(footprint, residue, chosen.as_deref(), &only, &mut review);
+
     // Services first: an attributed service's image and name are evidence for
     // everything after it, so an unattributed one must not get that far.
-    let mut attribution = Attribution::from_signed_files(footprint, residue, chosen.as_deref());
+    let mut attribution =
+        Attribution::from_signed_files(footprint, residue, chosen.as_deref(), only);
     let (services, unattributed_services): (Vec<&ServiceChange>, Vec<&ServiceChange>) = footprint
         .services
         .iter()
@@ -139,11 +178,32 @@ pub fn draft(footprint: &Diff, residue: Option<&Diff>, signer: Option<&str>) -> 
         .partition(|change| attribution.claims_service(change));
     attribution.add_services(&services);
 
-    let drivers = driver_files(footprint, &attribution, &services);
+    // Drivers the service control manager never listed. Judged after the
+    // listed services, whose images and names are evidence for them.
+    let (registry_kept, registry_left_out): (Vec<RegistryDriver>, Vec<RegistryDriver>) =
+        registry_only_drivers(footprint)
+            .into_iter()
+            .partition(|driver| attribution.claims_registry_driver(driver, chosen.as_deref()));
+    for driver in &registry_kept {
+        attribution.tokens.insert(driver.name.to_ascii_lowercase());
+    }
+
+    let mut drivers = driver_files(footprint, &attribution, &services);
+    for driver in &registry_kept {
+        if let Some(name) = file_name(&driver.image).filter(|name| !name.is_empty()) {
+            drivers
+                .kept
+                .entry(name.to_ascii_lowercase())
+                .or_insert(name);
+        }
+    }
 
     // docs/16 inference table, over what could be attributed.
-    let has_driver = services.iter().any(|change| change.is_driver) || !drivers.kept.is_empty();
-    let boot_start = services.iter().any(|change| change.is_boot_start);
+    let has_driver = services.iter().any(|change| change.is_driver)
+        || !drivers.kept.is_empty()
+        || !registry_kept.is_empty();
+    let boot_start = services.iter().any(|change| change.is_boot_start)
+        || registry_kept.iter().any(|driver| driver.boot_start);
 
     let kind = if has_driver {
         Kind::Kernel
@@ -166,30 +226,17 @@ pub fn draft(footprint: &Diff, residue: Option<&Diff>, signer: Option<&str>) -> 
         chosen.as_deref(),
         &mut review,
     );
+    note_registry_drivers(
+        &registry_kept,
+        &registry_left_out,
+        chosen.as_deref(),
+        &mut review,
+    );
 
-    let left_out_a_driver =
-        !drivers.left_out.is_empty() || unattributed_services.iter().any(|change| change.is_driver);
-    if !has_driver && left_out_a_driver {
-        review.push(
-            "no driver could be attributed to this publisher, so `kind` is `usermode` — but a \
-             driver *was* added and left out, named above. If it is this anti-cheat's, add it \
-             and make `kind` \"kernel\"."
-                .to_owned(),
-        );
-    } else if !has_driver {
-        review.push(
-            "no driver was observed, so `kind` is `usermode`. Confirm the anti-cheat really \
-             has no kernel component on this title before trusting it."
-                .to_owned(),
-        );
-    }
-    if has_driver && !boot_start {
-        review.push(
-            "a driver was observed but not at boot start. Vanguard has been seen configured \
-             either way, so confirm the start type rather than assuming this one generalises."
-                .to_owned(),
-        );
-    }
+    let left_out_a_driver = !drivers.left_out.is_empty()
+        || !registry_left_out.is_empty()
+        || unattributed_services.iter().any(|change| change.is_driver);
+    note_kind(has_driver, boot_start, left_out_a_driver, &mut review);
 
     // The deny-list allows a service key only when the catalog declares that
     // service, and a driver file only when the catalog names it. Those are the
@@ -197,11 +244,16 @@ pub fn draft(footprint: &Diff, residue: Option<&Diff>, signer: Option<&str>) -> 
     // exactly the exceptions its own fields would unlock at runtime — not with
     // `Exceptions::none()`, which refuses the entry for declaring the very
     // services it is about.
-    let service_names: Vec<String> = services.iter().map(|change| change.name.clone()).collect();
+    let service_names: Vec<String> = services
+        .iter()
+        .map(|change| change.name.clone())
+        .chain(registry_kept.iter().map(|driver| driver.name.clone()))
+        .collect();
     let exceptions = Exceptions::new(drivers.kept.values(), service_names.iter());
 
     let paths = path_entries(footprint, residue, &attribution, &exceptions, &mut review);
     let registry = registry_entries(footprint, &attribution, &exceptions, &mut review);
+    let event_sources = event_sources(footprint, &attribution, chosen.as_deref(), &mut review);
 
     if residue.is_none() {
         review.push(
@@ -243,7 +295,7 @@ pub fn draft(footprint: &Diff, residue: Option<&Diff>, signer: Option<&str>) -> 
             registry,
             tasks: Vec::new(),
             firewall_rules: Vec::new(),
-            event_sources: Vec::new(),
+            event_sources,
             official_uninstall: None,
         },
         signers,
@@ -258,20 +310,37 @@ pub fn draft(footprint: &Diff, residue: Option<&Diff>, signer: Option<&str>) -> 
 /// between the two snapshots — the first real run produced
 /// `%SystemRoot%\System32\drivers`, a running application's `leveldb`
 /// directory, and a token-broker cache.
+#[derive(Default)]
 struct Attribution {
     /// Lower-cased paths of added files the publisher signed, and of the images
     /// of the services attributed to it.
     files: BTreeSet<String>,
+    /// Lower-cased directories holding a file the publisher signed. A file
+    /// beside a signed one is attributed: EA's 190 MB service binary is too
+    /// large to have its signature read, and only the files next to it carry
+    /// one.
+    directories: BTreeSet<String>,
+    /// Lower-cased product folders below their root with at least two
+    /// components — `ea\ac` — which installers mirror under
+    /// `HKLM\SOFTWARE` and `HKCU\SOFTWARE`.
+    products: BTreeSet<String>,
     /// Lower-cased file names of every attributed file, so a copy of an
     /// attributed image somewhere else — `System32\drivers` — is recognised.
     names: BTreeSet<String>,
     /// Lower-cased names that identify this anti-cheat in a path or a key.
     tokens: BTreeSet<String>,
+    /// `--only`, lower-cased: what everything attributed must also mention.
+    only: Vec<String>,
 }
 
 impl Attribution {
     /// The publisher's signed files, and the directory names they live in.
-    fn from_signed_files(footprint: &Diff, residue: Option<&Diff>, signer: Option<&str>) -> Self {
+    fn from_signed_files(
+        footprint: &Diff,
+        residue: Option<&Diff>,
+        signer: Option<&str>,
+        only: Vec<String>,
+    ) -> Self {
         let added = || {
             footprint
                 .files
@@ -290,11 +359,26 @@ impl Attribution {
             .map(|change| change.path.to_ascii_lowercase())
             .collect();
         let tokens = directory_tokens(&files);
+        let directories: BTreeSet<String> = files
+            .iter()
+            .filter_map(|path| parent_of(path))
+            .filter(|directory| identifies_something(directory))
+            .collect();
+        let products: BTreeSet<String> = directories
+            .iter()
+            .filter_map(|directory| {
+                let below = below_root(directory);
+                (below.len() >= 2).then(|| below[..2].join("\\"))
+            })
+            .collect();
 
         let mut attribution = Self {
             files,
+            directories,
+            products,
             names: BTreeSet::new(),
             tokens,
+            only,
         };
         // Every added file that the evidence so far claims lends its name, so
         // an unsigned copy of a claimed binary is recognised elsewhere.
@@ -307,13 +391,47 @@ impl Attribution {
         attribution
     }
 
+    /// Whether a lower-cased text is inside what `--only` allows.
+    fn in_scope(&self, lowered: &str) -> bool {
+        self.only.is_empty() || self.only.iter().any(|text| lowered.contains(text.as_str()))
+    }
+
     /// Whether a lower-cased path or key belongs to this anti-cheat.
     fn claims_path(&self, lowered: &str) -> bool {
+        self.in_scope(lowered) && self.claims_unscoped(lowered)
+    }
+
+    /// [`Attribution::claims_path`] without `--only`.
+    fn claims_unscoped(&self, lowered: &str) -> bool {
         self.files.contains(lowered)
+            || parent_of(lowered).is_some_and(|parent| self.directories.contains(&parent))
             || self
                 .tokens
                 .iter()
                 .any(|token| contains_token(lowered, token))
+    }
+
+    /// Whether a lower-cased registry key belongs to this anti-cheat: as a
+    /// path does, or as the `SOFTWARE\<vendor>\<product>` an installer writes
+    /// for a product folder it laid down.
+    fn claims_key(&self, lowered: &str) -> bool {
+        if !self.in_scope(lowered) {
+            return false;
+        }
+        if self.claims_unscoped(lowered) {
+            return true;
+        }
+        let Some(below) = SOFTWARE_ROOTS
+            .iter()
+            .find_map(|root| lowered.strip_prefix(root))
+        else {
+            return false;
+        };
+        self.products.iter().any(|product| {
+            below
+                .strip_prefix(product.as_str())
+                .is_some_and(|rest| rest.is_empty() || rest.starts_with('\\'))
+        })
     }
 
     /// Whether an added service belongs to this anti-cheat.
@@ -326,14 +444,39 @@ impl Attribution {
     /// only by its image's signature.
     fn claims_service(&self, change: &ServiceChange) -> bool {
         let name = change.name.to_ascii_lowercase();
+        let image = change
+            .after
+            .as_ref()
+            .map(|record| normalise_image(&record.binary_path).to_ascii_lowercase());
+        if !(self.in_scope(&name) || image.as_deref().is_some_and(|image| self.in_scope(image))) {
+            return false;
+        }
         if self.tokens.iter().any(|token| contains_token(&name, token)) {
             return true;
         }
-        let Some(record) = &change.after else {
+        let Some(image) = image else {
             return false;
         };
-        let image = normalise_image(&record.binary_path).to_ascii_lowercase();
-        self.claims_path(&image) || file_name(&image).is_some_and(|file| self.names.contains(&file))
+        self.claims_unscoped(&image)
+            || file_name(&image).is_some_and(|file| self.names.contains(&file))
+    }
+
+    /// Whether a driver found only in the registry belongs to this anti-cheat:
+    /// by its key or its image, as anything else is, or because its own
+    /// description names the publisher — EA's reads "Electronic Arts AntiCheat
+    /// Driver", and its image is not on disk between game sessions.
+    fn claims_registry_driver(&self, driver: &RegistryDriver, publisher: Option<&str>) -> bool {
+        let key = driver.key.to_ascii_lowercase();
+        let image = driver.image.to_ascii_lowercase();
+        if !(self.in_scope(&key) || self.in_scope(&image) || self.in_scope(&driver.describes)) {
+            return false;
+        }
+        self.claims_unscoped(&key)
+            || self.claims_unscoped(&image)
+            || file_name(&image).is_some_and(|file| self.names.contains(&file))
+            || publisher
+                .and_then(publisher_name)
+                .is_some_and(|name| driver.describes.contains(&name))
     }
 
     /// Admit attributed services as evidence: their images and their names.
@@ -371,16 +514,417 @@ fn contains_token(text: &str, token: &str) -> bool {
 /// else, so nothing about the file attributes it — but the directory carries
 /// the same name as `%ProgramFiles%\AntiCheatExpert`, which the signed files
 /// anchor. Almost every installer lays itself out that way.
+///
+/// Only the product's own folders count: the first two below their root,
+/// `Program Files\<vendor>\<product>`. Every folder name used to, and the EA app
+/// — a large program with folders called `settings`, `universal` and
+/// `platforms` — then claimed `Local Settings` and the speech platform's keys.
 fn directory_tokens(files: &BTreeSet<String>) -> BTreeSet<String> {
     files
         .iter()
-        .filter_map(|path| parent_of(path))
-        .filter_map(|parent| parent.rsplit('\\').next().map(str::to_owned))
+        .flat_map(|path| {
+            let below = below_root(path);
+            // The last component is the file itself.
+            let folders = below.len().saturating_sub(1);
+            below
+                .into_iter()
+                .take(folders.min(2))
+                .map(str::to_owned)
+                .collect::<Vec<_>>()
+        })
         // A shared system directory names nothing in particular. Without this,
         // `System32\drivers` would make `drivers` an identifier and match half
         // the machine.
         .filter(|leaf| leaf.len() >= 4 && !SHARED_DIRECTORIES.contains(&leaf.as_str()))
         .collect()
+}
+
+/// The roots a product's folder sits directly below, lower-cased.
+///
+/// Longest first, so `windows\system32\drivers` is tried before `windows`.
+const ROOTS: &[&str] = &[
+    "windows\\system32\\drivers",
+    "windows\\system32",
+    "windows\\syswow64",
+    "program files (x86)",
+    "program files",
+    "programdata",
+    "windows",
+];
+
+/// Registry roots an installer mirrors its folders under, lower-cased.
+const SOFTWARE_ROOTS: &[&str] = &[
+    "hklm\\software\\wow6432node\\",
+    "hkcu\\software\\wow6432node\\",
+    "hklm\\software\\",
+    "hkcu\\software\\",
+];
+
+/// The components of a lower-cased path below its root, product first.
+///
+/// `c:\program files\ea\ac\x.exe` gives `["ea", "ac", "x.exe"]`;
+/// `c:\users\<name>\appdata\local\riot games\x` gives `["riot games", "x"]`; a
+/// path outside every root keeps all its components below the drive.
+fn below_root(path: &str) -> Vec<&str> {
+    let Some(rest) = path.get(3..).filter(|_| path.get(1..3) == Some(":\\")) else {
+        return Vec::new();
+    };
+    let parts: Vec<&str> = rest.split('\\').filter(|part| !part.is_empty()).collect();
+    if parts.first() == Some(&"users") && parts.len() > 2 {
+        let profile = &parts[2..];
+        if profile.len() > 2
+            && profile[0] == "appdata"
+            && matches!(profile[1], "local" | "locallow" | "roaming")
+        {
+            return profile[2..].to_vec();
+        }
+        return profile.to_vec();
+    }
+    for root in ROOTS {
+        let root_parts: Vec<&str> = root.split('\\').collect();
+        if parts.len() > root_parts.len() && parts[..root_parts.len()] == root_parts[..] {
+            return parts[root_parts.len()..].to_vec();
+        }
+    }
+    parts
+}
+
+/// Whether a lower-cased directory can identify a product: not a root itself,
+/// and not one of the folders every program shares.
+fn identifies_something(directory: &str) -> bool {
+    let leaf = directory.rsplit('\\').next().unwrap_or_default();
+    !SHARED_DIRECTORIES.contains(&leaf) && !below_root(directory).is_empty()
+}
+
+/// A publisher's name as prose would write it: `Electronic Arts, Inc.` as
+/// `electronic arts`, `ACEVILLE PTE LTD` as `aceville`. `None` when what is
+/// left is too short to mean anything.
+fn publisher_name(signer: &str) -> Option<String> {
+    const SUFFIXES: &[&str] = &[
+        "inc.",
+        "inc",
+        "ltd.",
+        "ltd",
+        "pte.",
+        "pte",
+        "llc",
+        "corp.",
+        "corp",
+        "corporation",
+        "gmbh",
+        "limited",
+        "co.",
+        "co",
+    ];
+    let lowered = signer.to_ascii_lowercase();
+    let mut name = lowered
+        .split(',')
+        .next()
+        .unwrap_or_default()
+        .trim()
+        .to_owned();
+    while let Some(rest) = SUFFIXES.iter().find_map(|suffix| {
+        name.strip_suffix(suffix)
+            .filter(|rest| rest.ends_with(' '))
+            .map(|rest| rest.trim_end().to_owned())
+    }) {
+        name = rest;
+    }
+    (name.len() >= 4).then_some(name)
+}
+
+/// A driver registered under `Services` that the service control manager did
+/// not list.
+///
+/// SCM builds its list when Windows starts. A driver key written straight into
+/// the registry afterwards — EA's minifilter is — or one missing a value SCM
+/// requires — Neverness To Everness's `PGameProtectDriver` has no
+/// `ErrorControl` — is not in it, and a scan that trusts SCM alone never sees
+/// either. The registry does.
+struct RegistryDriver {
+    name: String,
+    key: String,
+    image: String,
+    boot_start: bool,
+    /// `Description` and `DisplayName`, lower-cased.
+    describes: String,
+}
+
+/// The `Services` key every driver registration lives under.
+const SERVICES_KEY: &str = "HKLM\\SYSTEM\\CurrentControlSet\\Services\\";
+
+/// Drivers added to the registry that the services domain does not list.
+fn registry_only_drivers(footprint: &Diff) -> Vec<RegistryDriver> {
+    let listed: BTreeSet<String> = footprint
+        .services
+        .iter()
+        .map(|change| change.name.to_ascii_lowercase())
+        .collect();
+    let mut found: BTreeMap<String, RegistryDriver> = BTreeMap::new();
+    for change in &footprint.registry {
+        if change.kind != ChangeKind::Added {
+            continue;
+        }
+        let Some(name) = service_key_name(change) else {
+            continue;
+        };
+        if listed.contains(&name.to_ascii_lowercase()) {
+            continue;
+        }
+        let Some(record) = &change.after else {
+            continue;
+        };
+        let value = |wanted: &str| {
+            record
+                .values
+                .iter()
+                .find(|value| value.name.eq_ignore_ascii_case(wanted))
+                .map(|value| value.data.clone())
+        };
+        // SERVICE_KERNEL_DRIVER, SERVICE_FILE_SYSTEM_DRIVER and
+        // SERVICE_RECOGNIZER_DRIVER: the three that load into the kernel.
+        let Some(kind) = value("Type").and_then(|data| data.parse::<u32>().ok()) else {
+            continue;
+        };
+        if !matches!(kind, 1 | 2 | 8) {
+            continue;
+        }
+        found
+            .entry(name.to_ascii_lowercase())
+            .or_insert_with(|| RegistryDriver {
+                name: name.to_owned(),
+                key: change.key.clone(),
+                image: normalise_image(&value("ImagePath").unwrap_or_default()),
+                boot_start: value("Start").is_some_and(|start| start == "0"),
+                describes: [value("Description"), value("DisplayName")]
+                    .into_iter()
+                    .flatten()
+                    .collect::<Vec<_>>()
+                    .join(" ")
+                    .to_ascii_lowercase(),
+            });
+    }
+    found.into_values().collect()
+}
+
+/// The service a `Services\<name>` key is for, when the key is exactly that.
+fn service_key_name(change: &RegistryChange) -> Option<&str> {
+    let head = change.key.get(..SERVICES_KEY.len())?;
+    let name = change.key.get(SERVICES_KEY.len()..)?;
+    (head.eq_ignore_ascii_case(SERVICES_KEY) && !name.is_empty() && !name.contains('\\'))
+        .then_some(name)
+}
+
+/// The `EventLog` key every event source registration lives under.
+const EVENT_LOG_KEY: &str = "HKLM\\SYSTEM\\CurrentControlSet\\Services\\EventLog\\";
+
+/// Event log sources the footprint registered: kept when attributed, named in
+/// the review notes either way.
+///
+/// A source's own key carries little to attribute it by — EA's names Windows'
+/// generic `EventCreate.exe` as its message file — so it is kept only when its
+/// name carries one of this anti-cheat's identifiers or the publisher's name,
+/// and otherwise named for a person to decide, never dropped quietly.
+fn event_sources(
+    footprint: &Diff,
+    attribution: &Attribution,
+    signer: Option<&str>,
+    review: &mut Vec<String>,
+) -> Vec<String> {
+    let publisher = signer.and_then(publisher_name);
+    let mut kept: BTreeMap<String, String> = BTreeMap::new();
+    let mut left_out: BTreeMap<String, String> = BTreeMap::new();
+    for change in footprint
+        .registry
+        .iter()
+        .filter(|change| change.kind == ChangeKind::Added)
+    {
+        let Some(head) = change.key.get(..EVENT_LOG_KEY.len()) else {
+            continue;
+        };
+        if !head.eq_ignore_ascii_case(EVENT_LOG_KEY) {
+            continue;
+        }
+        let Some((log, source)) = change.key[EVENT_LOG_KEY.len()..].split_once('\\') else {
+            continue;
+        };
+        if source.is_empty() || source.contains('\\') {
+            continue;
+        }
+        let lowered = source.to_ascii_lowercase();
+        let claimed = attribution.in_scope(&change.key.to_ascii_lowercase())
+            && (attribution
+                .tokens
+                .iter()
+                .any(|token| contains_token(&lowered, token))
+                || publisher
+                    .as_deref()
+                    .is_some_and(|name| lowered.contains(name)));
+        let into = if claimed { &mut kept } else { &mut left_out };
+        into.entry(lowered)
+            .or_insert_with(|| format!("{log}\\{source}"));
+    }
+    for (lowered, place) in &left_out {
+        if kept.contains_key(lowered) {
+            continue;
+        }
+        review.push(format!(
+            "event log source `{place}` was registered and nothing ties its name to this \
+             anti-cheat, so it is not in `event_sources`. Add it if it is this anti-cheat's."
+        ));
+    }
+    kept.into_values()
+        .map(|place| {
+            place
+                .split_once('\\')
+                .map_or(place.clone(), |(_, source)| source.to_owned())
+        })
+        .collect()
+}
+
+/// Name every driver found only in the registry, kept or not.
+fn note_registry_drivers(
+    kept: &[RegistryDriver],
+    left_out: &[RegistryDriver],
+    signer: Option<&str>,
+    review: &mut Vec<String>,
+) {
+    let publisher = signer.unwrap_or("the chosen publisher");
+    for driver in kept {
+        review.push(format!(
+            "`{}` is a driver registered in the registry (`{}`, image `{}`) that the service \
+             control manager does not list, so a scan that trusts SCM alone never finds it \
+             (docs/05). It is in `services` and `drivers` so the entry names it; confirm it is \
+             this anti-cheat's.",
+            driver.name, driver.key, driver.image
+        ));
+    }
+    for driver in left_out {
+        review.push(format!(
+            "driver `{}` is registered in the registry only (`{}`, image `{}`), unknown to the \
+             service control manager, and nothing ties it to {publisher}, so it was left out. \
+             Add it to `services` and `drivers` only if it is this anti-cheat's.",
+            driver.name, driver.key, driver.image
+        ));
+    }
+}
+
+/// Say how far attribution reached: limited by `--only`, or — when it was not —
+/// whether the publisher's files span more than one product.
+fn note_scope(
+    footprint: &Diff,
+    residue: Option<&Diff>,
+    signer: Option<&str>,
+    only: &[String],
+    review: &mut Vec<String>,
+) {
+    if only.is_empty() {
+        note_several_products(footprint, residue, signer, review);
+        return;
+    }
+    review.push(format!(
+        "attribution was limited with --only to what mentions {}. Everything else this \
+         publisher signed was left out on purpose; check that nothing of the anti-cheat's was \
+         among it.",
+        only.iter()
+            .map(|text| format!("`{text}`"))
+            .collect::<Vec<_>>()
+            .join(" or ")
+    ));
+}
+
+/// The notes that go with the inferred `kind`.
+fn note_kind(
+    has_driver: bool,
+    boot_start: bool,
+    left_out_a_driver: bool,
+    review: &mut Vec<String>,
+) {
+    if !has_driver && left_out_a_driver {
+        review.push(
+            "no driver could be attributed to this publisher, so `kind` is `usermode` — but a \
+             driver *was* added and left out, named above. If it is this anti-cheat's, add it \
+             and make `kind` \"kernel\"."
+                .to_owned(),
+        );
+    } else if !has_driver {
+        review.push(
+            "no driver was observed, so `kind` is `usermode`. Confirm the anti-cheat really \
+             has no kernel component on this title before trusting it."
+                .to_owned(),
+        );
+    }
+    if has_driver && !boot_start {
+        review.push(
+            "a driver was observed but not at boot start. Vanguard has been seen configured \
+             either way, so confirm the start type rather than assuming this one generalises."
+                .to_owned(),
+        );
+    }
+}
+
+/// Point out a publisher whose signed files span several products.
+///
+/// A signature attributes everything the publisher signed, and a publisher
+/// that ships a launcher beside its anti-cheat — EA does — gets both in one
+/// draft. Nothing in a diff can tell them apart; a person can, with `--only`.
+fn note_several_products(
+    footprint: &Diff,
+    residue: Option<&Diff>,
+    signer: Option<&str>,
+    review: &mut Vec<String>,
+) {
+    let Some(signer) = signer else {
+        return;
+    };
+    let mut products: BTreeMap<String, String> = BTreeMap::new();
+    for change in footprint
+        .files
+        .iter()
+        .chain(residue.into_iter().flat_map(|diff| diff.files.iter()))
+        .filter(|change| change.kind == ChangeKind::Added)
+        .filter(|change| {
+            change
+                .signer
+                .as_deref()
+                .is_some_and(|have| have.eq_ignore_ascii_case(signer))
+        })
+    {
+        let lowered = change.path.to_ascii_lowercase();
+        let below = below_root(&lowered);
+        if below.len() < 2 {
+            continue;
+        }
+        // The product folder, or the vendor folder and the product below it
+        // when the first is shared or says nothing on its own.
+        let depth = if below[0].len() < 4 || SHARED_DIRECTORIES.contains(&below[0]) {
+            2
+        } else {
+            1
+        };
+        if below.len() <= depth {
+            continue;
+        }
+        let tail: usize = below[depth..].iter().map(|part| part.len() + 1).sum();
+        let original = &change.path[..change.path.len() - tail];
+        products
+            .entry(original.to_ascii_lowercase())
+            .or_insert_with(|| templated(original));
+    }
+    if products.len() > 1 {
+        review.push(format!(
+            "{signer} signed files in {} separate product folders: {}. One publisher often \
+             ships a launcher beside its anti-cheat, and a signature cannot tell them apart; if \
+             any of these is not the anti-cheat, re-run with --only naming the anti-cheat's \
+             folder or service.",
+            products.len(),
+            products
+                .values()
+                .map(|product| format!("`{product}`"))
+                .collect::<Vec<_>>()
+                .join(", ")
+        ));
+    }
 }
 
 /// Directory leaf names too general to identify anything.
@@ -403,6 +947,7 @@ const SHARED_DIRECTORIES: &[&str] = &[
     "config",
     "cache",
     "logs",
+    "package cache",
 ];
 
 /// Driver file names the draft keeps, and those it leaves out.
@@ -657,7 +1202,7 @@ fn registry_entries(
         // Registry needs the same attribution as the filesystem. Without it the
         // first real draft carried a shell session key that had nothing to do
         // with the anti-cheat.
-        if !attribution.claims_path(&change.key.to_ascii_lowercase()) {
+        if !attribution.claims_key(&change.key.to_ascii_lowercase()) {
             unattributed += 1;
             continue;
         }
@@ -688,7 +1233,18 @@ fn registry_entries(
             allowed
         })
         .map(|key| {
-            let views = &added[key];
+            // An entry covers every key folded into it, so it has to cover
+            // their views too. EA writes `EA\AC` through the 64-bit view and
+            // `EA\AC\Installs\fc26` through the 32-bit one; an entry that kept
+            // only the first view would miss the second.
+            let mut views = added[key].clone();
+            let prefix = format!("{key}\\");
+            for (descendant, seen) in added.range(prefix.clone()..) {
+                if !descendant.starts_with(&prefix) {
+                    break;
+                }
+                views.extend(seen.iter().cloned());
+            }
             let view = match (views.contains("32"), views.contains("64")) {
                 (true, true) => View::Both,
                 (true, false) => {
@@ -1016,8 +1572,8 @@ mod tests {
         tokens.extend(services.iter().map(|name| name.to_ascii_lowercase()));
         let attribution = Attribution {
             files: attributable.clone(),
-            names: BTreeSet::new(),
             tokens,
+            ..Attribution::default()
         };
         let exceptions = Exceptions::new(Vec::<String>::new(), services.to_vec());
         path_entries(diff, None, &attribution, &exceptions, review)
@@ -1054,12 +1610,11 @@ mod tests {
             ),
         ]);
         let attribution = Attribution {
-            files: BTreeSet::new(),
-            names: BTreeSet::new(),
             tokens: ["vgk", "riot vanguard"]
                 .iter()
                 .map(|t| (*t).to_owned())
                 .collect(),
+            ..Attribution::default()
         };
         let exceptions = Exceptions::new(Vec::<String>::new(), vec!["vgk".to_owned()]);
 
@@ -1169,6 +1724,282 @@ mod tests {
         }
     }
 
+    /// A `Services` registration as the registry walk records it.
+    fn registry_service(name: &str, values: &[(&str, &str, &str)]) -> crate::diff::RegistryChange {
+        let key = format!("{SERVICES_KEY}{name}");
+        crate::diff::RegistryChange {
+            key: key.clone(),
+            view: "64".to_owned(),
+            kind: ChangeKind::Added,
+            before: None,
+            after: Some(crate::model::RegistryRecord {
+                key,
+                view: "64".to_owned(),
+                values: values
+                    .iter()
+                    .map(|(name, kind, data)| crate::model::RegistryValue {
+                        name: (*name).to_owned(),
+                        kind: (*kind).to_owned(),
+                        data: (*data).to_owned(),
+                        oversized_bytes: None,
+                    })
+                    .collect(),
+            }),
+            fields: Vec::new(),
+        }
+    }
+
+    /// EA's anti-cheat as the 2026-10-09 observation found it, beside the EA
+    /// app, which the same publisher signs.
+    fn ea_like() -> Diff {
+        let mut diff = crate::diff::tests::diff_with_added_files(&[
+            r"C:\Program Files\EA\AC\EAAntiCheat.GameService.dll",
+            // 190 MB in the real thing: too large to have its signature read.
+            r"C:\Program Files\EA\AC\EAAntiCheat.GameService.exe",
+            r"C:\Program Files\Electronic Arts\EA Desktop\EA Desktop\EABackgroundService.exe",
+            r"C:\Program Files\Electronic Arts\EA Desktop\EA Desktop\qml\Settings\plugin.dll",
+            r"C:\Program Files\Electronic Arts\EA Desktop\EA Desktop\qml\Universal\plugin.dll",
+        ]);
+        for file in [
+            "GameService.dll",
+            "EABackgroundService.exe",
+            "Settings\\plugin.dll",
+            "Universal\\plugin.dll",
+        ] {
+            sign_one(&mut diff, file, "Electronic Arts, Inc.");
+        }
+        diff.services = vec![
+            added_service(
+                "EAAntiCheatService",
+                r#""C:\Program Files\EA\AC\eaanticheat.gameservice.exe""#,
+                false,
+            ),
+            added_service(
+                "EABackgroundService",
+                r#""C:\Program Files\Electronic Arts\EA Desktop\EA Desktop\EABackgroundService.exe""#,
+                false,
+            ),
+        ];
+        let mut keys = crate::diff::tests::diff_with_added_registry_keys(&[
+            (r"HKLM\SOFTWARE\EA\AC", "64"),
+            (r"HKLM\SOFTWARE\EA\AC\Installs\fc26", "32"),
+            (
+                r"HKCU\SOFTWARE\Classes\Local Settings\MuiCache\2ef\52C64B7E",
+                "64",
+            ),
+            (
+                r"HKCU\SOFTWARE\Microsoft\Speech_OneCore\Isolated\x\Universal",
+                "64",
+            ),
+            (
+                r"HKLM\SYSTEM\CurrentControlSet\Services\EventLog\Application\EA Javelin Anticheat",
+                "64",
+            ),
+        ])
+        .registry;
+        keys.push(registry_service(
+            "EAAntiCheat",
+            &[
+                ("Type", "dword", "2"),
+                ("Start", "dword", "3"),
+                (
+                    "ImagePath",
+                    "expand_sz",
+                    r"system32\drivers\eaanticheat.sys",
+                ),
+                ("Description", "sz", "Electronic Arts AntiCheat Driver"),
+            ],
+        ));
+        keys.push(registry_service(
+            "EAAntiCheatService",
+            &[("Type", "dword", "16"), ("Start", "dword", "3")],
+        ));
+        diff.registry = keys;
+        diff.coverage.captured.push(crate::model::Domain::Registry);
+        diff
+    }
+
+    #[test]
+    fn a_service_binary_beside_a_signed_file_is_attributed() {
+        // The service's own image carries no signature the harness could read;
+        // the DLL next to it does.
+        let generated = draft(&ea_like(), None, Some("Electronic Arts, Inc."));
+
+        assert!(
+            generated
+                .entry
+                .services
+                .contains(&"EAAntiCheatService".to_owned())
+        );
+        assert!(
+            generated
+                .entry
+                .paths
+                .iter()
+                .any(|entry| entry.path == r"%ProgramFiles%\EA\AC")
+        );
+    }
+
+    #[test]
+    fn the_folders_inside_a_product_identify_nothing() {
+        // `Settings` and `Universal` are the EA app's own folders, and used to
+        // claim `Local Settings` and the speech platform's keys.
+        let generated = draft(&ea_like(), None, Some("Electronic Arts, Inc."));
+
+        for entry in &generated.entry.registry {
+            assert!(!entry.key.contains("Local Settings"), "{}", entry.key);
+            assert!(!entry.key.contains("Speech_OneCore"), "{}", entry.key);
+        }
+    }
+
+    #[test]
+    fn a_driver_only_the_registry_knows_is_found_named_and_counted() {
+        let generated = draft(&ea_like(), None, Some("Electronic Arts, Inc."));
+
+        assert!(matches!(generated.entry.kind, Kind::Kernel));
+        assert_eq!(generated.entry.drivers, ["eaanticheat.sys"]);
+        assert!(generated.entry.services.contains(&"EAAntiCheat".to_owned()));
+        assert!(
+            generated
+                .review
+                .iter()
+                .any(|note| note.contains("EAAntiCheat") && note.contains("does not list")),
+            "{:#?}",
+            generated.review
+        );
+    }
+
+    #[test]
+    fn a_registry_driver_nothing_attributes_is_left_out_and_named() {
+        // Neverness To Everness's own driver: no description, an image on a
+        // drive that no longer exists, and nothing of the chosen publisher's.
+        let mut diff = ea_like();
+        diff.registry.push(registry_service(
+            "PGameProtectDriver",
+            &[
+                ("Type", "dword", "1"),
+                ("Start", "dword", "3"),
+                (
+                    "ImagePath",
+                    "expand_sz",
+                    r"\??\H:\Games\NTE\driver\PGameProtectDriver_X64.sys",
+                ),
+            ],
+        ));
+
+        let generated = draft(&diff, None, Some("Electronic Arts, Inc."));
+
+        assert!(
+            !generated
+                .entry
+                .services
+                .contains(&"PGameProtectDriver".to_owned())
+        );
+        assert!(
+            generated
+                .review
+                .iter()
+                .any(|note| note.contains("PGameProtectDriver") && note.contains("left out"))
+        );
+    }
+
+    #[test]
+    fn only_narrows_a_draft_to_one_product() {
+        let generated = draft_scoped(
+            &ea_like(),
+            None,
+            Some("Electronic Arts, Inc."),
+            &["eaanticheat".to_owned(), r"ea\ac".to_owned()],
+        );
+
+        assert_eq!(
+            generated.entry.services,
+            ["EAAntiCheatService", "EAAntiCheat"]
+        );
+        let paths: Vec<&str> = generated
+            .entry
+            .paths
+            .iter()
+            .map(|e| e.path.as_str())
+            .collect();
+        assert_eq!(paths, [r"%ProgramFiles%\EA\AC"]);
+    }
+
+    #[test]
+    fn several_products_under_one_signer_are_pointed_out() {
+        let generated = draft(&ea_like(), None, Some("Electronic Arts, Inc."));
+
+        assert!(
+            generated
+                .review
+                .iter()
+                .any(|note| note.contains("separate product folders") && note.contains("--only")),
+            "{:#?}",
+            generated.review
+        );
+    }
+
+    #[test]
+    fn a_key_covers_the_views_of_everything_folded_into_it() {
+        let generated = draft(&ea_like(), None, Some("Electronic Arts, Inc."));
+
+        let entry = generated
+            .entry
+            .registry
+            .iter()
+            .find(|entry| entry.key == r"HKLM\SOFTWARE\EA\AC")
+            .expect("the vendor key mirrors the product folder");
+        assert!(matches!(entry.view, View::Both));
+    }
+
+    #[test]
+    fn an_event_source_nothing_attributes_is_named_not_dropped() {
+        let generated = draft(&ea_like(), None, Some("Electronic Arts, Inc."));
+
+        assert!(generated.entry.event_sources.is_empty());
+        assert!(
+            generated
+                .review
+                .iter()
+                .any(|note| note.contains("EA Javelin Anticheat"))
+        );
+    }
+
+    #[test]
+    fn publisher_names_lose_their_corporate_suffixes() {
+        assert_eq!(
+            publisher_name("Electronic Arts, Inc.").as_deref(),
+            Some("electronic arts")
+        );
+        assert_eq!(
+            publisher_name("ACEVILLE PTE LTD").as_deref(),
+            Some("aceville")
+        );
+        assert_eq!(
+            publisher_name("N2E Entertainment PTE. LTD.").as_deref(),
+            Some("n2e entertainment")
+        );
+        assert_eq!(publisher_name("Taco").as_deref(), Some("taco"));
+        assert_eq!(publisher_name("EA Inc").as_deref(), None);
+    }
+
+    #[test]
+    fn a_product_folder_is_found_below_its_root() {
+        assert_eq!(
+            below_root(r"c:\program files\ea\ac\x.exe"),
+            ["ea", "ac", "x.exe"]
+        );
+        assert_eq!(
+            below_root(r"c:\users\someone\appdata\local\riot games\x"),
+            ["riot games", "x"]
+        );
+        assert_eq!(
+            below_root(r"c:\windows\system32\drivers\vgk.sys"),
+            ["vgk.sys"]
+        );
+        assert_eq!(below_root(r"d:\games\nte\x"), ["games", "nte", "x"]);
+    }
+
     #[test]
     fn an_unattributable_service_or_driver_is_left_out_and_named() {
         // The ACE-ADVT shape: a driver attestation-signed by Microsoft, in
@@ -1248,9 +2079,8 @@ mod tests {
             (r"HKLM\SOFTWARE\WOW6432Node\Example AC", "64"),
         ]);
         let attribution = Attribution {
-            files: BTreeSet::new(),
-            names: BTreeSet::new(),
             tokens: std::iter::once("example ac".to_owned()).collect(),
+            ..Attribution::default()
         };
 
         let entries = registry_entries(&diff, &attribution, &Exceptions::none(), &mut review);

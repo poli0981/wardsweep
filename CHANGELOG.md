@@ -263,6 +263,15 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
 - `observe diff` compared services whether or not both snapshots captured them,
   collapsed two per-user service instances into one record and dropped the
   other, and cloned every record of both snapshots to build its indexes.
+- `observe suggest`, against a third anti-cheat — EA's, observed beside the
+  EA app on 2026-10-09 — produced a draft that missed the anti-cheat's service
+  and its driver, called it `usermode`, and took the EA app and two unrelated
+  sets of Windows keys instead. Identifiers now come from product folders
+  only, a file beside a signed one is attributed, a driver registered only in
+  the registry is found, named and counted, an entry's key covers the WOW64
+  views of everything folded into it, event log sources are proposed or named,
+  and `--only` narrows a draft to one product when a publisher signs two. The
+  committed Vanguard and AntiCheatExpert drafts are unchanged.
 - `observe suggest` drafted every added service and driver, attributed or not,
   matched tokens as substrings, wrote `%LOCALAPPDATA%Low\…` for LocalLow paths
   and kept profile names in others, and listed a 32-bit key twice under two

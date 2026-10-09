@@ -400,14 +400,47 @@ mode.
 The table applies to what can be **attributed** to the publisher, and services
 and drivers are attributed before anything else, because an attributed service's
 image and name become evidence for paths and keys. A service or `.sys` file
-counts when the publisher signed it, when it lives where the publisher's own
-files live, when it carries the same file name as one of them, or when its name
-is one of the directory names they live in. Anything added between the two
-snapshots that meets none of those — a driver Windows Update dropped, a second
-program installed at the same time — is left out of the draft and **named** in
-its review notes, one note each, so a reviewer can put back what is genuinely
-the anti-cheat's. Names are matched as whole words, so a three-letter service
-name does not claim every path that happens to contain it.
+counts when the publisher signed it, when it sits in the same folder as a file
+the publisher signed, when it carries the same file name as one of them, or when
+its name is one of the product folders they live in. Anything added between the
+two snapshots that meets none of those — a driver Windows Update dropped, a
+second program installed at the same time — is left out of the draft and
+**named** in its review notes, one note each, so a reviewer can put back what is
+genuinely the anti-cheat's. Names are matched as whole words, so a three-letter
+service name does not claim every path that happens to contain it.
+
+A third observation, EA's anti-cheat beside the EA app, refined that in four
+places:
+
+- **Only product folders identify anything.** The identifiers come from the
+  first two folders below a root — `Program Files\<vendor>\<product>`,
+  `%LOCALAPPDATA%\<product>` — not from every folder a signed file sits in. The
+  EA app keeps its plug-ins in folders called `settings` and `universal`, and
+  those used to claim `Local Settings` and the speech platform's keys. An
+  installer's `SOFTWARE\<vendor>\<product>` key is claimed by the product folder
+  it mirrors.
+- **A file beside a signed one is attributed.** EA's service binary is 190 MB,
+  past the size above which the walk reads no signature, so nothing signed sat at
+  the service's image — only next to it.
+- **A driver known only to the registry is found.** A `Services` key of a
+  kernel, file-system or recognizer driver that the service control manager did
+  not list is counted for `kind`, put in `services` and `drivers` when it can be
+  attributed — by its key, its image, or a description that names the publisher
+  — and named in the review notes either way.
+- **`--only` narrows a draft to one product.** A publisher that signs its
+  launcher as well as its anti-cheat gets both from a signature; the draft says
+  so, naming the product folders, and `--only eaanticheat --only "ea\ac"` keeps
+  only what mentions one of those texts. It narrows; it never attributes on its
+  own.
+
+Event log sources the footprint registered are put in `event_sources` when
+their name carries one of the anti-cheat's identifiers or the publisher's name,
+and named in the review notes otherwise. A source's key says little about its
+owner — EA's names Windows' generic `EventCreate.exe` as its message file.
+
+When an entry's key absorbs keys below it, it takes their WOW64 views too: EA
+writes `EA\AC` through the 64-bit view and `EA\AC\Installs\fc26` through the
+32-bit one, and an entry claiming only the first would miss the second.
 
 ## Review before submitting
 
