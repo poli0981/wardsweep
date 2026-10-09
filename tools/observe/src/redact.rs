@@ -555,13 +555,33 @@ fn is_domain_byte(byte: u8) -> bool {
 
 fn is_email_domain(domain: &str) -> bool {
     let labels: Vec<&str> = domain.split('.').collect();
-    labels.len() >= 2
+    !is_scale_suffix(domain)
+        && labels.len() >= 2
         && labels
             .iter()
             .all(|label| !label.is_empty() && !label.starts_with('-') && !label.ends_with('-'))
         && labels
             .last()
             .is_some_and(|top| top.len() >= 2 && top.bytes().all(|byte| byte.is_ascii_alphabetic()))
+}
+
+/// Whether a "domain" is an image's display-scale suffix: the `2x.png` of
+/// `arrow@2x.png`, the `1.5x.png` of `icon@1.5x.png`. Application bundles name
+/// files that way by the hundred, and the EA app's did reach a diff as a row of
+/// e-mail addresses.
+fn is_scale_suffix(domain: &str) -> bool {
+    const IMAGES: &[&str] = &["png", "jpg", "jpeg", "gif", "svg", "webp", "bmp", "ico"];
+    let Some((scale, extension)) = domain.rsplit_once('.') else {
+        return false;
+    };
+    let Some(number) = scale.strip_suffix(['x', 'X']) else {
+        return false;
+    };
+    number.starts_with(|c: char| c.is_ascii_digit())
+        && number.chars().all(|c| c.is_ascii_digit() || c == '.')
+        && IMAGES
+            .iter()
+            .any(|image| image.eq_ignore_ascii_case(extension))
 }
 
 /// Replace a name where it stands as its own token, in any letter case.
@@ -870,6 +890,10 @@ mod tests {
 
         let (out, _) = redact_text("mailto:first.last+tag@sub.example.co.uk; and x@y.org.");
         assert_eq!(out, "mailto:%EMAIL%; and %EMAIL%.");
+
+        // An image's scale suffix beside it does not hide an address.
+        let (out, _) = redact_text("icon@2x.png, sent by someone@mail.example.org");
+        assert_eq!(out, "icon@2x.png, sent by %EMAIL%");
     }
 
     #[test]
@@ -881,6 +905,9 @@ mod tests {
             "@%SystemRoot%\\system32\\shell32.dll,-21787",
             "version 1.2@3",
             "a@b.c1",
+            // Display-scale suffixes, as the EA app's Qt styles name them.
+            "C:\\Program Files\\App\\QtQuick\\Controls\\Styles\\Base\\images\\arrow-down@2x.png",
+            "icon@1.5x.PNG",
         ] {
             let (out, hits) = redact_text(text);
             assert_eq!(out, text, "{text} should be unchanged");
