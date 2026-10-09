@@ -110,6 +110,7 @@
       "total_bytes": 207105553,
       "file_count_note": "The same eight stable files as before the uninstall, byte for byte, plus one fresh log."
     },
+    "start_type_evidence": "2026-10-09, read-only, from the System event log (Service Control Manager 7040 and 7045 with the acting account; boots from Kernel-General 12; 54 boots back to 2026-09-18). Four reinstalls by a user account set vgk to system start. Three times vgk was lowered to demand by the SYSTEM account, 4m07s, 4m11s and 10m21s after a boot. No write of system start other than the installer's, and no vgk change at all in the 46 boots up to the first reinstall. vgc was failing throughout: error 1 once on 2026-09-21, once on 2026-10-08, 38 times on 2026-10-09. See notes.md.",
     "start_type_note": "vgk is INSTALLED at SYSTEM_START (1). Four baseline snapshots taken hours after an install read demand (3). SYSTEM_START is not BOOT_START, so is_boot_start is false and docs/16 gives risk = high rather than critical.",
     "residue_survived_the_reinstall": "vgtray-settings.json and vgtray.log still carry their pre-uninstall timestamps. Nothing in the vendor install-uninstall-reinstall cycle touches them."
   },
