@@ -260,6 +260,17 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
   shows what it could not remove instead of calling it "`Anonymous` and the
   like". The three diffs were cleaned with those tools, and nothing in them
   that names an anti-cheat changed.
+- An ordinary install diff — EA's anti-cheat, 2026-10-09 — carried the
+  Microsoft account's authentication cookies, the sync store listing the
+  applications and Steam games the account has used, a browser's preference
+  hashes and telemetry state. The harness no longer reads any of them, and the
+  differ drops them from snapshots older builds took. `redact` masks the data
+  of identifier-named values (`…SessionId`, `…DeviceId` and the like) as
+  `%ID%`, keeping the names as evidence. The three committed diffs did hold
+  some of it — telemetry state, Visual Studio's per-machine telemetry
+  identifiers, Edge's preference hashes and session identifiers — and were
+  refiltered and redacted again; no authentication cookie or sync-store record
+  had been committed, and both committed drafts rebuild unchanged.
 - `observe diff` compared services whether or not both snapshots captured them,
   collapsed two per-user service instances into one record and dropped the
   other, and cloned every record of both snapshots to build its indexes.

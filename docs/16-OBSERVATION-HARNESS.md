@@ -348,6 +348,17 @@ activity stores above and the background-activity timestamps under
 `RegisteredOwner`, `RegisteredOrganization` and `UserEmail` are refused wherever
 they appear. The rules live in one place, `tools/observe/src/policy.rs`.
 
+The third observation, EA's anti-cheat on 2026-10-09, found more of the same
+kind in an ordinary install diff, and the walk no longer reads it either: the
+Microsoft account's authentication cookies, the sync store that lists which
+applications and which Steam games the account has used, the keyed hashes a
+Chromium browser keeps over its preferences, and telemetry state. And `redact`
+now masks the data of any value whose name ends in `SessionId`, `DeviceId`,
+`MachineId`, `ClientId`, `InstallId`, `UserId` or `AccountId` as `%ID%`, keeping
+the name: EA's anti-cheat stores two session identifiers under its own key,
+and the key and the names are footprint while the identifiers mean something
+only to the vendor.
+
 Two consequences:
 
 - **The differ applies the rules to both snapshots before comparing them**, so a
