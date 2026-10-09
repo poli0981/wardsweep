@@ -130,6 +130,24 @@ pub const SID_PLACEHOLDER: &str = "S-1-5-21-%REDACTED%";
 pub const HOST_PLACEHOLDER: &str = "%COMPUTER%";
 /// Placeholder for an e-mail address.
 pub const EMAIL_PLACEHOLDER: &str = "%EMAIL%";
+/// Placeholder for an opaque identifier a registry value carries.
+pub const ID_PLACEHOLDER: &str = "%ID%";
+
+/// Value-name endings that mark an opaque per-session, per-device or
+/// per-account identifier, compared without regard to case.
+///
+/// EA's anti-cheat keeps `LastSessionId` and `LastServiceSessionId` under its
+/// own key. The key and the value names are footprint and stay; the identifiers
+/// mean something only to the vendor's servers, and are masked.
+const IDENTIFIER_NAMES: &[&str] = &[
+    "sessionid",
+    "deviceid",
+    "machineid",
+    "clientid",
+    "installid",
+    "userid",
+    "accountid",
+];
 
 /// Redact a whole document: learn the account names, rewrite, then audit.
 ///
@@ -366,6 +384,7 @@ pub fn rewrite(
             }
         }
         serde_json::Value::Object(fields) => {
+            mask_identifier(fields, applied);
             // Values only. A key is a schema field name, and rewriting one
             // would produce a document that no longer parses.
             for (_, field) in fields.iter_mut() {
@@ -373,6 +392,53 @@ pub fn rewrite(
             }
         }
         _ => {}
+    }
+}
+
+/// Whether a registry value's name says it holds an opaque identifier.
+fn names_an_identifier(name: &str) -> bool {
+    let lowered = name.to_ascii_lowercase();
+    IDENTIFIER_NAMES
+        .iter()
+        .any(|suffix| lowered.ends_with(suffix))
+}
+
+/// Mask the data of a registry value, or of a change to one, whose name says
+/// it is an identifier. The name stays, so the value is still evidence that it
+/// exists.
+///
+/// The two shapes a document carries: a value, `{name, kind, data}`, and a
+/// field change, `{field, before, after}` with each side as `kind:data`.
+fn mask_identifier(fields: &mut serde_json::Map<String, serde_json::Value>, applied: &mut Applied) {
+    let named = |key: &str| {
+        fields
+            .get(key)
+            .and_then(serde_json::Value::as_str)
+            .is_some_and(names_an_identifier)
+    };
+    let (targets, typed): (&[&str], bool) = if named("name") && fields.contains_key("data") {
+        (&["data"], false)
+    } else if named("field") && fields.contains_key("before") {
+        (&["before", "after"], true)
+    } else {
+        return;
+    };
+    for target in targets {
+        let Some(serde_json::Value::String(text)) = fields.get_mut(*target) else {
+            continue;
+        };
+        let (kind, data) = match text.split_once(':') {
+            Some((kind, data)) if typed => (Some(kind.to_owned()), data),
+            _ => (None, text.as_str()),
+        };
+        if data.is_empty() || data == ID_PLACEHOLDER {
+            continue;
+        }
+        *text = kind.map_or_else(
+            || ID_PLACEHOLDER.to_owned(),
+            |kind| format!("{kind}:{ID_PLACEHOLDER}"),
+        );
+        *applied.entry(ID_PLACEHOLDER.to_owned()).or_insert(0) += 1;
     }
 }
 
@@ -632,6 +698,36 @@ mod tests {
 
     fn redact(document: &mut serde_json::Value) -> Report {
         redact_document(document, &Extra::default())
+    }
+
+    #[test]
+    fn an_identifier_value_keeps_its_name_and_loses_its_data() {
+        let mut document = serde_json::json!({
+            "registry": [{
+                "key": "HKCU\\SOFTWARE\\EA\\AC",
+                "after": {"values": [
+                    {"name": "LastSessionId", "kind": "sz", "data": "8f1e2d3c-1111-2222-3333-444455556666"},
+                    {"name": "version", "kind": "sz", "data": "1.2.3"}
+                ]},
+                "fields": [
+                    {"field": "LastServiceSessionId", "before": "sz:aaa", "after": "sz:bbb"}
+                ]
+            }]
+        });
+
+        let report = redact(&mut document);
+
+        let text = serde_json::to_string(&document).unwrap();
+        for identifier in ["8f1e2d3c", "sz:aaa", "sz:bbb"] {
+            assert!(!text.contains(identifier), "{identifier} survived: {text}");
+        }
+        assert!(
+            text.contains("\"LastSessionId\""),
+            "the name is evidence and stays"
+        );
+        assert!(text.contains("sz:%ID%"), "the type survives a field change");
+        assert!(text.contains("1.2.3"), "an ordinary value is untouched");
+        assert_eq!(report.applied.get(ID_PLACEHOLDER), Some(&3));
     }
 
     #[test]

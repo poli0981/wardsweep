@@ -363,3 +363,13 @@ generator got stricter after it was written:
   doing so.
 - **The uninstall key is recorded in the 64-bit view only**, which is the view
   it was observed in. The first draft claimed `both`.
+
+### Refiltered again on 2026-10-09
+
+The policy grew after an ordinary install diff turned up telemetry and
+credential stores (`docs/16`, "Personal identity and activity history are not
+recorded either"). `observe refilter` removed 18 more registry records from
+`residue.json` — Windows `DiagTrack` telemetry state and Visual Studio's
+per-machine telemetry identifiers — and `observe redact` masked 8 session
+identifiers as `%ID%`, keeping the value names. Nothing that names the
+anti-cheat changed, and `draft.toml` still rebuilds byte for byte.

@@ -506,3 +506,14 @@ Nothing else moved. The policy removed nothing this time; every change, field
 and file record is what it was; and the draft rebuilt from `install.json` is
 byte-for-byte `draft.toml`, which a test pins. The files are indented again:
 `redact` had written them on one line.
+
+### Refiltered again on 2026-10-09
+
+The policy grew after an ordinary install diff turned up telemetry and
+credential stores (`docs/16`, "Personal identity and activity history are not
+recorded either"). `observe refilter` removed 38 more registry records from
+`install.json` — Windows `DiagTrack` telemetry state and the keyed hashes Edge
+keeps over its preferences — and 8 from `residue.json`, all `DiagTrack`;
+`observe redact` masked 4 session identifiers in `install.json` as `%ID%`,
+keeping the value names. Nothing that names Vanguard changed, and `draft.toml`
+still rebuilds byte for byte.

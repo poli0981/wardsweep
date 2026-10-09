@@ -5218,62 +5218,6 @@
       "fields": []
     },
     {
-      "key": "HKCU\\SOFTWARE\\Microsoft\\VisualStudio\\Telemetry\\PersistentPropertyBag\\vctip",
-      "view": "32",
-      "kind": "added",
-      "before": null,
-      "after": {
-        "key": "HKCU\\SOFTWARE\\Microsoft\\VisualStudio\\Telemetry\\PersistentPropertyBag\\vctip",
-        "view": "32",
-        "values": [
-          {
-            "name": "VS.TelemetryApi.ChannelsDisposeLatency",
-            "kind": "dword",
-            "data": "1565"
-          },
-          {
-            "name": "VS.TelemetryApi.DroppedEventsDuringDisposing",
-            "kind": "dword",
-            "data": "1"
-          },
-          {
-            "name": "VS.TelemetryApi.TotalDisposeLatency",
-            "kind": "dword",
-            "data": "1582"
-          }
-        ]
-      },
-      "fields": []
-    },
-    {
-      "key": "HKCU\\SOFTWARE\\Microsoft\\VisualStudio\\Telemetry\\PersistentPropertyBag\\vctip",
-      "view": "64",
-      "kind": "added",
-      "before": null,
-      "after": {
-        "key": "HKCU\\SOFTWARE\\Microsoft\\VisualStudio\\Telemetry\\PersistentPropertyBag\\vctip",
-        "view": "64",
-        "values": [
-          {
-            "name": "VS.TelemetryApi.ChannelsDisposeLatency",
-            "kind": "dword",
-            "data": "1565"
-          },
-          {
-            "name": "VS.TelemetryApi.DroppedEventsDuringDisposing",
-            "kind": "dword",
-            "data": "1"
-          },
-          {
-            "name": "VS.TelemetryApi.TotalDisposeLatency",
-            "kind": "dword",
-            "data": "1582"
-          }
-        ]
-      },
-      "fields": []
-    },
-    {
       "key": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Start",
       "view": "32",
       "kind": "modified",
@@ -5289,7 +5233,7 @@
           {
             "name": "LaunchSessionId",
             "kind": "sz",
-            "data": "{97BCA272-2DFF-4071-BD1D-6ABE34718128}"
+            "data": "%ID%"
           }
         ]
       },
@@ -5305,7 +5249,7 @@
           {
             "name": "LaunchSessionId",
             "kind": "sz",
-            "data": "{4786AE58-95B7-4839-8790-0F09216F34D9}"
+            "data": "%ID%"
           }
         ]
       },
@@ -5317,8 +5261,8 @@
         },
         {
           "field": "LaunchSessionId",
-          "before": "sz:{97BCA272-2DFF-4071-BD1D-6ABE34718128}",
-          "after": "sz:{4786AE58-95B7-4839-8790-0F09216F34D9}"
+          "before": "sz:%ID%",
+          "after": "sz:%ID%"
         }
       ]
     },
@@ -5338,7 +5282,7 @@
           {
             "name": "LaunchSessionId",
             "kind": "sz",
-            "data": "{97BCA272-2DFF-4071-BD1D-6ABE34718128}"
+            "data": "%ID%"
           }
         ]
       },
@@ -5354,7 +5298,7 @@
           {
             "name": "LaunchSessionId",
             "kind": "sz",
-            "data": "{4786AE58-95B7-4839-8790-0F09216F34D9}"
+            "data": "%ID%"
           }
         ]
       },
@@ -5366,8 +5310,8 @@
         },
         {
           "field": "LaunchSessionId",
-          "before": "sz:{97BCA272-2DFF-4071-BD1D-6ABE34718128}",
-          "after": "sz:{4786AE58-95B7-4839-8790-0F09216F34D9}"
+          "before": "sz:%ID%",
+          "after": "sz:%ID%"
         }
       ]
     },
@@ -5549,338 +5493,6 @@
           "field": "RefCount",
           "before": "binary:0b000000",
           "after": "binary:0c000000"
-        }
-      ]
-    },
-    {
-      "key": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Diagnostics\\DiagTrack",
-      "view": "64",
-      "kind": "modified",
-      "before": {
-        "key": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Diagnostics\\DiagTrack",
-        "view": "64",
-        "values": [
-          {
-            "name": "LastSuccessfulNormalUploadTime",
-            "kind": "qword",
-            "data": "134316130017318794"
-          },
-          {
-            "name": "LastSuccessfulUploadTime",
-            "kind": "qword",
-            "data": "134316130017318794"
-          }
-        ]
-      },
-      "after": {
-        "key": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Diagnostics\\DiagTrack",
-        "view": "64",
-        "values": [
-          {
-            "name": "LastSuccessfulNormalUploadTime",
-            "kind": "qword",
-            "data": "134316139077206791"
-          },
-          {
-            "name": "LastSuccessfulUploadTime",
-            "kind": "qword",
-            "data": "134316139077206791"
-          }
-        ]
-      },
-      "fields": [
-        {
-          "field": "LastSuccessfulNormalUploadTime",
-          "before": "qword:134316130017318794",
-          "after": "qword:134316139077206791"
-        },
-        {
-          "field": "LastSuccessfulUploadTime",
-          "before": "qword:134316130017318794",
-          "after": "qword:134316139077206791"
-        }
-      ]
-    },
-    {
-      "key": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Diagnostics\\DiagTrack\\Aggregation\\Instrumentation\\CodeIntegrityAggregator",
-      "view": "64",
-      "kind": "modified",
-      "before": {
-        "key": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Diagnostics\\DiagTrack\\Aggregation\\Instrumentation\\CodeIntegrityAggregator",
-        "view": "64",
-        "values": [
-          {
-            "name": "HbActiveMillis",
-            "kind": "qword",
-            "data": "12709851"
-          }
-        ]
-      },
-      "after": {
-        "key": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Diagnostics\\DiagTrack\\Aggregation\\Instrumentation\\CodeIntegrityAggregator",
-        "view": "64",
-        "values": [
-          {
-            "name": "HbActiveMillis",
-            "kind": "qword",
-            "data": "14059774"
-          }
-        ]
-      },
-      "fields": [
-        {
-          "field": "HbActiveMillis",
-          "before": "qword:12709851",
-          "after": "qword:14059774"
-        }
-      ]
-    },
-    {
-      "key": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Diagnostics\\DiagTrack\\Aggregation\\Instrumentation\\MediaFoundationAggregator",
-      "view": "64",
-      "kind": "modified",
-      "before": {
-        "key": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Diagnostics\\DiagTrack\\Aggregation\\Instrumentation\\MediaFoundationAggregator",
-        "view": "64",
-        "values": [
-          {
-            "name": "HbActiveMillis",
-            "kind": "qword",
-            "data": "12709852"
-          }
-        ]
-      },
-      "after": {
-        "key": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Diagnostics\\DiagTrack\\Aggregation\\Instrumentation\\MediaFoundationAggregator",
-        "view": "64",
-        "values": [
-          {
-            "name": "HbActiveMillis",
-            "kind": "qword",
-            "data": "14059783"
-          }
-        ]
-      },
-      "fields": [
-        {
-          "field": "HbActiveMillis",
-          "before": "qword:12709852",
-          "after": "qword:14059783"
-        }
-      ]
-    },
-    {
-      "key": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Diagnostics\\DiagTrack\\Aggregation\\Instrumentation\\MissionControlAggregator",
-      "view": "64",
-      "kind": "modified",
-      "before": {
-        "key": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Diagnostics\\DiagTrack\\Aggregation\\Instrumentation\\MissionControlAggregator",
-        "view": "64",
-        "values": [
-          {
-            "name": "HbActiveMillis",
-            "kind": "qword",
-            "data": "12709266"
-          },
-          {
-            "name": "HbEventsEnabled",
-            "kind": "qword",
-            "data": "780"
-          },
-          {
-            "name": "HbProcessed",
-            "kind": "qword",
-            "data": "776"
-          }
-        ]
-      },
-      "after": {
-        "key": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Diagnostics\\DiagTrack\\Aggregation\\Instrumentation\\MissionControlAggregator",
-        "view": "64",
-        "values": [
-          {
-            "name": "HbActiveMillis",
-            "kind": "qword",
-            "data": "14059202"
-          },
-          {
-            "name": "HbEventsEnabled",
-            "kind": "qword",
-            "data": "837"
-          },
-          {
-            "name": "HbProcessed",
-            "kind": "qword",
-            "data": "832"
-          }
-        ]
-      },
-      "fields": [
-        {
-          "field": "HbActiveMillis",
-          "before": "qword:12709266",
-          "after": "qword:14059202"
-        },
-        {
-          "field": "HbEventsEnabled",
-          "before": "qword:780",
-          "after": "qword:837"
-        },
-        {
-          "field": "HbProcessed",
-          "before": "qword:776",
-          "after": "qword:832"
-        }
-      ]
-    },
-    {
-      "key": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Diagnostics\\DiagTrack\\Aggregation\\Instrumentation\\MpeCm",
-      "view": "64",
-      "kind": "modified",
-      "before": {
-        "key": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Diagnostics\\DiagTrack\\Aggregation\\Instrumentation\\MpeCm",
-        "view": "64",
-        "values": [
-          {
-            "name": "HbActiveMillis",
-            "kind": "qword",
-            "data": "12709250"
-          }
-        ]
-      },
-      "after": {
-        "key": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Diagnostics\\DiagTrack\\Aggregation\\Instrumentation\\MpeCm",
-        "view": "64",
-        "values": [
-          {
-            "name": "HbActiveMillis",
-            "kind": "qword",
-            "data": "14059187"
-          }
-        ]
-      },
-      "fields": [
-        {
-          "field": "HbActiveMillis",
-          "before": "qword:12709250",
-          "after": "qword:14059187"
-        }
-      ]
-    },
-    {
-      "key": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Diagnostics\\DiagTrack\\Aggregation\\Instrumentation\\UpdatePlatformAggregators",
-      "view": "64",
-      "kind": "modified",
-      "before": {
-        "key": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Diagnostics\\DiagTrack\\Aggregation\\Instrumentation\\UpdatePlatformAggregators",
-        "view": "64",
-        "values": [
-          {
-            "name": "HbActiveMillis",
-            "kind": "qword",
-            "data": "12709250"
-          }
-        ]
-      },
-      "after": {
-        "key": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Diagnostics\\DiagTrack\\Aggregation\\Instrumentation\\UpdatePlatformAggregators",
-        "view": "64",
-        "values": [
-          {
-            "name": "HbActiveMillis",
-            "kind": "qword",
-            "data": "14059187"
-          }
-        ]
-      },
-      "fields": [
-        {
-          "field": "HbActiveMillis",
-          "before": "qword:12709250",
-          "after": "qword:14059187"
-        }
-      ]
-    },
-    {
-      "key": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Diagnostics\\DiagTrack\\Aggregation\\Instrumentation\\UpdateReboot",
-      "view": "64",
-      "kind": "modified",
-      "before": {
-        "key": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Diagnostics\\DiagTrack\\Aggregation\\Instrumentation\\UpdateReboot",
-        "view": "64",
-        "values": [
-          {
-            "name": "HbActiveMillis",
-            "kind": "qword",
-            "data": "12709250"
-          },
-          {
-            "name": "HbEventsEnabled",
-            "kind": "qword",
-            "data": "2938"
-          }
-        ]
-      },
-      "after": {
-        "key": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Diagnostics\\DiagTrack\\Aggregation\\Instrumentation\\UpdateReboot",
-        "view": "64",
-        "values": [
-          {
-            "name": "HbActiveMillis",
-            "kind": "qword",
-            "data": "14059187"
-          },
-          {
-            "name": "HbEventsEnabled",
-            "kind": "qword",
-            "data": "3102"
-          }
-        ]
-      },
-      "fields": [
-        {
-          "field": "HbActiveMillis",
-          "before": "qword:12709250",
-          "after": "qword:14059187"
-        },
-        {
-          "field": "HbEventsEnabled",
-          "before": "qword:2938",
-          "after": "qword:3102"
-        }
-      ]
-    },
-    {
-      "key": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Diagnostics\\DiagTrack\\Aggregation\\Instrumentation\\UusFailover",
-      "view": "64",
-      "kind": "modified",
-      "before": {
-        "key": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Diagnostics\\DiagTrack\\Aggregation\\Instrumentation\\UusFailover",
-        "view": "64",
-        "values": [
-          {
-            "name": "HbActiveMillis",
-            "kind": "qword",
-            "data": "12709250"
-          }
-        ]
-      },
-      "after": {
-        "key": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Diagnostics\\DiagTrack\\Aggregation\\Instrumentation\\UusFailover",
-        "view": "64",
-        "values": [
-          {
-            "name": "HbActiveMillis",
-            "kind": "qword",
-            "data": "14059187"
-          }
-        ]
-      },
-      "fields": [
-        {
-          "field": "HbActiveMillis",
-          "before": "qword:12709250",
-          "after": "qword:14059187"
         }
       ]
     },
@@ -6762,7 +6374,7 @@
     "Microsoft Windows Hardware Compatibility Publisher": 5
   },
   "refiltered": {
-    "registry_records": 36,
+    "registry_records": 54,
     "registry_values": 0,
     "access_denied": 10,
     "emptied_keys": 0

@@ -167,6 +167,18 @@ pub const EXCLUDED_FRAGMENTS: &[&str] = &[
     // package under AppModel\SystemAppData\<package>\HAM and as a commit history.
     "\\ham\\",
     "\\hostactivitymanager\\",
+    // The settings and start-menu sync store: which applications, and which
+    // Steam games by their app ids, the account has used.
+    "\\currentversion\\cloudstore\\",
+    // Telemetry state: upload times and heartbeat counters, and Visual
+    // Studio's per-machine telemetry identifiers.
+    "\\diagnostics\\diagtrack\\",
+    "\\visualstudio\\telemetry\\",
+    // --- Credentials ---------------------------------------------------------
+    // Microsoft account authentication cookies.
+    "\\microsoft\\authcookies\\",
+    // The keyed hashes a Chromium browser keeps over its own preferences.
+    "\\preferencemacs\\",
     // --- Volume without information ----------------------------------------
     // Component servicing manifests and the installer database are enormous
     // and describe Windows, not an install.
@@ -377,6 +389,12 @@ mod tests {
             "HKCU\\SOFTWARE\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\SystemAppData\\Microsoft.WindowsNotepad_8wekyb3d8bbwe\\HAM",
             "HKCU\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\HostActivityManager\\CommitHistory\\x",
             "HKCU\\SOFTWARE\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\Shell\\MuiCache",
+            // Found in the 2026-10-09 EA AntiCheat install diff.
+            "HKCU\\SOFTWARE\\Microsoft\\AuthCookies\\Live\\Default",
+            "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CloudStore\\Store\\DefaultAccount\\Cloud",
+            "HKCU\\SOFTWARE\\Chromium\\PreferenceMACs\\Default",
+            "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Diagnostics\\DiagTrack\\HeartBeats\\Default",
+            "HKCU\\SOFTWARE\\Microsoft\\VisualStudio\\Telemetry\\PersistentPropertyBag",
         ] {
             assert!(is_excluded(key), "{key} must not be walked");
         }
@@ -394,6 +412,9 @@ mod tests {
             "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Valorant",
             "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run",
             "HKCU\\SOFTWARE\\appdatalow\\AntiCheatExpert\\{4324E6D9-BA90-499E-9B3A-A7DAB216C94E}",
+            "HKLM\\SOFTWARE\\EA\\AC",
+            "HKCU\\SOFTWARE\\EA\\AC",
+            "HKLM\\SYSTEM\\CurrentControlSet\\Services\\EAAntiCheat",
         ] {
             assert!(!is_excluded(key), "{key} is footprint and must be walked");
         }
