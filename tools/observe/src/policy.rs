@@ -208,6 +208,10 @@ pub const EXCLUDED_FRAGMENTS: &[&str] = &[
     "\\microsoft\\authcookies\\",
     // The keyed hashes a Chromium browser keeps over its own preferences.
     "\\preferencemacs\\",
+    // Windows licensing state, which keeps the product key in plain text. On
+    // a machine activated by digital licence that is the edition's published
+    // generic key; on one activated by a retail or OEM key, it is the key.
+    "\\currentversion\\softwareprotectionplatform\\",
     // --- Volume without information ----------------------------------------
     // Component servicing manifests and the installer database are enormous
     // and describe Windows, not an install.
@@ -434,6 +438,7 @@ mod tests {
             "HKCU\\SOFTWARE\\Microsoft\\DirectInput\\MostRecentApplication",
             "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\AppListBackup\\ListOfTaskBackedUpTiles_1",
             "HKCU\\SOFTWARE\\Classes\\Local Settings\\MuiCache\\2ee\\52C64B7E",
+            "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\SoftwareProtectionPlatform",
         ] {
             assert!(is_excluded(key), "{key} must not be walked");
         }

@@ -8872,40 +8872,6 @@
       ]
     },
     {
-      "key": "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\SoftwareProtectionPlatform",
-      "view": "64",
-      "kind": "modified",
-      "before": {
-        "key": "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\SoftwareProtectionPlatform",
-        "view": "64",
-        "values": [
-          {
-            "name": "ServiceSessionId",
-            "kind": "binary",
-            "data": "%ID%"
-          }
-        ]
-      },
-      "after": {
-        "key": "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\SoftwareProtectionPlatform",
-        "view": "64",
-        "values": [
-          {
-            "name": "ServiceSessionId",
-            "kind": "binary",
-            "data": "%ID%"
-          }
-        ]
-      },
-      "fields": [
-        {
-          "field": "ServiceSessionId",
-          "before": "binary:%ID%",
-          "after": "binary:%ID%"
-        }
-      ]
-    },
-    {
       "key": "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Superfetch\\PfAp",
       "view": "64",
       "kind": "modified",
@@ -13132,7 +13098,7 @@
     "Riot Games, Inc.": 7
   },
   "refiltered": {
-    "registry_records": 100,
+    "registry_records": 102,
     "registry_values": 8,
     "access_denied": 17,
     "emptied_keys": 0,

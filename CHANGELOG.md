@@ -280,14 +280,18 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
   history: camera, microphone and screen-capture use by program, notification
   counts, the last full-screen program and the last to open a game controller,
   Windows Backup's application lists, resolved display strings and the cache of
-  signed-in identities. Values holding Steam's sign-in name and account
-  identifier are refused. The differ now applies the directory exclusions to
+  signed-in identities; nor Windows' licensing state, which keeps the product
+  key in plain text. Values holding Steam's sign-in name and account identifier
+  are refused. The differ now applies the directory exclusions to
   older snapshots as it does the registry policy, and `refilter` applies them
   to an existing diff. The committed diffs held the Claude app's session state
   — folder names that are session identifiers — token-cache entries,
   crash-report names, and the key of the identity cache, which is named after
   an identity's identifier; they were refiltered, each draft's count of files
-  it could not attribute fell, and nothing else in the drafts changed.
+  it could not attribute fell, and nothing else in the drafts changed. One
+  held a licensing session identifier, already masked; its history holds the
+  product key's value, which is the published generic key for the edition and
+  activates nothing.
   `redact --also-id` masks an identifier a review finds that no rule knows.
 - `observe refilter` recomputed every registry modification, so an identifier
   `redact` had masked on both sides of a change read as unchanged and was
