@@ -56,7 +56,7 @@
     "installed": {
       "services": {
         "EAAntiCheatService": "win32_own_process, demand, LocalSystem, \"C:/Program Files/EA/AC/eaanticheat.gameservice.exe\"",
-        "EAAntiCheat": "file-system minifilter, demand, system32/drivers/eaanticheat.sys, altitude 363250; a registry-only driver that SCM answers 1060 for"
+        "EAAntiCheat": "file-system minifilter, demand, system32/drivers/eaanticheat.sys, altitude 363250; written straight into the registry: SCM answered 1060 for it in the install boot and listed it after the next restart"
       },
       "registry_keys": [
         "HKLM/SOFTWARE/EA/AC (both WOW64 views)",
@@ -105,7 +105,6 @@
   },
   "still_to_do": [
     "Residue half: uninstall FC 26 through Steam, snapshot with the pinned collector, diff.",
-    "After a restart, ask SCM about EAAntiCheat again.",
     "signtool verify /v /pa output for every binary, in the PR that adds the catalog entry."
   ]
 }

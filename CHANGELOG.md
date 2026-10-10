@@ -201,15 +201,17 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
   the first observed from a clean baseline rather than reconstructed. Steam's
   install script for EA SPORTS FC 26 installs it at the game's first launch and
   is wired to run its uninstaller when the game goes. Its driver is a
-  file-system minifilter written straight into the registry: SCM answers 1060
-  for it, and its image is absent while no game runs. EA keeps a record of the
+  file-system minifilter written straight into the registry. SCM answered
+  1060 for it until the machine restarted, and its image is absent while no
+  game runs. EA keeps a record of the
   games that installed it under `HKLM\SOFTWARE\EA\AC\Installs`. The draft is
   scoped with `--only`, because the same publisher signs the EA app the window
   also installed, and a test pins it to its diff. The residue half is next.
 - `docs/05` §"Not SCM alone": a driver whose key was written without SCM is
-  invisible to `EnumServicesStatusExW`, so detection reads the `Services` key as
-  well, removal cannot go through `DeleteService`, and a missing image is not
-  evidence of removal. How Stage 3 removes one is open in `docs/06`. And a
+  invisible to `EnumServicesStatusExW`: a complete key until the next boot, an
+  incomplete one for good. So detection reads the `Services` key as well,
+  removal cannot go through `DeleteService`, and a missing image is not evidence
+  of removal. How Stage 3 removes one is open in `docs/06`. And a
   signature verification that errors is unknown, never `suspicious`: two of
   EA's files failed one under disk load and verify when idle.
 

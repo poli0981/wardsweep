@@ -170,13 +170,14 @@ baseline, whose own observation follows):
 
 | Driver | Its `Services` key | `sc query` | Image |
 |---|---|---|---|
-| EA AntiCheat's `EAAntiCheat`, a file-system minifilter | complete: type, start, error control, image, group, instance and altitude | error 1060, in the boot it was installed in | absent while no game runs |
-| Neverness To Everness's `PGameProtectDriver` | `ImagePath`, `Type` and `Start` only, none of the values `CreateService` always writes | error 1060 | on a drive the machine no longer has |
+| EA AntiCheat's `EAAntiCheat`, a file-system minifilter | complete: type, start, error control, image, group, instance and altitude | error 1060 in the boot it was installed in; listed after a restart | absent while no game runs |
+| Neverness To Everness's `PGameProtectDriver` | `ImagePath`, `Type` and `Start` only, none of the values `CreateService` always writes | error 1060, before and after a restart | on a drive the machine no longer has |
 
 Both keys were written into `HKLM\SYSTEM\CurrentControlSet\Services` without
 going through SCM. The filter manager and `NtLoadDriver` read a key there
-directly and need no SCM record, so such a driver can load, and
-`EnumServicesStatusExW` never names it.
+directly and need no SCM record, so such a driver can load. SCM reads the key
+only at boot. So EA's complete key was missing from `EnumServicesStatusExW` until
+the machine restarted. NTE's incomplete one is never listed at all.
 
 So:
 

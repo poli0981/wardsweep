@@ -61,24 +61,31 @@ a signer for two of the four. The other two are larger than the harness's
 128 MiB hashing cap, so their signatures were not checked, which is not the
 same as unsigned. Checked by hand with `Get-AuthenticodeSignature`: valid.
 
-### The driver is not in SCM, and its image is not on disk
+### The driver was not in SCM, and its image is not on disk
 
-- **SCM does not know it.** `EAAntiCheat` is a complete service key — type,
-  start, error control, image, group, a minifilter instance — and the service
-  control manager answers 1060, "does not exist as an installed service". It
-  answered that in the boot the anti-cheat was installed in (checked
-  2026-10-09, read-only). The installer wrote the key straight into the
-  registry, so the snapshot's services domain does not list the driver and only
-  the registry walk sees it. That is how the first draft missed it, and why
-  `suggest` now looks for registry-only drivers (#50).
+- **SCM did not know it until the next boot.** `EAAntiCheat` is a complete
+  service key — type, start, error control, image, group, a minifilter
+  instance — and in the boot the anti-cheat was installed in, the service
+  control manager answered 1060, "does not exist as an installed service"
+  (checked 2026-10-09, read-only). The installer wrote the key straight into
+  the registry, so the snapshot's services domain does not list the driver and
+  only the registry walk sees it. That is how the first draft missed it, and why
+  `suggest` now looks for registry-only drivers (#50). After the machine
+  restarted, SCM listed it — `FILE_SYSTEM_DRIVER`, `DEMAND_START`, stopped
+  (checked 2026-10-10): it reads the key at boot.
 - **Its image does not exist.** `system32\drivers\eaanticheat.sys` was absent
   from both snapshots and is absent now, with the game closed, although the key
   names it and the walk covers `System32\drivers`.
 
 **Inference, not observed:** the service writes the image when a game starts
 and loads it through the filter manager, which reads the service key itself and
-needs no SCM record. Two things would test it: the image while a game runs, and
-whether SCM lists `EAAntiCheat` after a restart.
+needs no SCM record. The image while a game runs would test it.
+
+The same cycle's baseline has a driver that SCM does not list even after a
+restart: Neverness To Everness's `PGameProtectDriver`, whose key lacks the
+values `CreateService` always writes. SCM still answers 1060 for it on
+2026-10-10. A complete key written past SCM is invisible to it until the next
+boot. An incomplete one never shows up at all.
 
 What it means for WardSweep (`docs/05`):
 
@@ -176,6 +183,5 @@ pins the draft to `install.json`.
 1. **The residue half.** Uninstall FC 26 through Steam, so the install script's
    uninstall step runs. Then take a snapshot with the pinned collector and diff
    it against the snapshot before it.
-2. After a restart, ask SCM about `EAAntiCheat` again.
-3. In the PR that adds the catalog entry, paste `signtool verify /v /pa` for
+2. In the PR that adds the catalog entry, paste `signtool verify /v /pa` for
    every binary (`docs/16` checklist).

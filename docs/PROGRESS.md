@@ -207,7 +207,6 @@ EA AntiCheat's install footprint, committed. Next:
   Snapshot `03`; the diff from `02` is EA AntiCheat's residue.
 - Uninstall NTE, and ACE through its own uninstaller. Snapshot `04`; the diff
   from `03` is ACE's residue.
-- After the cycle, restart and ask SCM about `EAAntiCheat` again.
 
 **Earlier plan for ACE, which the cycle above replaces:**
 The uninstall half is done and committed at
