@@ -1820,8 +1820,8 @@ pub(crate) mod tests {
         let diff = compare(&before, &after, &NoiseFilter::permissive()).unwrap();
 
         let text = serde_json::to_string(&diff).unwrap();
-        for secret in ["someone@example.invalid", "host-before", "host-after"] {
-            assert!(!text.contains(secret), "{secret} reached the diff: {text}");
+        for needle in ["someone@example.invalid", "host-before", "host-after"] {
+            assert!(!text.contains(needle), "{needle} reached the diff: {text}");
         }
         // The footprint and the ordinary change both survive.
         assert_eq!(diff.registry.len(), 2, "{:?}", diff.registry);
@@ -1882,8 +1882,8 @@ pub(crate) mod tests {
         let report = refilter(&mut diff, &Policy::current());
 
         let text = serde_json::to_string(&diff).unwrap();
-        for secret in ["someone@example.invalid", "host-before", "host-after"] {
-            assert!(!text.contains(secret), "{secret} survived: {text}");
+        for needle in ["someone@example.invalid", "host-before", "host-after"] {
+            assert!(!text.contains(needle), "{needle} survived: {text}");
         }
         assert_eq!(diff.registry.len(), 1);
         assert_eq!(diff.registry[0].key, r"HKLM\SOFTWARE\Riot Vanguard");
@@ -1955,8 +1955,8 @@ pub(crate) mod tests {
         let diff = compare(&before, &after, &NoiseFilter::permissive()).unwrap();
 
         let text = serde_json::to_string(&diff).unwrap();
-        for secret in ["7654321", "0123456789abcdef"] {
-            assert!(!text.contains(secret), "{secret} reached the diff: {text}");
+        for needle in ["7654321", "0123456789abcdef"] {
+            assert!(!text.contains(needle), "{needle} reached the diff: {text}");
         }
         // The footprint survives.
         assert_eq!(diff.files.len(), 1);
@@ -2018,8 +2018,8 @@ pub(crate) mod tests {
         let report = refilter(&mut diff, &Policy::current());
 
         let text = serde_json::to_string(&diff).unwrap();
-        for secret in ["7654321", "0123456789abcdef", "Valve Corp."] {
-            assert!(!text.contains(secret), "{secret} survived: {text}");
+        for needle in ["7654321", "0123456789abcdef", "Valve Corp."] {
+            assert!(!text.contains(needle), "{needle} survived: {text}");
         }
         assert_eq!(diff.files.len(), 1);
         assert!(diff.suppressed_files.is_empty());
