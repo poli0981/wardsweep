@@ -271,6 +271,53 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
   identifiers, Edge's preference hashes and session identifiers — and were
   refiltered and redacted again; no authentication cookie or sync-store record
   had been committed, and both committed drafts rebuild unchanged.
+- The same diff showed the filesystem's share: the Steam account's identifier
+  in folder and file names, Windows Timeline's store, recent items and jump
+  lists, crash reports, the Microsoft account's sign-in records and token cache,
+  EA's avatar cache and the Claude desktop app's session state. The walk no
+  longer reads them, nor Steam's per-account list of library games under
+  `HKCU\SOFTWARE\Valve\Steam\Apps`, nor more of the registry's activity
+  history: camera, microphone and screen-capture use by program, notification
+  counts, the last full-screen program and the last to open a game controller,
+  Windows Backup's application lists, Start's record of recently added
+  shortcuts, resolved display strings and the cache of signed-in identities; nor Windows' licensing state, which keeps the product
+  key in plain text. Values holding Steam's sign-in name and account identifier
+  are refused. The differ now applies the directory exclusions to
+  older snapshots as it does the registry policy, and `refilter` applies them
+  to an existing diff. The committed diffs held the Claude app's session state
+  — folder names that are session identifiers — token-cache entries,
+  crash-report names, and the key of the identity cache, which is named after
+  an identity's identifier; they were refiltered, each draft's count of files
+  it could not attribute fell, and nothing else in the drafts changed. One
+  held a licensing session identifier, already masked; its history holds the
+  product key's value, which is the published generic key for the edition and
+  activates nothing.
+  `redact --also-id` masks an identifier a review finds that no rule knows.
+- `observe refilter` recomputed every registry modification, so an identifier
+  `redact` had masked on both sides of a change read as unchanged and was
+  dropped without being counted. A change the policy leaves alone is now kept
+  as written. No committed diff was affected: each was refiltered before it was
+  redacted.
+- `redact` read an image's display-scale suffix — `arrow-down@2x.png`, of which
+  the EA app ships a row — as an e-mail address, and masked the file name. A
+  scale suffix on an image is no longer an address. No committed diff held one.
+- The walk read Windows' key stores, against Safety Gate G3. A machine key's
+  file name ends in the machine's MachineGuid, and `Crypto\PCPKSP` holds the
+  TPM's endorsement and attestation keys. `Microsoft\Crypto` and DPAPI's
+  `Microsoft\Protect` are no longer walked. No committed diff held a machine
+  key's name. The three held the TPM key folders' paths as unreadable items,
+  identifying nothing, and are refiltered. The registry walk also leaves out
+  Store applications' file-picker history, packaged applications' resolved
+  strings, and Gaming Services' shader bindings, which list the Steam library.
+  The filesystem walk leaves out the Claude command line's caches, Visual Studio
+  Code's edit history and chat sessions, and Proton Mail Bridge's mail store.
+- `redact` could not see a name inside a registry binary. The EA AntiCheat
+  install diff carried the account name 72 times in shell links that a Store
+  application's storage table keeps, written as hex, and the report said no
+  name remained. A hex value is now decoded and searched for each name as ASCII
+  and as UTF-16, a name found there is replaced in the same encoding, and what
+  is left is counted. The storage table is no longer walked. No committed diff
+  held a name in a binary value.
 - `observe diff` compared services whether or not both snapshots captured them,
   collapsed two per-user service instances into one record and dropped the
   other, and cloned every record of both snapshots to build its indexes.

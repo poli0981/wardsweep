@@ -21,9 +21,11 @@
 
 use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet};
+use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 
+use crate::collect::filesystem;
 use crate::model::{
     Coverage, Domain, FileRecord, OLDEST_SNAPSHOT_FORMAT, RegistryKeyRef, RegistryRecord,
     SNAPSHOT_FORMAT_VERSION, ServiceRecord, Snapshot,
@@ -162,10 +164,11 @@ pub struct SuppressedFile {
 
 /// What this build's privacy policy removed before anything was compared.
 ///
-/// See [`crate::policy`]. Every count is of something an older build read and
-/// this one refuses to keep, so a non-zero value means at least one snapshot
-/// predates a rule — and that the rule, not the snapshot, decided what the diff
-/// may say.
+/// See [`crate::policy`], and for files and directories the walk's exclusions
+/// in [`crate::collect::filesystem`]. Every count is of something an older
+/// build read and this one refuses to keep, so a non-zero value means at least
+/// one snapshot predates a rule — and that the rule, not the snapshot, decided
+/// what the diff may say.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Refiltered {
@@ -176,12 +179,27 @@ pub struct Refiltered {
     /// Values dropped from registry records that were otherwise kept.
     #[serde(default)]
     pub registry_values: usize,
-    /// `access_denied` items that named an excluded key.
+    /// `access_denied` items that named an excluded key or path.
     #[serde(default)]
     pub access_denied: usize,
     /// Emptied keys dropped because the key itself is excluded.
     #[serde(default)]
     pub emptied_keys: usize,
+    /// File records dropped because their path is excluded: from both
+    /// snapshots when comparing, from both sides of each change when
+    /// refiltering. Absent when nothing was, so a diff that dropped no file
+    /// still reads in a build that predates the count.
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub files: usize,
+    /// Emptied directories dropped because the directory itself is excluded.
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub emptied_directories: usize,
+}
+
+/// For the counts that are written only when something was counted.
+#[allow(clippy::trivially_copy_pass_by_ref)] // serde hands the field over by reference
+fn is_zero(count: &usize) -> bool {
+    *count == 0
 }
 
 impl Refiltered {
@@ -197,6 +215,8 @@ impl Refiltered {
         self.registry_values += other.registry_values;
         self.access_denied += other.access_denied;
         self.emptied_keys += other.emptied_keys;
+        self.files += other.files;
+        self.emptied_directories += other.emptied_directories;
     }
 }
 
@@ -449,7 +469,7 @@ pub fn compare(
     // file as removed, which is an artefact of the collection rather than
     // anything that happened on the machine.
     let (files, suppressed_files) = if coverage.covers(crate::model::Domain::Filesystem) {
-        compare_files(&before.files, &after.files, filter)
+        compare_files(&before.files, &after.files, filter, &mut refiltered)
     } else {
         (Vec::new(), Vec::new())
     };
@@ -467,15 +487,9 @@ pub fn compare(
 
     // Directories are part of the filesystem domain, so they answer to the same
     // coverage rule the file list does. Empty keys likewise to the registry's.
-    let emptied_directories = emptied_directories(before, after, &coverage);
+    let emptied_directories = emptied_directories(before, after, &coverage, &mut refiltered);
     let emptied_keys = emptied_keys(before, after, &coverage, &mut refiltered);
-
-    let mut signers: BTreeMap<String, usize> = BTreeMap::new();
-    for change in &files {
-        if let Some(signer) = &change.signer {
-            *signers.entry(signer.clone()).or_insert(0) += 1;
-        }
-    }
+    let signers = signer_counts(&files);
 
     Ok(Diff {
         format_version: DIFF_FORMAT_VERSION,
@@ -556,12 +570,7 @@ pub fn reversed(diff: &Diff) -> Diff {
     }
 
     let files: Vec<FileChange> = diff.files.iter().map(file).collect();
-    let mut signers: BTreeMap<String, usize> = BTreeMap::new();
-    for change in &files {
-        if let Some(signer) = &change.signer {
-            *signers.entry(signer.clone()).or_insert(0) += 1;
-        }
-    }
+    let signers = signer_counts(&files);
 
     Diff {
         format_version: diff.format_version,
@@ -613,8 +622,8 @@ pub fn reversed(diff: &Diff) -> Diff {
 /// Apply this build's privacy policy to a diff that already exists.
 ///
 /// The same rule [`compare`] applies to snapshots, for a diff produced before
-/// the rule existed: drop every change under an excluded key, drop refused
-/// values from the records that remain, and recompute what is left — a
+/// the rule existed: drop every change under an excluded key or path, drop
+/// refused values from the records that remain, and recompute what is left — a
 /// modification whose only differences were refused values is no longer a
 /// change at all. This is what makes cleaning a committed diff reproducible from
 /// committed code rather than from a script nobody kept.
@@ -632,9 +641,24 @@ pub fn refilter(diff: &mut Diff, policy: &Policy) -> Refiltered {
         keys.retain(|key| !is_excluded(&key.key));
         report.emptied_keys = listed - keys.len();
     }
+    if let Some(directories) = diff.emptied_directories.as_mut() {
+        let listed = directories.len();
+        directories.retain(|directory| !filesystem::is_excluded(Path::new(directory)));
+        report.emptied_directories = listed - directories.len();
+    }
+    report.files = drop_excluded_files(diff);
 
+    let upgrading = diff.format_version != DIFF_FORMAT_VERSION;
     let mut kept = Vec::with_capacity(diff.registry.len());
     for change in std::mem::take(&mut diff.registry) {
+        // A change the policy has nothing to say about stays as written, unless
+        // the format is being upgraded. Recomputing it would compare what
+        // `redact` left behind — an identifier masked on both sides reads as
+        // unchanged — and drop evidence without counting it.
+        if !upgrading && untouched(policy, &change) {
+            kept.push(change);
+            continue;
+        }
         let before = admit_owned(policy, change.before, &mut report);
         let after = admit_owned(policy, change.after, &mut report);
         let rebuilt = match (before, after) {
@@ -666,6 +690,14 @@ pub fn refilter(diff: &mut Diff, policy: &Policy) -> Refiltered {
     report
 }
 
+/// Whether the policy keeps both sides of a registry change exactly as written.
+fn untouched(policy: &Policy, change: &RegistryChange) -> bool {
+    [&change.before, &change.after]
+        .into_iter()
+        .flatten()
+        .all(|record| matches!(policy.admit(record).record, Some(Cow::Borrowed(_))))
+}
+
 /// One side of a registry change, as the policy allows it.
 fn admit_owned(
     policy: &Policy,
@@ -686,15 +718,48 @@ fn admit_owned(
     Some(replacement.unwrap_or(record))
 }
 
-/// Remove `access_denied` items that name an excluded registry key.
+/// Remove file changes, kept or suppressed, whose path is excluded, and recount
+/// the signers from what is left. Returns the records the dropped changes held.
+fn drop_excluded_files(diff: &mut Diff) -> usize {
+    let mut dropped = 0;
+    let mut keep = |change: &FileChange| {
+        let excluded = filesystem::is_excluded(Path::new(&change.path));
+        if excluded {
+            dropped += usize::from(change.before.is_some()) + usize::from(change.after.is_some());
+        }
+        !excluded
+    };
+    diff.files.retain(&mut keep);
+    diff.suppressed_files.retain(|entry| keep(&entry.change));
+    if dropped > 0 {
+        diff.signers = signer_counts(&diff.files);
+    }
+    dropped
+}
+
+/// Signer common names among file changes, with counts.
+pub(crate) fn signer_counts(files: &[FileChange]) -> BTreeMap<String, usize> {
+    let mut signers = BTreeMap::new();
+    for change in files {
+        if let Some(signer) = &change.signer {
+            *signers.entry(signer.clone()).or_insert(0) += 1;
+        }
+    }
+    signers
+}
+
+/// Remove `access_denied` items that name an excluded registry key or path.
 ///
 /// The item itself can be the identity: the Microsoft account cache names its
-/// keys after the account's e-mail address, and a key that could not be opened
-/// is recorded by its full path.
+/// keys after the account's e-mail address, Windows Timeline names its folder
+/// after the account's identifier, and an item that could not be read is
+/// recorded by its full path.
 fn drop_excluded_denials(coverage: &mut Coverage) -> usize {
     let before = coverage.access_denied.len();
-    coverage.access_denied.retain(|item| {
-        !(item.domain == Domain::Registry && crate::policy::excludes_denied_item(&item.item))
+    coverage.access_denied.retain(|item| match item.domain {
+        Domain::Registry => !crate::policy::excludes_denied_item(&item.item),
+        Domain::Filesystem => !filesystem::is_excluded(Path::new(&item.item)),
+        _ => true,
     });
     before - coverage.access_denied.len()
 }
@@ -705,25 +770,26 @@ fn drop_excluded_denials(coverage: &mut Coverage) -> usize {
 /// directories. Comparing a snapshot that recorded them against one that did
 /// not would report every empty directory on the machine as freshly emptied —
 /// the same class of artefact `filesystem_policy_changed` exists to catch, and
-/// just as convincing to a reader who does not know to look.
+/// just as convincing to a reader who does not know to look. A directory the
+/// current exclusions cover is dropped and counted, as a file would be.
 fn emptied_directories(
     before: &Snapshot,
     after: &Snapshot,
     coverage: &Coverage,
+    refiltered: &mut Refiltered,
 ) -> Option<Vec<String>> {
     if !coverage.covers(crate::model::Domain::Filesystem) {
         return None;
     }
     let was: BTreeSet<&String> = before.file_empty_directories.as_ref()?.iter().collect();
-    Some(
-        after
-            .file_empty_directories
-            .as_ref()?
-            .iter()
-            .filter(|directory| !was.contains(directory))
-            .cloned()
-            .collect(),
-    )
+    let (excluded, kept): (Vec<&String>, Vec<&String>) = after
+        .file_empty_directories
+        .as_ref()?
+        .iter()
+        .filter(|directory| !was.contains(directory))
+        .partition(|directory| filesystem::is_excluded(Path::new(directory)));
+    refiltered.emptied_directories += excluded.len();
+    Some(kept.into_iter().cloned().collect())
 }
 
 /// Registry keys that hold no value now and held one before, or did not exist.
@@ -919,15 +985,26 @@ fn compare_files<'a>(
     before: &'a [FileRecord],
     after: &'a [FileRecord],
     filter: &NoiseFilter,
+    refiltered: &mut Refiltered,
 ) -> (Vec<FileChange>, Vec<SuppressedFile>) {
     // By reference. A real snapshot holds three quarters of a million file
     // records, and cloning both sides into the index doubled the memory the
     // comparison needed in order to copy the few that changed.
-    let index = |records: &'a [FileRecord]| -> BTreeMap<String, &'a FileRecord> {
-        records
-            .iter()
-            .map(|record| (record.path.to_ascii_lowercase(), record))
-            .collect()
+    //
+    // And through this build's exclusions, which an older collector did not
+    // apply: a directory now known to hold an account's identifier or its
+    // activity history must not reach a diff because a snapshot predates the
+    // rule.
+    let mut index = |records: &'a [FileRecord]| -> BTreeMap<String, &'a FileRecord> {
+        let mut indexed = BTreeMap::new();
+        for record in records {
+            if filesystem::is_excluded(Path::new(&record.path)) {
+                refiltered.files += 1;
+            } else {
+                indexed.insert(record.path.to_ascii_lowercase(), record);
+            }
+        }
+        indexed
     };
 
     let before_index = index(before);
@@ -1743,8 +1820,8 @@ pub(crate) mod tests {
         let diff = compare(&before, &after, &NoiseFilter::permissive()).unwrap();
 
         let text = serde_json::to_string(&diff).unwrap();
-        for secret in ["someone@example.invalid", "host-before", "host-after"] {
-            assert!(!text.contains(secret), "{secret} reached the diff: {text}");
+        for needle in ["someone@example.invalid", "host-before", "host-after"] {
+            assert!(!text.contains(needle), "{needle} reached the diff: {text}");
         }
         // The footprint and the ordinary change both survive.
         assert_eq!(diff.registry.len(), 2, "{:?}", diff.registry);
@@ -1758,7 +1835,7 @@ pub(crate) mod tests {
                 registry_records: 2,
                 registry_values: 2,
                 access_denied: 1,
-                emptied_keys: 0,
+                ..Refiltered::default()
             }
         );
     }
@@ -1805,8 +1882,8 @@ pub(crate) mod tests {
         let report = refilter(&mut diff, &Policy::current());
 
         let text = serde_json::to_string(&diff).unwrap();
-        for secret in ["someone@example.invalid", "host-before", "host-after"] {
-            assert!(!text.contains(secret), "{secret} survived: {text}");
+        for needle in ["someone@example.invalid", "host-before", "host-after"] {
+            assert!(!text.contains(needle), "{needle} survived: {text}");
         }
         assert_eq!(diff.registry.len(), 1);
         assert_eq!(diff.registry[0].key, r"HKLM\SOFTWARE\Riot Vanguard");
@@ -1816,7 +1893,7 @@ pub(crate) mod tests {
                 registry_records: 2,
                 registry_values: 2,
                 access_denied: 1,
-                emptied_keys: 0,
+                ..Refiltered::default()
             }
         );
         assert_eq!(
@@ -1826,6 +1903,177 @@ pub(crate) mod tests {
 
         // Running it again finds nothing more, so it is safe to repeat.
         assert!(refilter(&mut diff, &Policy::current()).is_empty());
+    }
+
+    /// A Steam account's own folder, named after the account's identifier.
+    const STEAM_ACCOUNT_FILE: &str =
+        r"C:\Program Files (x86)\Steam\userdata\7654321\config\localconfig.vdf";
+    const TIMELINE_FOLDER: &str =
+        r"C:\Users\x\AppData\Local\ConnectedDevicesPlatform\0123456789abcdef";
+    const EA_LAUNCHER: &str = r"C:\Program Files\EA\AC\EAAntiCheat.GameServiceLauncher.exe";
+
+    fn file_record(path: &str, size: u64) -> FileRecord {
+        FileRecord {
+            path: path.to_owned(),
+            size,
+            modified_utc: String::new(),
+            sha256: None,
+            signer: None,
+            not_hashed: None,
+        }
+    }
+
+    #[test]
+    fn files_this_build_excludes_never_reach_a_diff_of_older_snapshots() {
+        // Both snapshots predate the exclusions, so both walked the Steam
+        // account's folder and Windows Timeline's, each named after an
+        // account identifier. Neither may reach the diff.
+        let mut before = snapshot(vec![]);
+        let mut after = snapshot(vec![]);
+        for side in [&mut before, &mut after] {
+            side.coverage.captured.push(Domain::Filesystem);
+            side.file_empty_directories = Some(Vec::new());
+        }
+        before.files = vec![file_record(STEAM_ACCOUNT_FILE, 1)];
+        after.files = vec![
+            file_record(STEAM_ACCOUNT_FILE, 2),
+            file_record(EA_LAUNCHER, 1),
+        ];
+        after.file_empty_directories = Some(vec![
+            r"C:\Program Files (x86)\Steam\userdata\7654321\760".to_owned(),
+            r"C:\Program Files\EA\AC\Logs".to_owned(),
+        ]);
+        after
+            .coverage
+            .access_denied
+            .push(crate::model::AccessDenied {
+                domain: Domain::Filesystem,
+                item: TIMELINE_FOLDER.to_owned(),
+                reason: "Access is denied. (os error 5)".to_owned(),
+            });
+
+        let diff = compare(&before, &after, &NoiseFilter::permissive()).unwrap();
+
+        let text = serde_json::to_string(&diff).unwrap();
+        for needle in ["7654321", "0123456789abcdef"] {
+            assert!(!text.contains(needle), "{needle} reached the diff: {text}");
+        }
+        // The footprint survives.
+        assert_eq!(diff.files.len(), 1);
+        assert_eq!(diff.files[0].path, EA_LAUNCHER);
+        assert_eq!(
+            diff.emptied_directories,
+            Some(vec![r"C:\Program Files\EA\AC\Logs".to_owned()])
+        );
+        // And the removal is counted: a record from each snapshot, the emptied
+        // directory, the unreadable folder.
+        assert_eq!(
+            diff.refiltered,
+            Refiltered {
+                access_denied: 1,
+                files: 2,
+                emptied_directories: 1,
+                ..Refiltered::default()
+            }
+        );
+    }
+
+    #[test]
+    fn refiltering_a_written_diff_drops_excluded_files_and_recounts_signers() {
+        let mut diff = diff_with_added_files(&[EA_LAUNCHER]);
+        // What a build without the exclusions wrote: a kept change, a
+        // suppressed one and an emptied directory inside the Steam account's
+        // folder, and a signer counted for the kept one.
+        let mut account = file_record(STEAM_ACCOUNT_FILE, 2);
+        account.signer = Some("Valve Corp.".to_owned());
+        diff.files.push(FileChange {
+            path: STEAM_ACCOUNT_FILE.to_owned(),
+            kind: ChangeKind::Modified,
+            signer: account.signer.clone(),
+            is_driver_image: false,
+            before: Some(file_record(STEAM_ACCOUNT_FILE, 1)),
+            after: Some(account),
+            fields: Vec::new(),
+        });
+        diff.signers.insert("Valve Corp.".to_owned(), 1);
+        diff.suppressed_files.push(SuppressedFile {
+            rule: "test".to_owned(),
+            change: FileChange {
+                path: format!("{TIMELINE_FOLDER}\\ActivitiesCache.db"),
+                kind: ChangeKind::Added,
+                signer: None,
+                is_driver_image: false,
+                before: None,
+                after: Some(file_record(
+                    &format!("{TIMELINE_FOLDER}\\ActivitiesCache.db"),
+                    1,
+                )),
+                fields: Vec::new(),
+            },
+        });
+        diff.emptied_directories = Some(vec![
+            r"C:\Program Files (x86)\Steam\userdata\7654321\760".to_owned(),
+        ]);
+
+        let report = refilter(&mut diff, &Policy::current());
+
+        let text = serde_json::to_string(&diff).unwrap();
+        for needle in ["7654321", "0123456789abcdef", "Valve Corp."] {
+            assert!(!text.contains(needle), "{needle} survived: {text}");
+        }
+        assert_eq!(diff.files.len(), 1);
+        assert!(diff.suppressed_files.is_empty());
+        assert_eq!(diff.emptied_directories, Some(Vec::new()));
+        assert_eq!(
+            report,
+            Refiltered {
+                files: 3,
+                emptied_directories: 1,
+                ..Refiltered::default()
+            }
+        );
+        assert_eq!(diff.refiltered, report);
+        assert!(refilter(&mut diff, &Policy::current()).is_empty());
+    }
+
+    #[test]
+    fn refiltering_a_redacted_diff_keeps_a_masked_identifier_change() {
+        // `redact` masks an identifier on both sides of a change, so the two
+        // sides read the same afterwards. The change still happened, and a
+        // refilter with nothing to remove must leave the diff as it found it.
+        const KEY: &str = r"HKCU\SOFTWARE\EA\AC";
+        let mut diff = compare(
+            &registry_snapshot(vec![record(KEY, &[("LastSessionId", "a1"), ("Mode", "1")])]),
+            &registry_snapshot(vec![record(KEY, &[("LastSessionId", "b2"), ("Mode", "2")])]),
+            &NoiseFilter::permissive(),
+        )
+        .unwrap();
+        let mut document = serde_json::to_value(&diff).unwrap();
+        crate::redact::redact_document(&mut document, &crate::redact::Extra::default());
+        diff = serde_json::from_value(document).unwrap();
+        let redacted = serde_json::to_string(&diff).unwrap();
+        assert!(redacted.contains("sz:%ID%"), "{redacted}");
+
+        let report = refilter(&mut diff, &Policy::current());
+
+        assert!(report.is_empty(), "{report:?}");
+        assert_eq!(serde_json::to_string(&diff).unwrap(), redacted);
+        assert_eq!(diff.registry[0].fields.len(), 2);
+    }
+
+    #[test]
+    fn a_count_this_build_added_is_not_written_when_nothing_was_counted() {
+        // So a diff that dropped no file still reads in an older build, which
+        // refuses fields it does not know.
+        let counts = Refiltered {
+            registry_records: 1,
+            ..Refiltered::default()
+        };
+        let text = serde_json::to_string(&counts).unwrap();
+        assert!(!text.contains("files"), "{text}");
+        assert!(!text.contains("emptied_directories"), "{text}");
+        let read: Refiltered = serde_json::from_str(&text).unwrap();
+        assert_eq!(read, counts);
     }
 
     #[test]

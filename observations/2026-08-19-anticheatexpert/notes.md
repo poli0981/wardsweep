@@ -373,3 +373,23 @@ recorded either"). `observe refilter` removed 18 more registry records from
 per-machine telemetry identifiers — and `observe redact` masked 8 session
 identifiers as `%ID%`, keeping the value names. Nothing that names the
 anti-cheat changed, and `draft.toml` still rebuilds byte for byte.
+
+### Refiltered again on 2026-10-10
+
+The walk's exclusions grew the same way (`docs/16`, "Personal identity and
+activity history are not recorded either"), and the differ now applies them to
+existing diffs. `observe refilter` removed 36 file changes and seven unreadable
+items from `residue.json`:
+
+- the Claude desktop app's caches and session state, whose folder names are
+  session identifiers;
+- two entries of Windows' token cache;
+- the harness's own baseline snapshot;
+- two crash reports, named after the programs that crashed;
+- Windows' cache of signed-in identities, named after an identity's
+  identifier;
+- four paths to the TPM's key folders. They identify nothing, but Safety
+  Gate G3 says the walk should never have tried to read them.
+
+In `draft.toml` the count of added files the draft could not attribute fell
+from 15 to 1; nothing else in it changed.

@@ -100,6 +100,12 @@ const PERSONAL_IDENTITY_VALUE_NAMES: &[&str] = &[
     "registeredowner",
     "registeredorganization",
     "useremail",
+    // Steam's remembered sign-in name and the signed-in account's identifier,
+    // kept beside its own settings in `HKCU\SOFTWARE\Valve\Steam`, and the
+    // persona name some clients keep there too.
+    "autologinuser",
+    "activeuser",
+    "lastgamenameused",
 ];
 
 /// Whether a value's name marks it as personal identity.
@@ -141,6 +147,9 @@ pub const EXCLUDED_FRAGMENTS: &[&str] = &[
     "\\microsoft\\office\\common\\userinfo\\",
     // Names of every network the machine has joined.
     "\\networklist\\profiles\\",
+    // Windows' cache of the identities signed in to the machine, keyed by
+    // their security identifiers.
+    "\\microsoft\\identitystore\\",
     // --- Activity history --------------------------------------------------
     // Every program run, keyed by its path.
     "\\appcompatflags\\compatibility assistant\\",
@@ -163,6 +172,36 @@ pub const EXCLUDED_FRAGMENTS: &[&str] = &[
     // Background activity moderator: last-run time of every executable.
     "\\services\\bam\\state\\",
     "\\services\\dam\\state\\",
+    // Which programs used the camera, microphone, location or screen capture,
+    // and when.
+    "\\capabilityaccessmanager\\consentstore\\",
+    // How often each application raised a notification and when it last did;
+    // the last program to run full screen; the last program to open a game
+    // controller, and when.
+    "\\currentversion\\notifications\\settings\\",
+    "\\notifications\\quiethours\\",
+    "\\directinput\\mostrecentapplication\\",
+    // Windows Backup's lists of installed applications and pinned tiles, a
+    // Steam game's launch link among them.
+    "\\currentversion\\applistbackup\\",
+    // Start's rotating record of recently added shortcuts and the command
+    // lines they launch: a slot the observed install takes still names the
+    // program that held it before. Its machine-wide twin, `UFH\ARP`, names
+    // uninstall keys and is footprint: an uninstaller removes its own entry.
+    "\\currentversion\\ufh\\shc\\",
+    // Display strings resolved for the programs and items Explorer showed, and
+    // the same for packaged applications.
+    "\\local settings\\muicache\\",
+    "\\local settings\\mrtcache\\",
+    // The files and folders each Store application keeps lasting access to,
+    // and the folder each one's file picker last opened, as shell links and
+    // item lists that carry their full paths — the account name among them,
+    // in bytes no text rule reads.
+    "\\persistedstorageitemtable\\",
+    "\\persistedpickerdata\\",
+    // Gaming Services' shader bindings for the Steam games it has seen: the
+    // library again, by app id and executable.
+    "\\microsoft\\gamingservices\\",
     // Host Activity Manager: how long each application was in use, kept per
     // package under AppModel\SystemAppData\<package>\HAM and as a commit history.
     "\\ham\\",
@@ -174,11 +213,21 @@ pub const EXCLUDED_FRAGMENTS: &[&str] = &[
     // Studio's per-machine telemetry identifiers.
     "\\diagnostics\\diagtrack\\",
     "\\visualstudio\\telemetry\\",
+    // Steam's state for each application in the signed-in account's library —
+    // installed, running, updating — which lists the library. Named from its
+    // hive: the machine-wide key of the same shape is footprint, Steam's record
+    // of which install-script steps a game has run, and an anti-cheat
+    // installer is one of those steps.
+    "\\hkcu\\software\\valve\\steam\\apps\\",
     // --- Credentials ---------------------------------------------------------
     // Microsoft account authentication cookies.
     "\\microsoft\\authcookies\\",
     // The keyed hashes a Chromium browser keeps over its own preferences.
     "\\preferencemacs\\",
+    // Windows licensing state, which keeps the product key in plain text. On
+    // a machine activated by digital licence that is the edition's published
+    // generic key; on one activated by a retail or OEM key, it is the key.
+    "\\currentversion\\softwareprotectionplatform\\",
     // --- Volume without information ----------------------------------------
     // Component servicing manifests and the installer database are enormous
     // and describe Windows, not an install.
@@ -194,7 +243,9 @@ pub const EXCLUDED_FRAGMENTS: &[&str] = &[
 /// Whether a key path falls inside an excluded fragment.
 #[must_use]
 pub fn is_excluded(key: &str) -> bool {
-    let lowered = format!("{}\\", key.to_ascii_lowercase());
+    // A separator at each end, so a fragment can name a subtree from its hive
+    // as well as from anywhere below it.
+    let lowered = format!("\\{}\\", key.to_ascii_lowercase());
     EXCLUDED_FRAGMENTS
         .iter()
         .any(|fragment| lowered.contains(fragment))
@@ -395,6 +446,20 @@ mod tests {
             "HKCU\\SOFTWARE\\Chromium\\PreferenceMACs\\Default",
             "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Diagnostics\\DiagTrack\\HeartBeats\\Default",
             "HKCU\\SOFTWARE\\Microsoft\\VisualStudio\\Telemetry\\PersistentPropertyBag",
+            "HKCU\\SOFTWARE\\Valve\\Steam\\Apps\\1234",
+            "HKLM\\SOFTWARE\\Microsoft\\IdentityStore\\Cache\\S-1-5-21-%REDACTED%\\IdentityCache",
+            "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\microphone\\NonPackaged\\x",
+            "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Notifications\\Settings\\Some.App",
+            "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Notifications\\QuietHours",
+            "HKCU\\SOFTWARE\\Microsoft\\DirectInput\\MostRecentApplication",
+            "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\AppListBackup\\ListOfTaskBackedUpTiles_1",
+            "HKCU\\SOFTWARE\\Classes\\Local Settings\\MuiCache\\2ee\\52C64B7E",
+            "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\SoftwareProtectionPlatform",
+            "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\UFH\\SHC",
+            "HKCU\\SOFTWARE\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\SystemAppData\\Some.App_x\\PersistedStorageItemTable\\System\\x",
+            "HKCU\\SOFTWARE\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\SystemAppData\\Some.App_x\\PersistedPickerData\\Some.App_x!App",
+            "HKCU\\SOFTWARE\\Classes\\Local Settings\\MrtCache\\x",
+            "HKLM\\SOFTWARE\\Microsoft\\GamingServices",
         ] {
             assert!(is_excluded(key), "{key} must not be walked");
         }
@@ -415,6 +480,20 @@ mod tests {
             "HKLM\\SOFTWARE\\EA\\AC",
             "HKCU\\SOFTWARE\\EA\\AC",
             "HKLM\\SYSTEM\\CurrentControlSet\\Services\\EAAntiCheat",
+            // Where Steam records that a game's install script ran EA's
+            // anti-cheat installer, under both of the names the 32-bit view
+            // goes by. Only the per-account state beside it is excluded.
+            "HKLM\\SOFTWARE\\Valve\\Steam\\Apps\\3405690",
+            "HKLM\\SOFTWARE\\WOW6432Node\\Valve\\Steam\\Apps\\3405690",
+            "HKCU\\SOFTWARE\\Valve\\Steam",
+            // A game's own controller settings are left behind when it goes,
+            // beside the record of the last program to open a controller.
+            "HKCU\\SOFTWARE\\Microsoft\\DirectInput\\FC26.EXE6A6AC0701B12BB70",
+            // Windows' notification state data, not a per-application record.
+            "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Notifications\\Data",
+            // Where an installer's uninstall key is recorded for Start, which
+            // Vanguard's uninstaller removes along with its own key.
+            "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\UFH\\ARP",
         ] {
             assert!(!is_excluded(key), "{key} is footprint and must be walked");
         }
@@ -520,6 +599,13 @@ mod tests {
             policy.refusal("registeredOwner", "x"),
             Some(Refusal::PersonalIdentity)
         );
+        for steam in ["AutoLoginUser", "ActiveUser", "LastGameNameUsed"] {
+            assert_eq!(
+                policy.refusal(steam, "x"),
+                Some(Refusal::PersonalIdentity),
+                "{steam}"
+            );
+        }
         // Exact, not substring: a value that merely mentions a host is footprint.
         assert_eq!(policy.refusal("HostNameResolutionTimeout", "5"), None);
     }

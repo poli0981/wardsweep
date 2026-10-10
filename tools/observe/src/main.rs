@@ -176,6 +176,13 @@ enum Command {
         /// name anyone to learn from.
         #[arg(long = "also-name", value_name = "NAME")]
         also_names: Vec<String>,
+        /// An identifier to mask as `%ID%` wherever it stands on its own.
+        /// Repeatable.
+        ///
+        /// For what a review finds that no rule knows: an account number in a
+        /// game's file name, a folder named after a hash of one.
+        #[arg(long = "also-id", value_name = "TEXT")]
+        also_ids: Vec<String>,
     },
 }
 
@@ -221,7 +228,8 @@ fn run(command: &Command) -> Result<u8> {
             input,
             output,
             also_names,
-        } => run_redact(input, output, also_names),
+            also_ids,
+        } => run_redact(input, output, also_names, also_ids),
     }
 }
 
@@ -336,10 +344,15 @@ fn report_refiltered(report: &diff::Refiltered) {
         return;
     }
     eprintln!(
-        "  removed by this build's privacy policy (identity, hardware identifiers, activity \
-         history): {} registry record(s), {} value(s), {} unreadable-item record(s), {} empty \
-         key(s)",
-        report.registry_records, report.registry_values, report.access_denied, report.emptied_keys
+        "  removed by this build's privacy policy and walk exclusions (identity, credentials, \
+         hardware identifiers, activity history): {} registry record(s), {} value(s), {} \
+         unreadable-item record(s), {} empty key(s), {} file record(s), {} empty director(ies)",
+        report.registry_records,
+        report.registry_values,
+        report.access_denied,
+        report.emptied_keys,
+        report.files,
+        report.emptied_directories
     );
 }
 
@@ -411,7 +424,12 @@ fn run_suggest(
     Ok(exit::SUCCESS)
 }
 
-fn run_redact(input: &PathBuf, output: &PathBuf, also_names: &[String]) -> Result<u8> {
+fn run_redact(
+    input: &PathBuf,
+    output: &PathBuf,
+    also_names: &[String],
+    also_ids: &[String],
+) -> Result<u8> {
     let source =
         std::fs::read_to_string(input).with_context(|| format!("reading {}", input.display()))?;
     let mut document: serde_json::Value =
@@ -432,6 +450,7 @@ fn run_redact(input: &PathBuf, output: &PathBuf, also_names: &[String]) -> Resul
             .chain(local("USERNAME"))
             .collect(),
         computers: local("COMPUTERNAME").into_iter().collect(),
+        identifiers: also_ids.to_vec(),
     };
     let report = redact::redact_document(&mut document, &extra);
 
@@ -448,6 +467,9 @@ fn run_redact(input: &PathBuf, output: &PathBuf, also_names: &[String]) -> Resul
             "  computer name(s) looked for: {}",
             report.computers.join(", ")
         );
+    }
+    if report.identifiers > 0 {
+        eprintln!("  {} supplied identifier(s) looked for", report.identifiers);
     }
     for name in &report.skipped {
         eprintln!(

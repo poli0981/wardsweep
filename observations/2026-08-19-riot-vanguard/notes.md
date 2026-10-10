@@ -517,3 +517,34 @@ keeps over its preferences — and 8 from `residue.json`, all `DiagTrack`;
 `observe redact` masked 4 session identifiers in `install.json` as `%ID%`,
 keeping the value names. Nothing that names Vanguard changed, and `draft.toml`
 still rebuilds byte for byte.
+
+### Refiltered again on 2026-10-10
+
+The walk's exclusions grew the same way (`docs/16`, "Personal identity and
+activity history are not recorded either"), and the differ now applies them to
+existing diffs. `observe refilter` removed:
+
+- from `install.json`: 31 file changes, an emptied directory, one
+  application's notification counts, Windows' licensing state and eleven
+  unreadable items;
+- from `residue.json`: 16 file changes, a packaged application's resolved
+  strings and eleven unreadable items.
+
+What they were:
+
+- the Claude desktop app's caches and session state, whose folder names are
+  session identifiers;
+- four entries of Windows' token cache, and a recent item;
+- the harness's own snapshots;
+- crash reports named after the programs that crashed;
+- Windows' cache of signed-in identities, named after an identity's identifier;
+- the paths of the TPM's key folders. They identify nothing, but Safety Gate G3
+  says the walk should never have tried to read them.
+
+In `draft.toml` the count of added files the draft could not attribute fell from
+66 to 56; nothing else in it changed.
+
+Earlier versions of `install.json` in the history, written in diff format 1,
+carried the whole licensing record, product key included. That value is the
+published generic key for this machine's edition, which a digital licence
+leaves there, and it activates nothing.
