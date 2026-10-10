@@ -207,6 +207,15 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
   games that installed it under `HKLM\SOFTWARE\EA\AC\Installs`. The draft is
   scoped with `--only`, because the same publisher signs the EA app the window
   also installed, and a test pins it to its diff. The residue half is next.
+- `observations/2026-10-10-anticheatexpert/`: ACE's install, by Wuthering
+  Waves' first launch. ACE's August uninstall was the first observation; this
+  is the second title, and the first install seen. It installs a service and a
+  kernel driver whose image stays on disk while no game runs. Per-title state
+  is keyed by a game id: two core drivers named after it, and a per-user key.
+  Every installed binary is a byte copy of the game's payload, and the
+  installer doubles as the uninstaller. The draft needs no scoping, and a test
+  pins it. `docs/16` and the snapshot model now say which roots are walked: a
+  launcher library on another volume is not.
 - `docs/05` §"Not SCM alone": a driver whose key was written without SCM is
   invisible to `EnumServicesStatusExW`: a complete key until the next boot, an
   incomplete one for good. So detection reads the `Services` key as well,

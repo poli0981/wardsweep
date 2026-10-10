@@ -46,8 +46,10 @@ pub enum Domain {
     /// `HKLM\SOFTWARE` in both WOW64 views, the services key, `Run` keys,
     /// uninstall keys, and `HKCU\SOFTWARE`.
     Registry,
-    /// Program files, program data, per-user application data, `System32\drivers`,
-    /// and launcher libraries.
+    /// Program files, program data, per-user application data and
+    /// `System32\drivers`. A launcher library is covered only when it lies under
+    /// one of those, as Steam's default one does; a library on another volume
+    /// is not walked.
     Filesystem,
     /// Full XML export of every scheduled task.
     ScheduledTasks,
