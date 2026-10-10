@@ -3,9 +3,9 @@
 The third anti-cheat observed here, and the first from a **clean baseline**:
 EA AntiCheat was not on the machine when the first snapshot was taken, so
 `install.json` is the install footprint as it happened, not one reconstructed
-by uninstalling and reinstalling. The install half is done. The residue half —
-uninstalling the game through Steam, which is meant to run the anti-cheat's own
-uninstaller — is still to do.
+by uninstalling and reinstalling. Both halves are done: the install, and the
+residue left when the game was uninstalled through Steam, which ran the
+anti-cheat's own uninstaller (`residue.json`).
 
 It is also the observation that cost the tooling most: the draft generator
 missed the anti-cheat's service and driver and took in the EA app (#50), and
@@ -180,10 +180,57 @@ Without `--only`, the draft takes in the EA app, because the same publisher
 signs both. `shared` stays `true` until a second title has been observed. A test
 pins the draft to `install.json`.
 
+## The residue half
+
+On 2026-10-10 the maintainer uninstalled FC 26 through Steam. Snapshot
+`04-after-fc26-uninstall` (06:13Z) followed, in the same boot as `03` (06:05Z),
+and `residue.json` is the diff between them.
+
+Steam ran the install script's uninstall step. Its record for the game swapped
+`EAAntiCheatInstaller 1.0.15918775` and `EADesktopSetup` for
+`EAAntiCheatInstaller Uninstall` and `EAAntiCheatInstaller Unstall`.
+
+**Removed by the uninstaller:**
+- both services, `EAAntiCheatService` and the minifilter `EAAntiCheat`;
+- their keys in both views, the minifilter's instance and the event source;
+- all four files under `C:\Program Files\EA\AC`, and the directory;
+- `HKLM\SOFTWARE\EA\AC` in the 64-bit view, with its `Installs` record.
+
+**Left by the anti-cheat:**
+
+| What | Why it matters |
+|---|---|
+| `HKLM\SOFTWARE\WOW6432Node\EA\AC\Installs\fc26`, holding `EAAntiCheatInstaller`, with `EA\AC` and `Installs` above it | The uninstaller cleaned the 64-bit view and left the 32-bit one: the WOW64 miss `docs/05` warns of, from the vendor itself |
+| `HKCU\SOFTWARE\EA\AC`, holding two session identifiers | Per-user, outside any uninstaller's reach while it runs as SYSTEM |
+| SCM's entry for `EAAntiCheat` | The key was deleted past SCM, as it was written. Until the next boot SCM still opens the service, and every query fails with error 2, "the system cannot find the file specified" |
+
+None of these is in `residue.json`. They did not change between `03` and `04`,
+so they were found by hand and are in the meta.
+
+**Left by the game, Steam and the EA app** (by hand where unchanged):
+
+- `HKLM\SOFTWARE\EA Sports\EA SPORTS FC 26`, in both views, and the game's
+  uninstall entry `{CC38BDAB-…}`. The install script's named values are gone,
+  and each key keeps only an empty default value.
+- Steam's record for the game, in the 32-bit view, now holding the uninstall
+  flags.
+- The EA app's `Origin Games` key, left empty, and
+  `ProgramData\Origin\LocalContent`, left empty.
+- `%LOCALAPPDATA%\EA SPORTS FC 26`: 66 files, 142 MB of settings and caches.
+  `HKCU\SOFTWARE\Electronic Arts\FC` and the game's DirectInput key.
+- On `D:`, which the walk does not cover: the game's folder with one file in
+  it, `steam_appid.txt`. The game wrote that file at its first launch, so it was
+  never Steam's to remove.
+
+So EA AntiCheat leaves little of its own, and two pieces of it are
+instructive. The 32-bit view of a key the uninstaller cleaned in the 64-bit one
+is the case WardSweep's WOW64 handling exists for. And SCM keeps an entry for
+a driver whose key is already gone, so a scan that trusts SCM after an
+uninstall reports a driver that is not there, the mirror of the August finding
+that WMI did the same.
+
 ## Still to do
 
-1. **The residue half.** Uninstall FC 26 through Steam, so the install script's
-   uninstall step runs. Then take a snapshot with the pinned collector and diff
-   it against the snapshot before it.
-2. In the PR that adds the catalog entry, paste `signtool verify /v /pa` for
+1. In the PR that adds the catalog entry, paste `signtool verify /v /pa` for
    every binary (`docs/16` checklist).
+2. After the next restart, confirm SCM no longer lists `EAAntiCheat`.

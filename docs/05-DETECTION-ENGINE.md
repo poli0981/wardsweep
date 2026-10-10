@@ -191,6 +191,11 @@ So:
 - **A missing image is not evidence of removal.** EA's driver has no image on
   disk while no game runs, and its key is still the anti-cheat's. An absent file
   under a present key is the normal state of that driver, not an orphan.
+- **Nor is SCM's word after an uninstall.** EA's uninstaller deleted the
+  minifilter's key the way the installer wrote it, past SCM, and until the next
+  boot SCM kept an entry: `OpenService` still succeeds, and every query fails
+  with error 2. A scan that believes SCM there reports a driver that is gone,
+  the same mistake `Win32_SystemDriver` made above.
 
 The observation harness found the same blind spot first: the snapshot's
 services domain is SCM's view, and `suggest` now looks for registry-only drivers

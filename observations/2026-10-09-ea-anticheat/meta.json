@@ -1,8 +1,8 @@
 {
   "observation_id": "2026-10-09-ea-anticheat",
   "date": "2026-10-09",
-  "kind": "install",
-  "note": "First observation from a clean baseline: EA AntiCheat was not on the machine when 00-current was taken. The install half is done; the residue half is still to do.",
+  "kind": "install-and-uninstall",
+  "note": "First observation from a clean baseline: EA AntiCheat was not on the machine when 00-current was taken. Both halves are done: the install, and the residue after the game's uninstall through Steam.",
   "anticheat": {
     "display": "EA AntiCheat (Javelin)",
     "vendor_cn": "Electronic Arts, Inc.",
@@ -49,7 +49,9 @@
   "snapshots": {
     "00-current": "2026-10-09T15:56:30Z; FC 26 installed and not yet launched; no EA AntiCheat service, driver or directory",
     "01-after-fc26": "2026-10-09T16:37:35Z; after FC 26's first launch, with the game closed",
-    "storage": "%LOCALAPPDATA%/WardSweep/observations/ - raw snapshots are NOT committed"
+    "storage": "%LOCALAPPDATA%/WardSweep/observations/ - raw snapshots are NOT committed",
+    "03-after-nte-steam": "2026-10-10T06:05:03Z; the before side of residue.json, with EA AntiCheat installed and FC 26 not running",
+    "04-after-fc26-uninstall": "2026-10-10T06:13:44Z; after FC 26 was uninstalled through Steam, same boot as 03"
   },
   "install": {
     "trigger": "FC 26's first launch through Steam. Steam ran the game's install script, whose step EAAntiCheatInstaller 1.0.15918775 runs EAAntiCheat.Installer.exe --noui --install --read-cfg.",
@@ -104,7 +106,40 @@
     "attribution_note": "Electronic Arts, Inc. signs the EA app as well as the anti-cheat, and the EA app was installed in the same window, so the draft is scoped with --only."
   },
   "still_to_do": [
-    "Residue half: uninstall FC 26 through Steam, snapshot with the pinned collector, diff.",
-    "signtool verify /v /pa output for every binary, in the PR that adds the catalog entry."
-  ]
+    "signtool verify /v /pa output for every binary, in the PR that adds the catalog entry.",
+    "After the next restart, confirm SCM no longer lists EAAntiCheat."
+  ],
+  "uninstall": {
+    "ran": "Steam's uninstall of FC 26, whose install script runs EAAntiCheat.Installer.exe --noui --uninstall --read-cfg --launcher-path \"%INSTALLDIR%/EAAntiCheat.GameServiceLauncher.exe\"",
+    "by": "the maintainer, through Steam",
+    "steam_record": "HKLM/SOFTWARE/WOW6432Node/Valve/Steam/Apps/3405690 swapped its install flags for EAAntiCheatInstaller Uninstall = 1 and EAAntiCheatInstaller Unstall = 1",
+    "removed": {
+      "services": [
+        "EAAntiCheatService",
+        "EAAntiCheat"
+      ],
+      "registry_keys": [
+        "HKLM/SYSTEM/CurrentControlSet/Services/EAAntiCheatService (both WOW64 views)",
+        "HKLM/SYSTEM/CurrentControlSet/Services/EAAntiCheat with Instances (both WOW64 views)",
+        "HKLM/SYSTEM/CurrentControlSet/Services/EventLog/Application/EA Javelin Anticheat (both WOW64 views)",
+        "HKLM/SOFTWARE/EA/AC and its Installs record (64-bit view)"
+      ],
+      "files": "all four under C:/Program Files/EA/AC, and the directory"
+    },
+    "left_behind": {
+      "by_the_anticheat": [
+        "HKLM/SOFTWARE/WOW6432Node/EA/AC/Installs/fc26 holding EAAntiCheatInstaller, with EA/AC and Installs above it: the 32-bit view of what the uninstaller removed in the 64-bit one",
+        "HKCU/SOFTWARE/EA/AC holding LastSessionId and LastServiceSessionId",
+        "SCM's entry for EAAntiCheat: its key was deleted past SCM, and until the next boot SCM still opens the service while every query fails with error 2"
+      ],
+      "by_the_game_steam_and_the_ea_app": [
+        "HKLM/SOFTWARE/EA Sports/EA SPORTS FC 26 (both views) and the uninstall entry {CC38BDAB-B776-4908-9A26-CC27C96404C2}, each holding only an empty default value",
+        "Steam's record HKLM/SOFTWARE/WOW6432Node/Valve/Steam/Apps/3405690",
+        "HKLM/SOFTWARE/WOW6432Node/Origin Games, left empty; C:/ProgramData/Origin/LocalContent, left empty",
+        "%LOCALAPPDATA%/EA SPORTS FC 26, 66 files and 142 MB of settings and caches; HKCU/SOFTWARE/Electronic Arts/FC; the game's DirectInput key",
+        "D:/SteamLibrary/steamapps/common/FC 26 holding steam_appid.txt, which the game wrote at first launch (not walked; checked by hand)"
+      ],
+      "found_by": "Those that did not change between 03 and 04 are not in residue.json and were found by hand, read-only."
+    }
+  }
 }

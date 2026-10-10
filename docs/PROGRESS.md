@@ -69,7 +69,7 @@ compare against. A third would probably be worth more than the next feature.
 | Spike S3 — split-privilege architecture | **PASS.** All six criteria measured — 23 checks, 0 failed. `spikes/S3-RESULT.md`. Throwaway code in `spikes/s3-split-privilege/`, unreachable from either build. |
 | `observations/2026-08-19-anticheatexpert/` | **First real observation.** Uninstall half of the `docs/16` cycle, committed with its diff, draft entry and notes. The reinstall half now needs a new full cycle: its raw snapshots are gone (next step 1). |
 | `observations/2026-10-10-anticheatexpert/` | **ACE's install, by a second title.** Wuthering Waves' first launch installed ACE 28.6: a service, a kernel driver whose image stays on disk, and per-title state keyed by a game id — two core drivers and a per-user key — beside the shared parts. Every installed binary is a byte copy of the game's payload; the installer doubles as the uninstaller. Draft pinned by a test. Next: a second title on the installed ACE, then the residue half. |
-| `observations/2026-10-09-ea-anticheat/` | **First observation from a clean baseline.** EA AntiCheat's install, by FC 26's first launch through Steam's install script: a service, a minifilter driver SCM does not list and whose image is absent while no game runs, and EA's own record of the games that installed it. Draft scoped with `--only` and pinned by a test. The residue half is next (step 1). |
+| `observations/2026-10-09-ea-anticheat/` | **First observation from a clean baseline, both halves.** EA AntiCheat's install, by FC 26's first launch through Steam's install script: a service, a minifilter driver SCM does not list until a restart and whose image is absent while no game runs, and EA's own record of the games that installed it. Its uninstall, through Steam, left the 32-bit view of a key it removed in the 64-bit one, its per-user key, and a stale SCM entry until the next boot. Draft scoped with `--only` and pinned by a test. |
 | `tools/observe/` — the observation harness | **`snapshot`, `diff`, `suggest`, `intersect`, `redact`, `refilter`.** Services, filesystem and registry, with Authenticode signer clustering and both WOW64 views. Never records account identity, credentials, activity history or G3 material, in the registry or on disk, and the differ re-applies that policy to older snapshots. Snapshot format 2 also records registry keys left standing with no value and oversized values by size, and `diff` refuses to compare across formats. A draft entry is generated from the shipped schema, is proven to load through the real parser, and each committed draft is pinned by a test to its committed diff. Scheduled tasks, firewall, event sources and environment are named as `not_captured` rather than omitted. |
 
 Enforced by tests rather than by review:
@@ -209,8 +209,10 @@ EA AntiCheat's install footprint, committed. Next:
   `02` and `03`, and nothing of ACE's changed: ACE was not engaged. Next, a
   second title played past login, between two snapshots, to see what it adds
   to a shared ACE.
-- Uninstall FC 26 through Steam, whose install script runs EA's uninstaller,
-  then snapshot. That diff is EA AntiCheat's residue.
+- **Done:** FC 26 uninstalled through Steam, whose install script ran EA's
+  uninstaller; the diff from `03` is EA AntiCheat's residue, committed. It left
+  the 32-bit view of a key it removed in the 64-bit one, its per-user key, and
+  for one boot a stale SCM entry.
 - Run ACE's own uninstaller, then snapshot. That diff is ACE's residue; a title's
   next launch reinstalls it.
 

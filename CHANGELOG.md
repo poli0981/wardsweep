@@ -206,7 +206,10 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
   game runs. EA keeps a record of the
   games that installed it under `HKLM\SOFTWARE\EA\AC\Installs`. The draft is
   scoped with `--only`, because the same publisher signs the EA app the window
-  also installed, and a test pins it to its diff. The residue half is next.
+  also installed, and a test pins it to its diff. The residue half followed:
+  uninstalling the game through Steam ran EA's uninstaller. It left three things:
+  the 32-bit view of a key it removed in the 64-bit one, its per-user key, and,
+  until the next boot, an SCM entry for a driver whose key was already gone.
 - `observations/2026-10-10-anticheatexpert/`: ACE's install, by Wuthering
   Waves' first launch. ACE's August uninstall was the first observation; this
   is the second title, and the first install seen. It installs a service and a
