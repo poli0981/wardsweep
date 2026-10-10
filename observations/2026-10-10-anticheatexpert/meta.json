@@ -1,8 +1,8 @@
 {
   "observation_id": "2026-10-10-anticheatexpert",
   "date": "2026-10-10",
-  "kind": "install",
-  "note": "ACE's install, from a baseline with no ACE on the machine, by Wuthering Waves' first launch. Second observation of ACE: the first (2026-08-19) was its uninstall, with Neverness To Everness the referencing title.",
+  "kind": "install-and-uninstall",
+  "note": "ACE's install, from a baseline with no ACE on the machine, by Wuthering Waves' first launch, and its removal by its own uninstaller. Second observation of ACE: the first (2026-08-19) was its uninstall, with Neverness To Everness the referencing title.",
   "anticheat": {
     "display": "AntiCheatExpert",
     "vendor_cn": "ACEVILLE PTE LTD",
@@ -63,7 +63,9 @@
     "01-after-fc26": "2026-10-09T16:37:35Z; the before side; no ACE",
     "02-after-ww": "2026-10-10T04:13:28Z; after two sessions of Wuthering Waves, with the game closed and ACE stopped",
     "storage": "%LOCALAPPDATA%/WardSweep/observations/ - raw snapshots are NOT committed",
-    "03-after-nte-steam": "2026-10-10T06:05:03Z; after NTE from Steam ran once with ACE installed; diff 02->03 holds nothing of ACE's and is kept locally"
+    "03-after-nte-steam": "2026-10-10T06:05:03Z; after NTE from Steam ran once with ACE installed; diff 02->03 holds nothing of ACE's and is kept locally",
+    "04-after-fc26-uninstall": "2026-10-10T06:13:44Z; the before side of residue.json, with ACE installed and stopped",
+    "05-after-ace-uninstall": "2026-10-10T06:32:14Z; after ACE's own Uninstaller.exe, same boot as 04"
   },
   "install": {
     "trigger": "Wuthering Waves' first launch, 2026-10-10 03:27Z. SCM install events: AntiCheatExpert Protection at 03:27:04 by the signed-in account through an elevated installer, ACE-BASE at 03:27:05 by SYSTEM.",
@@ -123,8 +125,29 @@
     "attribution_note": "No --only needed: nothing else in the window clusters with ACE. suggest tried to add System32/drivers as a path and the deny-list refused it."
   },
   "still_to_do": [
-    "A second title that engages ACE: play NTE (or another ACE title) past login between two snapshots.",
-    "Residue half: ACE's own Uninstaller.exe, then a snapshot.",
+    "A second title that engages ACE: reinstall ACE through a title's launch, then play a second ACE title past login between two snapshots.",
     "signtool verify /v /pa output for every binary, in the PR that adds the catalog entry."
-  ]
+  ],
+  "uninstall": {
+    "ran": "C:/Program Files/AntiCheatExpert/Uninstaller.exe, a byte copy of the game's ACE-Setup64.exe",
+    "by": "the maintainer, with no game running",
+    "scm_events": "7045 at 06:22:49 for AntiCheatExpert Protection (signed-in account) and ACE-BASE (SYSTEM, 89 ms later): the uninstaller installs both again before removing them, so the removal runs inside ACE's own service",
+    "removed": {
+      "services": [
+        "AntiCheatExpert Protection",
+        "ACE-BASE"
+      ],
+      "registry_keys": [
+        "HKLM/SYSTEM/CurrentControlSet/Services/ACE-BASE with Final (both WOW64 views)",
+        "HKLM/SYSTEM/CurrentControlSet/Services/AntiCheatExpert Protection (both WOW64 views)",
+        "HKLM/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall/AntiCheatExpert (64-bit view)",
+        "HKCU/SOFTWARE/appdatalow/AntiCheatExpert, its per-user keys and the two empty keys beside them"
+      ],
+      "files": "all seven: five under C:/Program Files/AntiCheatExpert, ace-drc.dat, and System32/drivers/ACE-BASE.sys; both directories too"
+    },
+    "left_behind": {
+      "by_the_anticheat": [],
+      "note": "Nothing. The one key the diff reports as emptied, HKCU/SOFTWARE/AppDataLow, is Windows' own and was already present and empty at snapshot 01."
+    }
+  }
 }
