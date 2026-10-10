@@ -133,10 +133,19 @@ pub const EXCLUDED_FRAGMENTS: &[&str] = &[
     // EA's launcher caches account avatars under the accounts' identifiers.
     "\\origin\\avatarscache\\",
     // The Claude desktop app: session state in folders named after session
-    // identifiers, a browser profile of its own, and its logs.
+    // identifiers, a browser profile of its own, and its logs. And the Claude
+    // command line's caches, in folders named after each project's path, with
+    // a log per connected service.
     "\\appdata\\roaming\\claude\\",
     "\\appdata\\local\\claude\\",
     "\\programdata\\claude\\",
+    "\\appdata\\local\\claude-cli-nodejs\\",
+    // Visual Studio Code's user state: the local history of every file edited,
+    // chat sessions, and per-workspace storage named after each workspace.
+    "\\appdata\\roaming\\code\\user\\",
+    // Proton Mail Bridge: a local mail store, in folders named after account
+    // and message identifiers.
+    "\\protonmail\\",
 ];
 
 /// How the walk finds a file's Authenticode signer.
@@ -477,6 +486,9 @@ mod tests {
             "C:\\Users\\x\\AppData\\Roaming\\Claude\\claude-code-sessions\\a\\b.json",
             "C:\\Users\\x\\AppData\\Local\\Claude\\logs\\main.log",
             "C:\\ProgramData\\Claude\\Logs\\service.log",
+            "C:\\Users\\x\\AppData\\Local\\claude-cli-nodejs\\Cache\\E--project\\x.jsonl",
+            "C:\\Users\\x\\AppData\\Roaming\\Code\\User\\History\\-1d4b67a\\entries.json",
+            "C:\\Users\\x\\AppData\\Roaming\\protonmail\\bridge-v3\\gluon\\backend\\store\\a\\b",
             "C:\\ProgramData\\Microsoft\\Crypto\\RSA\\MachineKeys\\0a1b_00000000-0000-0000-0000-000000000000",
             "C:\\ProgramData\\Microsoft\\Crypto\\PCPKSP\\WindowsEK",
             "C:\\Users\\x\\AppData\\Roaming\\Microsoft\\Protect\\S-1-5-21-1-2-3-1001\\x",

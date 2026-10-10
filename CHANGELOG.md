@@ -309,6 +309,8 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
   identifying nothing, and are refiltered. The registry walk also leaves out
   Store applications' file-picker history, packaged applications' resolved
   strings, and Gaming Services' shader bindings, which list the Steam library.
+  The filesystem walk leaves out the Claude command line's caches, Visual Studio
+  Code's edit history and chat sessions, and Proton Mail Bridge's mail store.
 - `redact` could not see a name inside a registry binary. The EA AntiCheat
   install diff carried the account name 72 times in shell links that a Store
   application's storage table keeps, written as hex, and the report said no

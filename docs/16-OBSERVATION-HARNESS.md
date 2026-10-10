@@ -373,8 +373,10 @@ named after the programs that crashed, the Microsoft account's sign-in records
 and token cache, and OneDrive's folder; the Steam client's per-account data,
 caches and download manifests, which carry the Steam account's identifier in
 folder and file names and between them list every game it owns; EA's cache of
-account avatars, named after the accounts' identifiers; and the Claude desktop
-app's session state. Steam's per-application state under
+account avatars, named after the accounts' identifiers; and the session state
+of the Claude desktop app and command line. A later diff in the same cycle
+added Visual Studio Code's edit history and chat sessions, and Proton Mail
+Bridge's local mail store. Steam's per-application state under
 `HKCU\SOFTWARE\Valve\Steam\Apps` is the registry side of the same list and
 is excluded. The machine-wide key of the same shape under `HKLM` is not, because
 it is footprint: Steam's record of which steps of a game's install script have
