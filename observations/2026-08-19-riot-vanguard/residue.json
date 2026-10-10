@@ -213,16 +213,6 @@
       },
       {
         "domain": "filesystem",
-        "item": "C:\\ProgramData\\Microsoft\\Crypto\\PCPKSP\\WindowsAIK",
-        "reason": "Access is denied. (os error 5)"
-      },
-      {
-        "domain": "filesystem",
-        "item": "C:\\ProgramData\\Microsoft\\Crypto\\PCPKSP\\WindowsEK",
-        "reason": "Access is denied. (os error 5)"
-      },
-      {
-        "domain": "filesystem",
         "item": "C:\\ProgramData\\Microsoft\\Diagnosis",
         "reason": "Access is denied. (os error 5)"
       },
@@ -379,16 +369,6 @@
       {
         "domain": "filesystem",
         "item": "C:\\ProgramData\\Microsoft\\Windows\\Containers\\Layers\\c9c568fc-ce59-4df7-8747-53905b9b2774\\Files\\Program Files\\WindowsApps",
-        "reason": "Access is denied. (os error 5)"
-      },
-      {
-        "domain": "filesystem",
-        "item": "C:\\ProgramData\\Microsoft\\Windows\\Containers\\Layers\\c9c568fc-ce59-4df7-8747-53905b9b2774\\Files\\ProgramData\\Microsoft\\Crypto\\PCPKSP\\WindowsAIK",
-        "reason": "Access is denied. (os error 5)"
-      },
-      {
-        "domain": "filesystem",
-        "item": "C:\\ProgramData\\Microsoft\\Windows\\Containers\\Layers\\c9c568fc-ce59-4df7-8747-53905b9b2774\\Files\\ProgramData\\Microsoft\\Crypto\\PCPKSP\\WindowsEK",
         "reason": "Access is denied. (os error 5)"
       },
       {
@@ -4854,62 +4834,6 @@
   "suppressed_files": [],
   "registry": [
     {
-      "key": "HKCU\\SOFTWARE\\Classes\\Local Settings\\MrtCache\\C:%5CProgram Files%5CWindowsApps%5CMicrosoft.ScreenSketch_11.2607.18.0_x64__8wekyb3d8bbwe%5Cmicrosoft.system.package.metadata%5CS-1-5-21-%REDACTED%MergedResources-10.pri\\1dd2fd5d30cb7a7\\aad8ed49",
-      "view": "32",
-      "kind": "modified",
-      "before": {
-        "key": "HKCU\\SOFTWARE\\Classes\\Local Settings\\MrtCache\\C:%5CProgram Files%5CWindowsApps%5CMicrosoft.ScreenSketch_11.2607.18.0_x64__8wekyb3d8bbwe%5Cmicrosoft.system.package.metadata%5CS-1-5-21-%REDACTED%MergedResources-10.pri\\1dd2fd5d30cb7a7\\aad8ed49",
-        "view": "32",
-        "values": []
-      },
-      "after": {
-        "key": "HKCU\\SOFTWARE\\Classes\\Local Settings\\MrtCache\\C:%5CProgram Files%5CWindowsApps%5CMicrosoft.ScreenSketch_11.2607.18.0_x64__8wekyb3d8bbwe%5Cmicrosoft.system.package.metadata%5CS-1-5-21-%REDACTED%MergedResources-10.pri\\1dd2fd5d30cb7a7\\aad8ed49",
-        "view": "32",
-        "values": [
-          {
-            "name": "@{Microsoft.ScreenSketch_11.2607.18.0_x64__8wekyb3d8bbwe?ms-resource://Microsoft.ScreenSketch/Resources/AppStoreName}",
-            "kind": "sz",
-            "data": "Snipping Tool"
-          }
-        ]
-      },
-      "fields": [
-        {
-          "field": "@{Microsoft.ScreenSketch_11.2607.18.0_x64__8wekyb3d8bbwe?ms-resource://Microsoft.ScreenSketch/Resources/AppStoreName}",
-          "before": "",
-          "after": "sz:Snipping Tool"
-        }
-      ]
-    },
-    {
-      "key": "HKCU\\SOFTWARE\\Classes\\Local Settings\\MrtCache\\C:%5CProgram Files%5CWindowsApps%5CMicrosoft.ScreenSketch_11.2607.18.0_x64__8wekyb3d8bbwe%5Cmicrosoft.system.package.metadata%5CS-1-5-21-%REDACTED%MergedResources-10.pri\\1dd2fd5d30cb7a7\\aad8ed49",
-      "view": "64",
-      "kind": "modified",
-      "before": {
-        "key": "HKCU\\SOFTWARE\\Classes\\Local Settings\\MrtCache\\C:%5CProgram Files%5CWindowsApps%5CMicrosoft.ScreenSketch_11.2607.18.0_x64__8wekyb3d8bbwe%5Cmicrosoft.system.package.metadata%5CS-1-5-21-%REDACTED%MergedResources-10.pri\\1dd2fd5d30cb7a7\\aad8ed49",
-        "view": "64",
-        "values": []
-      },
-      "after": {
-        "key": "HKCU\\SOFTWARE\\Classes\\Local Settings\\MrtCache\\C:%5CProgram Files%5CWindowsApps%5CMicrosoft.ScreenSketch_11.2607.18.0_x64__8wekyb3d8bbwe%5Cmicrosoft.system.package.metadata%5CS-1-5-21-%REDACTED%MergedResources-10.pri\\1dd2fd5d30cb7a7\\aad8ed49",
-        "view": "64",
-        "values": [
-          {
-            "name": "@{Microsoft.ScreenSketch_11.2607.18.0_x64__8wekyb3d8bbwe?ms-resource://Microsoft.ScreenSketch/Resources/AppStoreName}",
-            "kind": "sz",
-            "data": "Snipping Tool"
-          }
-        ]
-      },
-      "fields": [
-        {
-          "field": "@{Microsoft.ScreenSketch_11.2607.18.0_x64__8wekyb3d8bbwe?ms-resource://Microsoft.ScreenSketch/Resources/AppStoreName}",
-          "before": "",
-          "after": "sz:Snipping Tool"
-        }
-      ]
-    },
-    {
       "key": "HKCU\\SOFTWARE\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\SystemAppData\\Microsoft.WindowsStore_8wekyb3d8bbwe\\PersistedTitleBarData\\Microsoft.WindowsStore_8wekyb3d8bbwe!App",
       "view": "32",
       "kind": "modified",
@@ -6813,9 +6737,9 @@
     "Riot Games, Inc.": 7
   },
   "refiltered": {
-    "registry_records": 109,
+    "registry_records": 113,
     "registry_values": 0,
-    "access_denied": 17,
+    "access_denied": 21,
     "emptied_keys": 0,
     "files": 22
   }

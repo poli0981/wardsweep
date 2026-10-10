@@ -215,16 +215,6 @@
       },
       {
         "domain": "filesystem",
-        "item": "C:\\ProgramData\\Microsoft\\Crypto\\PCPKSP\\WindowsAIK",
-        "reason": "Access is denied. (os error 5)"
-      },
-      {
-        "domain": "filesystem",
-        "item": "C:\\ProgramData\\Microsoft\\Crypto\\PCPKSP\\WindowsEK",
-        "reason": "Access is denied. (os error 5)"
-      },
-      {
-        "domain": "filesystem",
         "item": "C:\\ProgramData\\Microsoft\\Diagnosis",
         "reason": "Access is denied. (os error 5)"
       },
@@ -381,16 +371,6 @@
       {
         "domain": "filesystem",
         "item": "C:\\ProgramData\\Microsoft\\Windows\\Containers\\Layers\\c9c568fc-ce59-4df7-8747-53905b9b2774\\Files\\Program Files\\WindowsApps",
-        "reason": "Access is denied. (os error 5)"
-      },
-      {
-        "domain": "filesystem",
-        "item": "C:\\ProgramData\\Microsoft\\Windows\\Containers\\Layers\\c9c568fc-ce59-4df7-8747-53905b9b2774\\Files\\ProgramData\\Microsoft\\Crypto\\PCPKSP\\WindowsAIK",
-        "reason": "Access is denied. (os error 5)"
-      },
-      {
-        "domain": "filesystem",
-        "item": "C:\\ProgramData\\Microsoft\\Windows\\Containers\\Layers\\c9c568fc-ce59-4df7-8747-53905b9b2774\\Files\\ProgramData\\Microsoft\\Crypto\\PCPKSP\\WindowsEK",
         "reason": "Access is denied. (os error 5)"
       },
       {
@@ -13076,7 +13056,7 @@
   "refiltered": {
     "registry_records": 102,
     "registry_values": 8,
-    "access_denied": 17,
+    "access_denied": 21,
     "emptied_keys": 0,
     "files": 42,
     "emptied_directories": 1

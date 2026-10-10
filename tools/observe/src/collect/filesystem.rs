@@ -100,6 +100,13 @@ pub const EXCLUDED_FRAGMENTS: &[&str] = &[
     // taken earlier in the cycle would otherwise read as a file the install
     // added.
     "\\appdata\\local\\wardsweep\\observations\\",
+    // --- Safety Gate G3 -------------------------------------------------------
+    // Windows' key stores. A machine key's file is named after the machine's
+    // MachineGuid, and PCPKSP holds the TPM's endorsement and attestation keys:
+    // G3 forbids reading either, including for reporting. DPAPI's master keys
+    // sit beside them, under a folder named after the account's SID.
+    "\\microsoft\\crypto\\",
+    "\\microsoft\\protect\\",
     // --- Personal identity, credentials and activity history -----------------
     // Windows Timeline: the activity history database, in a folder and in files
     // named after the account's identifier.
@@ -129,6 +136,7 @@ pub const EXCLUDED_FRAGMENTS: &[&str] = &[
     // identifiers, a browser profile of its own, and its logs.
     "\\appdata\\roaming\\claude\\",
     "\\appdata\\local\\claude\\",
+    "\\programdata\\claude\\",
 ];
 
 /// How the walk finds a file's Authenticode signer.
@@ -468,6 +476,10 @@ mod tests {
             "C:\\Users\\x\\AppData\\Local\\Origin\\AvatarsCache\\1234567890.jpg",
             "C:\\Users\\x\\AppData\\Roaming\\Claude\\claude-code-sessions\\a\\b.json",
             "C:\\Users\\x\\AppData\\Local\\Claude\\logs\\main.log",
+            "C:\\ProgramData\\Claude\\Logs\\service.log",
+            "C:\\ProgramData\\Microsoft\\Crypto\\RSA\\MachineKeys\\0a1b_00000000-0000-0000-0000-000000000000",
+            "C:\\ProgramData\\Microsoft\\Crypto\\PCPKSP\\WindowsEK",
+            "C:\\Users\\x\\AppData\\Roaming\\Microsoft\\Protect\\S-1-5-21-1-2-3-1001\\x",
             "C:\\Users\\x\\AppData\\Local\\WardSweep\\observations\\cycle\\00-before.json",
             "C:\\Users\\x\\AppData\\Roaming\\Microsoft\\Windows\\Recent\\Some document.docx.lnk",
             "C:\\ProgramData\\Microsoft\\Windows\\WER\\ReportArchive\\AppCrash_game.exe_1\\Report.wer",

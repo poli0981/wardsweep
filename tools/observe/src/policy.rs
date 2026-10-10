@@ -189,12 +189,19 @@ pub const EXCLUDED_FRAGMENTS: &[&str] = &[
     // program that held it before. Its machine-wide twin, `UFH\ARP`, names
     // uninstall keys and is footprint: an uninstaller removes its own entry.
     "\\currentversion\\ufh\\shc\\",
-    // Display strings resolved for the programs and items Explorer showed.
+    // Display strings resolved for the programs and items Explorer showed, and
+    // the same for packaged applications.
     "\\local settings\\muicache\\",
+    "\\local settings\\mrtcache\\",
     // The files and folders each Store application keeps lasting access to,
-    // as shell links that carry their full paths — the account name among
-    // them, in bytes no text rule reads.
+    // and the folder each one's file picker last opened, as shell links and
+    // item lists that carry their full paths — the account name among them,
+    // in bytes no text rule reads.
     "\\persistedstorageitemtable\\",
+    "\\persistedpickerdata\\",
+    // Gaming Services' shader bindings for the Steam games it has seen: the
+    // library again, by app id and executable.
+    "\\microsoft\\gamingservices\\",
     // Host Activity Manager: how long each application was in use, kept per
     // package under AppModel\SystemAppData\<package>\HAM and as a commit history.
     "\\ham\\",
@@ -450,6 +457,9 @@ mod tests {
             "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\SoftwareProtectionPlatform",
             "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\UFH\\SHC",
             "HKCU\\SOFTWARE\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\SystemAppData\\Some.App_x\\PersistedStorageItemTable\\System\\x",
+            "HKCU\\SOFTWARE\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\SystemAppData\\Some.App_x\\PersistedPickerData\\Some.App_x!App",
+            "HKCU\\SOFTWARE\\Classes\\Local Settings\\MrtCache\\x",
+            "HKLM\\SOFTWARE\\Microsoft\\GamingServices",
         ] {
             assert!(is_excluded(key), "{key} must not be walked");
         }

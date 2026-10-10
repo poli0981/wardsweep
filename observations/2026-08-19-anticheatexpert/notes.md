@@ -378,11 +378,18 @@ anti-cheat changed, and `draft.toml` still rebuilds byte for byte.
 
 The walk's exclusions grew the same way (`docs/16`, "Personal identity and
 activity history are not recorded either"), and the differ now applies them to
-existing diffs. `observe refilter` removed 36 file changes from `residue.json`
-— the Claude desktop app's caches and session state, whose folder names are
-session identifiers, two entries of Windows' token cache, and the harness's
-own baseline snapshot — and three
-unreadable items: two crash reports, named after the programs that crashed,
-and Windows' cache of signed-in identities, named after an identity's
-identifier. In `draft.toml` the count of added files the draft could not
-attribute fell from 15 to 1; nothing else in it changed.
+existing diffs. `observe refilter` removed 36 file changes and seven unreadable
+items from `residue.json`:
+
+- the Claude desktop app's caches and session state, whose folder names are
+  session identifiers;
+- two entries of Windows' token cache;
+- the harness's own baseline snapshot;
+- two crash reports, named after the programs that crashed;
+- Windows' cache of signed-in identities, named after an identity's
+  identifier;
+- four paths to the TPM's key folders. They identify nothing, but Safety
+  Gate G3 says the walk should never have tried to read them.
+
+In `draft.toml` the count of added files the draft could not attribute fell
+from 15 to 1; nothing else in it changed.

@@ -332,6 +332,14 @@ no MAC-address term matches, so the term list names it directly.
 
 ### Personal identity and activity history are not recorded either
 
+> **G3 on the filesystem too.** Until 2026-10-10 the walk read Windows' key
+> stores. A machine key's file name ends in the machine's MachineGuid, and
+> `Crypto\PCPKSP` holds the TPM's endorsement and attestation keys. The walk now
+> leaves out `Microsoft\Crypto` and DPAPI's `Microsoft\Protect`. No committed
+> diff held a machine key's name. The three diffs held the TPM key folders'
+> paths as unreadable items, with nothing identifying in them, and those are
+> refiltered out.
+
 Diffs are committed to a public repository, and two of them carried the
 contributor's Microsoft-account e-mail address — as the *name* of a key under
 `IdentityCRL` — along with the account's identifiers, the machine's host name
@@ -382,8 +390,10 @@ application's notification counts, the last program to run full screen and the
 last to open a game controller — another game, in this diff — Windows Backup's
 lists of installed applications and pinned tiles, Start's rotating record of
 recently added shortcuts, whose slot still named the game that held it before,
-the display strings Explorer resolved, the files each Store application keeps
-lasting access to, and Windows' cache of signed-in identities. The walk also leaves out
+the display strings Explorer and packaged applications resolved, the files each
+Store application keeps lasting access to and the folder its file picker last
+opened, Gaming Services' shader bindings, which list the Steam library again,
+and Windows' cache of signed-in identities. The walk also leaves out
 Windows' licensing state, which keeps the product key in plain text: on this
 machine the edition's published generic key, on one activated by a retail or
 OEM key the key itself.

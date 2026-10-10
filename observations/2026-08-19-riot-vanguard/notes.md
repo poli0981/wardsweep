@@ -522,15 +522,27 @@ still rebuilds byte for byte.
 
 The walk's exclusions grew the same way (`docs/16`, "Personal identity and
 activity history are not recorded either"), and the differ now applies them to
-existing diffs. `observe refilter` removed from `install.json` 31 file changes,
-an emptied directory, one application's notification counts, Windows'
-licensing state and seven unreadable items, and from `residue.json` 16 file
-changes and seven unreadable items: the Claude desktop app's caches and session
-state, whose folder names are session identifiers; four entries of Windows'
-token cache and a recent item; the harness's own snapshots; crash reports named
-after the programs that crashed; and Windows' cache of signed-in identities,
-named after an identity's identifier. In `draft.toml` the count of added files
-the draft could not attribute fell from 66 to 56; nothing else in it changed.
+existing diffs. `observe refilter` removed:
+
+- from `install.json`: 31 file changes, an emptied directory, one
+  application's notification counts, Windows' licensing state and eleven
+  unreadable items;
+- from `residue.json`: 16 file changes, a packaged application's resolved
+  strings and eleven unreadable items.
+
+What they were:
+
+- the Claude desktop app's caches and session state, whose folder names are
+  session identifiers;
+- four entries of Windows' token cache, and a recent item;
+- the harness's own snapshots;
+- crash reports named after the programs that crashed;
+- Windows' cache of signed-in identities, named after an identity's identifier;
+- the paths of the TPM's key folders. They identify nothing, but Safety Gate G3
+  says the walk should never have tried to read them.
+
+In `draft.toml` the count of added files the draft could not attribute fell from
+66 to 56; nothing else in it changed.
 
 Earlier versions of `install.json` in the history, written in diff format 1,
 carried the whole licensing record, product key included. That value is the

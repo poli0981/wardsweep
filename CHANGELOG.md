@@ -301,6 +301,14 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
 - `redact` read an image's display-scale suffix — `arrow-down@2x.png`, of which
   the EA app ships a row — as an e-mail address, and masked the file name. A
   scale suffix on an image is no longer an address. No committed diff held one.
+- The walk read Windows' key stores, against Safety Gate G3. A machine key's
+  file name ends in the machine's MachineGuid, and `Crypto\PCPKSP` holds the
+  TPM's endorsement and attestation keys. `Microsoft\Crypto` and DPAPI's
+  `Microsoft\Protect` are no longer walked. No committed diff held a machine
+  key's name. The three held the TPM key folders' paths as unreadable items,
+  identifying nothing, and are refiltered. The registry walk also leaves out
+  Store applications' file-picker history, packaged applications' resolved
+  strings, and Gaming Services' shader bindings, which list the Steam library.
 - `redact` could not see a name inside a registry binary. The EA AntiCheat
   install diff carried the account name 72 times in shell links that a Store
   application's storage table keeps, written as hex, and the report said no
