@@ -161,6 +161,10 @@ for each eligible service (dependents first, then dependencies):
            mark service delete_pending → Stage 5
 ```
 
+> A driver SCM does not know never reaches this loop: there is no SCM handle to
+> disable, stop or delete. [`05`](05-DETECTION-ENGINE.md) §"Not SCM alone" has
+> two observed. How Stage 3 removes one is not decided yet.
+
 ### Boot-start drivers
 
 `SERVICE_BOOT_START` (Vanguard's `vgk.sys` is the canonical case) cannot be

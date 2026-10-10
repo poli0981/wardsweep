@@ -161,6 +161,46 @@ it had been completely removed — and for this tool that means offering to remo
 something that is not there, on a machine the user was told is not clean. SCM is
 the authority; WMI is a cache with its own opinion.
 
+### Not SCM alone
+
+SCM is the authority on the services it manages, and a driver does not have to
+be one of them. The 2026-10-09 cycle found two that are not
+(`observations/2026-10-09-ea-anticheat/`; the second is in the same cycle's
+baseline, whose own observation follows):
+
+| Driver | Its `Services` key | `sc query` | Image |
+|---|---|---|---|
+| EA AntiCheat's `EAAntiCheat`, a file-system minifilter | complete: type, start, error control, image, group, instance and altitude | error 1060 in the boot it was installed in; listed after a restart | absent while no game runs |
+| Neverness To Everness's `PGameProtectDriver` | `ImagePath`, `Type` and `Start` only, none of the values `CreateService` always writes; its launcher rewrites `ImagePath` when it runs | error 1060, before and after a restart | at the baseline, on a drive the machine no longer had; re-pointed at the game's current install once it ran |
+
+Both keys were written into `HKLM\SYSTEM\CurrentControlSet\Services` without
+going through SCM. The filter manager and `NtLoadDriver` read a key there
+directly and need no SCM record, so such a driver can load. SCM reads the key
+only at boot. So EA's complete key was missing from `EnumServicesStatusExW` until
+the machine restarted. NTE's incomplete one is never listed at all.
+
+So:
+
+- **Enumeration reads the `Services` key as well as asking SCM.** A key whose
+  `Type` is a driver type (1, 2 or 8) that SCM does not name is a registry-only
+  driver, and its record comes from the registry alone: there is no
+  `QueryServiceConfigW` to call.
+- **Removal cannot go through `DeleteService`** for such a key, since SCM has
+  nothing to delete. How Stage 3 removes one is not decided yet
+  ([`06`](06-REMOVAL-PIPELINE.md)).
+- **A missing image is not evidence of removal.** EA's driver has no image on
+  disk while no game runs, and its key is still the anti-cheat's. An absent file
+  under a present key is the normal state of that driver, not an orphan.
+- **Nor is SCM's word after an uninstall.** EA's uninstaller deleted the
+  minifilter's key the way the installer wrote it, past SCM, and until the next
+  boot SCM kept an entry: `OpenService` still succeeds, and every query fails
+  with error 2. A scan that believes SCM there reports a driver that is gone,
+  the same mistake `Win32_SystemDriver` made above.
+
+The observation harness found the same blind spot first: the snapshot's
+services domain is SCM's view, and `suggest` now looks for registry-only drivers
+in the registry diff (`docs/16`).
+
 ## Authenticode verification
 
 `WinVerifyTrust` with `WTD_UI_NONE`, `WTD_REVOKE_WHOLECHAIN`, then extract the
@@ -181,6 +221,16 @@ after Bloom + Aho–Corasick have narrowed the set.
 
 Expired certificates on old anti-cheat builds are **normal** and are not
 downgraded — countersigned timestamps are honoured.
+
+**A verification that fails is unknown, not unsigned.** During the 2026-10-09
+baseline, with a snapshot saturating the disk, a signature pass over EA
+AntiCheat's files reported one as not signed and another with an unknown error.
+With the disk idle both verified: signed by *Electronic Arts, Inc.*,
+timestamped. `suspicious` needs a signature that verifies and names the wrong
+publisher, or one that is invalid. An error — I/O, a timeout, a chain that cannot
+be built — is retried, and an artifact whose publisher still cannot be verified
+is `probable`, as one whose file is already gone is. It is never `suspicious` on
+the strength of an error, and never `confirmed`.
 
 ## Ownership graph and reference counting
 

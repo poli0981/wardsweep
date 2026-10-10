@@ -1,0 +1,130 @@
+{
+  "observation_id": "2026-10-10-anticheatexpert",
+  "date": "2026-10-10",
+  "kind": "install",
+  "note": "ACE's install, from a baseline with no ACE on the machine, by Wuthering Waves' first launch. Second observation of ACE: the first (2026-08-19) was its uninstall, with Neverness To Everness the referencing title.",
+  "anticheat": {
+    "display": "AntiCheatExpert",
+    "vendor_cn": "ACEVILLE PTE LTD",
+    "version": "28.6.2606.970",
+    "version_note": "From the uninstall entry's DisplayVersion. The 2026-08-19 observation saw 28.0.2604.938.",
+    "driver_signer": "Microsoft Windows Hardware Compatibility Publisher",
+    "driver_signer_note": "Attestation-signed, as in August, so the drivers do not cluster with the vendor CN. ACE-Service64.exe and Uninstaller.exe carry ACEVILLE PTE LTD."
+  },
+  "referencing_games": {
+    "installed": [
+      {
+        "title": "Wuthering Waves",
+        "launcher": "steam",
+        "steam_appid": 3513350,
+        "path": "D:/SteamLibrary/steamapps/common/Wuthering Waves",
+        "ace_game_id": "6095005"
+      }
+    ],
+    "also_on_the_machine": [
+      {
+        "title": "Neverness To Everness",
+        "note": "The standalone install ran in the window, about 2026-10-09 18:00Z, and installed or registered nothing of ACE's."
+      },
+      {
+        "title": "NTE: Neverness to Everness (Steam)",
+        "steam_appid": 4508340,
+        "path": "D:/SteamLibrary/steamapps/common/Neverness to Everness",
+        "note": "Installed 2026-10-10, carrying a newer ACE payload of its own. Run once between snapshots 02 and 03: nothing of ACE's changed; its launcher re-pointed PGameProtectDriver at the Steam install."
+      }
+    ],
+    "refcount_at_observation": 1,
+    "vendor_record": "The uninstall entry names the installing title's ACE-Setup64.exe as its icon; per-title state is keyed by game id."
+  },
+  "machine": {
+    "os": "Windows 11 Pro 10.0.29648",
+    "note": "In ordinary use over eleven and a half hours, with a restart in between, contrary to docs/16 section 'Reducing noise'. Steam, the EA app and another launcher were running at the after snapshot."
+  },
+  "harness": {
+    "version": "0.0.1",
+    "collector": "wardsweep-observe-snapshot.exe, pinned for the cycle, SHA-256 prefix fdc1b7d2f192b786",
+    "domains_captured": [
+      "services",
+      "filesystem",
+      "registry"
+    ],
+    "domains_not_captured": [
+      "scheduled_tasks",
+      "firewall",
+      "event_sources",
+      "environment"
+    ],
+    "diff_format": 2,
+    "snapshot_format": 2,
+    "filesystem_roots_note": "The walk covers Program Files, ProgramData, the profile's AppData and System32/drivers. The game and its ACE payload on D: are not walked; they were listed and hashed by hand.",
+    "note": "Diffed, redacted and drafted by the build with #52. rebooted_between is true."
+  },
+  "snapshots": {
+    "01-after-fc26": "2026-10-09T16:37:35Z; the before side; no ACE",
+    "02-after-ww": "2026-10-10T04:13:28Z; after two sessions of Wuthering Waves, with the game closed and ACE stopped",
+    "storage": "%LOCALAPPDATA%/WardSweep/observations/ - raw snapshots are NOT committed",
+    "03-after-nte-steam": "2026-10-10T06:05:03Z; after NTE from Steam ran once with ACE installed; diff 02->03 holds nothing of ACE's and is kept locally"
+  },
+  "install": {
+    "trigger": "Wuthering Waves' first launch, 2026-10-10 03:27Z. SCM install events: AntiCheatExpert Protection at 03:27:04 by the signed-in account through an elevated installer, ACE-BASE at 03:27:05 by SYSTEM.",
+    "installed": {
+      "services": {
+        "AntiCheatExpert Protection": "win32_own_process | interactive_process, demand, \"C:/Program Files/AntiCheatExpert/ACE-Service64.exe\" -autorun",
+        "ACE-BASE": "kernel_driver, demand, \\??\\C:/WINDOWS/system32/drivers/ACE-BASE.sys"
+      },
+      "registry_keys": [
+        "HKLM/SYSTEM/CurrentControlSet/Services/ACE-BASE (both WOW64 views), with its Final subkey",
+        "HKLM/SYSTEM/CurrentControlSet/Services/AntiCheatExpert Protection (both WOW64 views)",
+        "HKLM/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall/AntiCheatExpert (64-bit view)",
+        "HKCU/SOFTWARE/appdatalow/AntiCheatExpert/{4324E6D9-BA90-499E-9B3A-A7DAB216C94E}/Tencent (both WOW64 views)",
+        "HKCU/SOFTWARE/appdatalow/AntiCheatExpert/{F63EEEBB-2033-42E2-818E-2126FDEB47C4}/Tencent/6095005 (both WOW64 views)"
+      ],
+      "empty_keys": [
+        "HKCU/SOFTWARE/appdatalow/AntiCheatExpert/CrashDumps",
+        "HKCU/SOFTWARE/appdatalow/AntiCheatExpert/{5FCF1253-B4BF-4F83-A7C7-86C124F2DF16}"
+      ],
+      "files": [
+        "C:/Program Files/AntiCheatExpert/ACE-BASE.sys",
+        "C:/Program Files/AntiCheatExpert/ACE-CORE106095005.sys",
+        "C:/Program Files/AntiCheatExpert/ACE-CORE206095005.sys",
+        "C:/Program Files/AntiCheatExpert/ACE-Service64.exe",
+        "C:/Program Files/AntiCheatExpert/Uninstaller.exe",
+        "C:/ProgramData/AntiCheatExpert/ace-drc.dat",
+        "C:/WINDOWS/System32/drivers/ACE-BASE.sys"
+      ],
+      "file_count": 7,
+      "total_bytes": 21402356,
+      "copies_note": "Every installed binary is byte-identical to the game's payload: Uninstaller.exe is ACE-Setup64.exe, and ACE-CORE1/2<game id>.sys are ACE-CORE.sys and ACE-CORE.sys2."
+    },
+    "runtime_state": "While the game ran, ACE-BASE was running and AntiCheatExpert Protection stopped; once it closed, both were stopped, and system32/drivers/ACE-BASE.sys stayed on disk."
+  },
+  "privacy": {
+    "removed_by_policy": {
+      "registry_records": 13442,
+      "registry_values": 8,
+      "file_records": 81481,
+      "unreadable_items": 43,
+      "emptied_directories": 8
+    },
+    "redacted": {
+      "account_names": 3110,
+      "machine_sids": 296,
+      "machine_name_in_binary_values": 4,
+      "identifiers": 55,
+      "identifiers_supplied_with_also_id": 9,
+      "also_id_note": "NTE save files named after the player's account, Unreal crash-reporter folders named after an installation id, the Kuro SDK's account-file prefix, and an EA app folder named after a hash."
+    }
+  },
+  "draft": {
+    "file": "draft.toml",
+    "derived_from": "install.json",
+    "command": "suggest --signer \"ACEVILLE PTE LTD\"",
+    "status": "hypothesis, not an entry; id and display are placeholders; the core drivers are named by this title's game id",
+    "attribution_note": "No --only needed: nothing else in the window clusters with ACE. suggest tried to add System32/drivers as a path and the deny-list refused it."
+  },
+  "still_to_do": [
+    "A second title that engages ACE: play NTE (or another ACE title) past login between two snapshots.",
+    "Residue half: ACE's own Uninstaller.exe, then a snapshot.",
+    "signtool verify /v /pa output for every binary, in the PR that adds the catalog entry."
+  ]
+}

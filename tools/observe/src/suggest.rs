@@ -2112,6 +2112,22 @@ mod tests {
     const VANGUARD_DRAFT: &str =
         include_str!("../../../observations/2026-08-19-riot-vanguard/draft.toml");
 
+    /// The committed EA AntiCheat install diff, the first taken from a clean
+    /// baseline.
+    const EA_INSTALL_DIFF: &str =
+        include_str!("../../../observations/2026-10-09-ea-anticheat/install.json");
+
+    /// The draft committed alongside it.
+    const EA_DRAFT: &str = include_str!("../../../observations/2026-10-09-ea-anticheat/draft.toml");
+
+    /// The committed `AntiCheatExpert` install diff, by a second title.
+    const ACE_INSTALL_DIFF: &str =
+        include_str!("../../../observations/2026-10-10-anticheatexpert/install.json");
+
+    /// The draft committed alongside it.
+    const ACE_INSTALL_DRAFT: &str =
+        include_str!("../../../observations/2026-10-10-anticheatexpert/draft.toml");
+
     /// The committed `AntiCheatExpert` diff, which runs from installed to
     /// uninstalled.
     const ACE_REMOVAL_DIFF: &str =
@@ -2167,5 +2183,39 @@ mod tests {
         .expect("the draft serialises");
 
         assert_eq!(rendered, ACE_DRAFT);
+    }
+
+    #[test]
+    fn the_committed_anticheatexpert_install_draft_is_reproducible_from_its_committed_diff() {
+        // Unscoped: nothing else in an eleven-hour window clustered with ACE,
+        // and attestation-signed drivers were attributed by their directory.
+        let diff: Diff =
+            serde_json::from_str(ACE_INSTALL_DIFF).expect("the committed install diff parses");
+
+        let rendered = to_toml(
+            &draft(&diff, None, Some("ACEVILLE PTE LTD")),
+            generated_utc(ACE_INSTALL_DRAFT),
+        )
+        .expect("the draft serialises");
+
+        assert_eq!(rendered, ACE_INSTALL_DRAFT);
+    }
+
+    #[test]
+    fn the_committed_ea_anticheat_draft_is_reproducible_from_its_committed_diff() {
+        // Scoped, because the publisher also signs the EA app the same window
+        // installed: the scope is part of what this is a draft of, and a
+        // change that moves the EA app back in fails here.
+        let diff: Diff =
+            serde_json::from_str(EA_INSTALL_DIFF).expect("the committed install diff parses");
+        let only = ["eaanticheat", "ea\\ac", "javelin"].map(String::from);
+
+        let rendered = to_toml(
+            &draft_scoped(&diff, None, Some("Electronic Arts, Inc."), &only),
+            generated_utc(EA_DRAFT),
+        )
+        .expect("the draft serialises");
+
+        assert_eq!(rendered, EA_DRAFT);
     }
 }

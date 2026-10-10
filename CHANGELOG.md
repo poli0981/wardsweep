@@ -197,6 +197,35 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
   attestation and VirusTotal entry, rather than inside the installer: a binary
   that reads the whole registry and filesystem is what heuristic engines flag,
   and the uninstaller's users never run it.
+- `observations/2026-10-09-ea-anticheat/`: EA AntiCheat's install footprint,
+  the first observed from a clean baseline rather than reconstructed. Steam's
+  install script for EA SPORTS FC 26 installs it at the game's first launch and
+  is wired to run its uninstaller when the game goes. Its driver is a
+  file-system minifilter written straight into the registry. SCM answered
+  1060 for it until the machine restarted, and its image is absent while no
+  game runs. EA keeps a record of the
+  games that installed it under `HKLM\SOFTWARE\EA\AC\Installs`. The draft is
+  scoped with `--only`, because the same publisher signs the EA app the window
+  also installed, and a test pins it to its diff. The residue half followed:
+  uninstalling the game through Steam ran EA's uninstaller. It left three things:
+  the 32-bit view of a key it removed in the 64-bit one, its per-user key, and,
+  until the next boot, an SCM entry for a driver whose key was already gone.
+- `observations/2026-10-10-anticheatexpert/`: ACE's install, by Wuthering
+  Waves' first launch. ACE's August uninstall was the first observation; this
+  is the second title, and the first install seen. It installs a service and a
+  kernel driver whose image stays on disk while no game runs. Per-title state
+  is keyed by a game id: two core drivers named after it, and a per-user key.
+  Every installed binary is a byte copy of the game's payload, and the
+  installer doubles as the uninstaller. The draft needs no scoping, and a test
+  pins it. `docs/16` and the snapshot model now say which roots are walked: a
+  launcher library on another volume is not.
+- `docs/05` §"Not SCM alone": a driver whose key was written without SCM is
+  invisible to `EnumServicesStatusExW`: a complete key until the next boot, an
+  incomplete one for good. So detection reads the `Services` key as well,
+  removal cannot go through `DeleteService`, and a missing image is not evidence
+  of removal. How Stage 3 removes one is open in `docs/06`. And a
+  signature verification that errors is unknown, never `suspicious`: two of
+  EA's files failed one under disk load and verify when idle.
 
 ### Changed
 - `docs/08-IPC-PROTOCOL.md` amended from the S3 findings, in five places. Events

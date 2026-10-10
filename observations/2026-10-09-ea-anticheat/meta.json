@@ -1,0 +1,145 @@
+{
+  "observation_id": "2026-10-09-ea-anticheat",
+  "date": "2026-10-09",
+  "kind": "install-and-uninstall",
+  "note": "First observation from a clean baseline: EA AntiCheat was not on the machine when 00-current was taken. Both halves are done: the install, and the residue after the game's uninstall through Steam.",
+  "anticheat": {
+    "display": "EA AntiCheat (Javelin)",
+    "vendor_cn": "Electronic Arts, Inc.",
+    "vendor_ou": "EA SPEAR AntiCheat Engineering",
+    "version": "1.0.15918775",
+    "version_note": "From the name of the Steam install-script step that installed it, EAAntiCheatInstaller 1.0.15918775.",
+    "driver_signer": null,
+    "driver_signer_note": "Not observed. system32/drivers/eaanticheat.sys was absent from both snapshots and is absent with no game running, although the service key names it. Every file under Program Files/EA/AC is signed Electronic Arts, Inc. and timestamped."
+  },
+  "referencing_games": {
+    "installed": [
+      {
+        "title": "EA SPORTS FC 26",
+        "launcher": "steam",
+        "steam_appid": 3405690,
+        "path": "D:/SteamLibrary/steamapps/common/FC 26"
+      }
+    ],
+    "refcount_at_observation": 1,
+    "vendor_record": "HKLM/SOFTWARE/EA/AC/Installs holds fc26 = 1; the 32-bit view's Installs/fc26 holds EAAntiCheatInstaller = 1."
+  },
+  "machine": {
+    "os": "Windows 11 Pro 10.0.29648",
+    "note": "In ordinary use during capture rather than freshly booted and idle, contrary to docs/16 section 'Reducing noise'. The EA app was installed in the same window, Steam updated another application, and the NTE launcher was downloading an update."
+  },
+  "harness": {
+    "version": "0.0.1",
+    "collector": "wardsweep-observe-snapshot.exe, pinned for the cycle, SHA-256 prefix fdc1b7d2f192b786",
+    "domains_captured": [
+      "services",
+      "filesystem",
+      "registry"
+    ],
+    "domains_not_captured": [
+      "scheduled_tasks",
+      "firewall",
+      "event_sources",
+      "environment"
+    ],
+    "diff_format": 2,
+    "snapshot_format": 2,
+    "note": "Diffed, redacted and drafted by the build with #51 and #52, whose privacy rules this diff prompted. Both snapshots were taken in one boot, so the diff carries no restart."
+  },
+  "snapshots": {
+    "00-current": "2026-10-09T15:56:30Z; FC 26 installed and not yet launched; no EA AntiCheat service, driver or directory",
+    "01-after-fc26": "2026-10-09T16:37:35Z; after FC 26's first launch, with the game closed",
+    "storage": "%LOCALAPPDATA%/WardSweep/observations/ - raw snapshots are NOT committed",
+    "03-after-nte-steam": "2026-10-10T06:05:03Z; the before side of residue.json, with EA AntiCheat installed and FC 26 not running",
+    "04-after-fc26-uninstall": "2026-10-10T06:13:44Z; after FC 26 was uninstalled through Steam, same boot as 03"
+  },
+  "install": {
+    "trigger": "FC 26's first launch through Steam. Steam ran the game's install script, whose step EAAntiCheatInstaller 1.0.15918775 runs EAAntiCheat.Installer.exe --noui --install --read-cfg.",
+    "installed": {
+      "services": {
+        "EAAntiCheatService": "win32_own_process, demand, LocalSystem, \"C:/Program Files/EA/AC/eaanticheat.gameservice.exe\"",
+        "EAAntiCheat": "file-system minifilter, demand, system32/drivers/eaanticheat.sys, altitude 363250; written straight into the registry: SCM answered 1060 for it in the install boot and listed it after the next restart"
+      },
+      "registry_keys": [
+        "HKLM/SOFTWARE/EA/AC (both WOW64 views)",
+        "HKCU/SOFTWARE/EA/AC (both WOW64 views)",
+        "HKLM/SYSTEM/CurrentControlSet/Services/EAAntiCheat (both WOW64 views)",
+        "HKLM/SYSTEM/CurrentControlSet/Services/EAAntiCheatService (both WOW64 views)"
+      ],
+      "event_sources": [
+        "Application/EA Javelin Anticheat"
+      ],
+      "files": [
+        "C:/Program Files/EA/AC/EAAntiCheat.GameService.exe",
+        "C:/Program Files/EA/AC/EAAntiCheat.GameService.dll",
+        "C:/Program Files/EA/AC/EAAntiCheat.Installer.exe",
+        "C:/Program Files/EA/AC/preloader_s.dll"
+      ],
+      "file_count": 4,
+      "total_bytes": 532941280
+    },
+    "uninstall_wired_to": "The same install script runs EAAntiCheat.Installer.exe --noui --uninstall --read-cfg --launcher-path \"%INSTALLDIR%/EAAntiCheat.GameServiceLauncher.exe\" when Steam uninstalls the game."
+  },
+  "privacy": {
+    "removed_by_policy": {
+      "registry_records": 13336,
+      "registry_values": 8,
+      "file_records": 81328,
+      "unreadable_items": 53,
+      "empty_keys": 10,
+      "emptied_directories": 1
+    },
+    "redacted": {
+      "account_names": 1027,
+      "machine_sids": 70,
+      "identifiers": 38,
+      "identifiers_supplied_with_also_id": 8,
+      "also_id_note": "FC 26's play-time file name and TLM value, an EA SDK persistence file name, and EA app folder and secure-store file names made of hashes."
+    },
+    "note": "An earlier pass reported no name left while the account name sat 72 times in hex-encoded shell links in a Store application's storage table; since #52 redact searches hex values and the table is not walked."
+  },
+  "draft": {
+    "file": "draft.toml",
+    "derived_from": "install.json",
+    "command": "suggest --signer \"Electronic Arts, Inc.\" --only eaanticheat --only \"ea\\ac\" --only javelin",
+    "status": "hypothesis, not an entry; id and display are placeholders; the event source belongs in it (see notes)",
+    "attribution_note": "Electronic Arts, Inc. signs the EA app as well as the anti-cheat, and the EA app was installed in the same window, so the draft is scoped with --only."
+  },
+  "still_to_do": [
+    "signtool verify /v /pa output for every binary, in the PR that adds the catalog entry.",
+    "After the next restart, confirm SCM no longer lists EAAntiCheat."
+  ],
+  "uninstall": {
+    "ran": "Steam's uninstall of FC 26, whose install script runs EAAntiCheat.Installer.exe --noui --uninstall --read-cfg --launcher-path \"%INSTALLDIR%/EAAntiCheat.GameServiceLauncher.exe\"",
+    "by": "the maintainer, through Steam",
+    "steam_record": "HKLM/SOFTWARE/WOW6432Node/Valve/Steam/Apps/3405690 swapped its install flags for EAAntiCheatInstaller Uninstall = 1 and EAAntiCheatInstaller Unstall = 1",
+    "removed": {
+      "services": [
+        "EAAntiCheatService",
+        "EAAntiCheat"
+      ],
+      "registry_keys": [
+        "HKLM/SYSTEM/CurrentControlSet/Services/EAAntiCheatService (both WOW64 views)",
+        "HKLM/SYSTEM/CurrentControlSet/Services/EAAntiCheat with Instances (both WOW64 views)",
+        "HKLM/SYSTEM/CurrentControlSet/Services/EventLog/Application/EA Javelin Anticheat (both WOW64 views)",
+        "HKLM/SOFTWARE/EA/AC and its Installs record (64-bit view)"
+      ],
+      "files": "all four under C:/Program Files/EA/AC, and the directory"
+    },
+    "left_behind": {
+      "by_the_anticheat": [
+        "HKLM/SOFTWARE/WOW6432Node/EA/AC/Installs/fc26 holding EAAntiCheatInstaller, with EA/AC and Installs above it: the 32-bit view of what the uninstaller removed in the 64-bit one",
+        "HKCU/SOFTWARE/EA/AC holding LastSessionId and LastServiceSessionId",
+        "SCM's entry for EAAntiCheat: its key was deleted past SCM, and until the next boot SCM still opens the service while every query fails with error 2"
+      ],
+      "by_the_game_steam_and_the_ea_app": [
+        "HKLM/SOFTWARE/EA Sports/EA SPORTS FC 26 (both views) and the uninstall entry {CC38BDAB-B776-4908-9A26-CC27C96404C2}, each holding only an empty default value",
+        "Steam's record HKLM/SOFTWARE/WOW6432Node/Valve/Steam/Apps/3405690",
+        "HKLM/SOFTWARE/WOW6432Node/Origin Games, left empty; C:/ProgramData/Origin/LocalContent, left empty",
+        "%LOCALAPPDATA%/EA SPORTS FC 26, 66 files and 142 MB of settings and caches; HKCU/SOFTWARE/Electronic Arts/FC; the game's DirectInput key",
+        "D:/SteamLibrary/steamapps/common/FC 26 holding steam_appid.txt, which the game wrote at first launch (not walked; checked by hand)"
+      ],
+      "found_by": "Those that did not change between 03 and 04 are not in residue.json and were found by hand, read-only."
+    }
+  }
+}

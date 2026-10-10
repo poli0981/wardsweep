@@ -47,7 +47,7 @@ human review, never a finished entry — see "Review before submitting" below.
 |---|---|
 | Services | Full `QueryServiceConfigW` + `QueryServiceConfig2W` for every service and driver |
 | Registry | `HKLM\SOFTWARE` (both WOW64 views), `HKLM\SYSTEM\CurrentControlSet\Services`, `Run` keys, uninstall keys, `HKCU\SOFTWARE`; values, and keys left standing with none |
-| Filesystem | Path, size, SHA-256, mtime, Authenticode signer for `%ProgramFiles*%`, `%ProgramData%`, `%LOCALAPPDATA%`, `%APPDATA%`, `System32\drivers`, launcher libraries |
+| Filesystem | Path, size, SHA-256, mtime, Authenticode signer for `%ProgramFiles*%`, `%ProgramData%`, `%LOCALAPPDATA%`, `%APPDATA%` and `System32\drivers`. A launcher library is covered only under one of those: a Steam library on another volume, where both 2026-10 titles live, is not walked, and a game's own copy of its anti-cheat is listed by hand |
 | Scheduled tasks | Full XML export of every task |
 | Firewall | Every rule via `INetFwPolicy2` |
 | Event log sources | Registered sources under `EventLog\Application` |
