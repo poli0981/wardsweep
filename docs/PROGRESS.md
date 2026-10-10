@@ -3,8 +3,9 @@
 Where the project actually stands, and what to pick up next. `CHANGELOG.md`
 records what happened; this file records what is true now and what is not done.
 
-Last updated **2026-10-08**, after an audit of the whole tree and the work that
-followed it the same day — see "The 2026-10-08 audit" below.
+Last updated **2026-10-10**, at the end of the 2026-10-09 observation cycle —
+see "Next, in order" below. The audit of 2026-10-08 and the work that followed
+it are under "The 2026-10-08 audit".
 
 ---
 
@@ -24,14 +25,21 @@ and the root of the dependency graph. It changed `docs/08-IPC-PROTOCOL.md` in
 five places and left `docs/03-ARCHITECTURE.md` untouched: the split-privilege
 architecture survived contact, its protocol did not survive it unamended.
 
-Two anti-cheats have since been observed through their own uninstallers, one of
-them through a full uninstall-and-reinstall cycle. AntiCheatExpert left
-**nothing of its own**; Riot Vanguard left two files and two empty directories,
-which its own reinstall did not reset either. A third, EA AntiCheat, has been
-observed installing from a clean baseline; its uninstall is next. **That is the honest scale of the
-residue problem so far**, and it is a long way from what the subject is usually
-claimed to be. Anyone picking this up should know that before deciding how loud
-the product's claims are allowed to be.
+Three anti-cheats have since been observed leaving through their own
+uninstallers:
+
+- **AntiCheatExpert** left **nothing of its own**, twice: in August, and on
+  2026-10-10 behind a different title, this time with empty keys and
+  directories in view.
+- **Riot Vanguard** left two files and two empty directories, which its own
+  reinstall did not reset either.
+- **EA AntiCheat**, observed from a clean baseline, left the 32-bit view of a
+  key it removed in the 64-bit one and its per-user key. Until the next boot it
+  also left an SCM entry for a driver whose key was already gone.
+
+**That is the honest scale of the residue problem so far**, and it is a long way
+from what the subject is usually claimed to be. Anyone picking this up should
+know that before deciding how loud the product's claims are allowed to be.
 
 What the observations produced instead was method, and most of it came from
 tools being wrong rather than from anti-cheats being interesting:
@@ -50,7 +58,17 @@ tools being wrong rather than from anti-cheats being interesting:
   `TypedPaths` value named the anti-cheat and survived the uninstall.
 
 Five of those six were only visible because there was a *second* anti-cheat to
-compare against. A third would probably be worth more than the next feature.
+compare against. The third, in October, added three more:
+
+- **A driver can live past SCM.** EA's installer wrote its minifilter's key
+  straight into the registry, and SCM did not list it until a reboot. NTE's
+  incomplete key is never listed. EA's uninstaller deleted the key the same way,
+  and SCM kept a stale entry until the next boot.
+- **A full-machine diff of a machine in use carries personal data no rule
+  names.** That took two harness PRs and a review step before anything could be
+  committed (`docs/16`). The review is still partly by hand.
+- **The walk does not cover a launcher library on another volume**, and both
+  October titles live on one. Their folders were listed and hashed by hand.
 
 ## What exists and is verified
 
@@ -194,92 +212,90 @@ Detail in `observations/2026-08-19-riot-vanguard/notes.md`.
 Vanguard is **installed but not working** on this machine: its service
 terminated with error 1 thirty-eight times on 2026-10-09, four reinstalls that
 day did not change that, and no Code Integrity block explains it. Until it
-works, step 2 cannot be done here.
+works, step 3 cannot be done here.
 
-**1. Finish the 2026-10-09 cycle: ACE and EA AntiCheat.**
-Every snapshot in it comes from one collector, pinned for the cycle. `00` is
-the baseline and `01` followed FC 26's first launch; the diff between them is
-EA AntiCheat's install footprint, committed. Next:
+**1. Done: the 2026-10-09 cycle.** It took six snapshots, all from one
+collector pinned for the cycle, two PRs of evidence (#53, #54), and the harness
+fixes those diffs prompted first (#50 to #52):
 
-- **Done:** snapshot `02` (2026-10-10). Wuthering Waves, installed after `01`,
-  installed ACE at its first launch. The diff from `01` is ACE's install
-  footprint, committed. NTE also ran in the window and did not install or
-  register ACE.
-- **Tried:** NTE, reinstalled from Steam, ran once with ACE installed between
-  `02` and `03`, and nothing of ACE's changed: ACE was not engaged. Next, a
-  second title played past login, between two snapshots, to see what it adds
-  to a shared ACE.
-- **Done:** FC 26 uninstalled through Steam, whose install script ran EA's
-  uninstaller; the diff from `03` is EA AntiCheat's residue, committed. It left
-  the 32-bit view of a key it removed in the 64-bit one, its per-user key, and
-  for one boot a stale SCM entry.
-- **Done:** ACE's own uninstaller, then snapshot. The diff from `04` is ACE's
-  residue, committed, and ACE left nothing of its own, as it did in August,
-  now with empty keys and directories in view. The uninstaller installs both
-  services again before it removes them, so SCM's install events alone
-  overstate ACE installs.
+- **EA AntiCheat, both halves** (`observations/2026-10-09-ea-anticheat/`):
+  - installed by FC 26's first launch, through Steam's install script;
+  - removed by the game's uninstall through Steam, which ran EA's uninstaller.
+    The residue is summarised at the top of this file.
+- **AntiCheatExpert, both halves** (`observations/2026-10-10-anticheatexpert/`):
+  - installed by Wuthering Waves, a second title after August's;
+  - removed by its own uninstaller, leaving nothing of its own.
+  - It keeps per-title state keyed by a game id, and its uninstaller installs
+    both services again before removing them.
+- **A second ACE title did not engage ACE.** NTE, from Steam, ran once with ACE
+  installed and touched nothing of ACE's.
 
-**Earlier plan for ACE, which the cycle above replaces:**
-The uninstall half is done and committed at
-`observations/2026-08-19-anticheatexpert/`. ACE is not installed on this
-machine at present (checked 2026-10-09), so the cycle starts with the game
-client installing it — the step that failed twice in August. The plan was one
-game launch and a diff against the `01-uninstalled` snapshot, but the raw snapshots are no longer
-at `%LOCALAPPDATA%\WardSweep\observations\` (checked 2026-10-08), and a format
-1 snapshot cannot be diffed against a format 2 one anyway. So: snapshot with
-ACE installed, uninstall through the official uninstaller, snapshot, start
-Neverness To Everness so it reinstalls ACE, snapshot — and the residue half is
-measured again, with the format 2 harness, which can now see an emptied key.
+One follow-up needs the maintainer's hands: after the next restart,
+`sc query EAAntiCheat` should answer 1060. Record that in the EA notes.
 
-The half that already exists is the one [`16`](16-OBSERVATION-HARNESS.md) says
-"alone justifies the cycle", and its answer was that **ACEVILLE's uninstaller
-leaves nothing of its own**. A project that sweeps residue has to report that as
-readily as the opposite.
+**2. ACE from a second title, on a machine without it.** ACE is uninstalled
+now, so the next ACE title to run installs it from scratch. Take a new cycle
+with a freshly pinned collector:
 
-**2. A second title carrying Riot Vanguard** — blocked on this machine while
-Vanguard is failing (step 0).
-The Vanguard cycle is complete — both halves — and committed at
-`observations/2026-08-19-riot-vanguard/` with a `draft.toml`. What the draft
-cannot have is `shared = false`, and it must not get it from one title:
-[`04`](04-CATALOG-SCHEMA.md) is explicit that a wrong `shared = false` is the G1
-violation this project exists to prevent. Only a second observed title changes
-that, and the same holds for AntiCheatExpert.
+- Snapshot. Play NTE past login, into the game. Close it. Snapshot. That diff
+  is ACE's install footprint by a second title, from a clean machine, which is
+  exactly what `observe intersect` needs (step 4).
+- Then launch Wuthering Waves between two more snapshots. That diff shows what
+  a second title adds to an ACE already installed: by October's evidence, its
+  own pair of core drivers and its own per-user key, named by its game id.
 
-Vanguard is **the first anti-cheat observed here that leaves anything behind**:
-two files under `%LOCALAPPDATA%` and two empty directories under
-`%ProgramFiles%`, against a removal of 207 MB, two services and every registry
-key it owned — and its own reinstall does not reset those two files either. It
-cost the tooling three defects, all fixed there: a snapshot did not record which
-boot it belonged to, an emptied directory produced no record at all, and
-`suggest` claimed `view = "both"` for every registry key on the false grounds
-that the observation could not tell.
+**3. A second title carrying Riot Vanguard**: blocked on this machine while
+Vanguard is failing (step 0). The Vanguard cycle is complete, both halves, and
+committed at `observations/2026-08-19-riot-vanguard/` with a `draft.toml`.
 
-Two facts worth carrying forward. No reboot was required, contrary to
-expectation, because the client was closed and `vgk` was not loaded. And **`vgk`
-is installed at `SYSTEM_START` but reads `demand` on a machine that has been up
-for hours** — `docs/16` infers `risk` from a value that moves, so a late
-observation records the later reading and calls it the fact. The endpoints are
-measured; the transition between them has never been caught, and a 35-minute
-poll straight after the install saw no change at all.
+What the draft cannot have is `shared = false`, and it must not get it from one
+title: [`04`](04-CATALOG-SCHEMA.md) is explicit that a wrong `shared = false` is
+the G1 violation this project exists to prevent. Two facts are worth carrying
+forward:
+- No reboot was required to uninstall it, because the client was closed and
+  `vgk` was not loaded.
+- `vgk` is installed at `SYSTEM_START` and lowered to `demand` by Vanguard's own
+  service minutes into a boot. `risk` must not be inferred from a late reading.
 
-**3. Feed `observe intersect`.**
-Written on 2026-10-08 and waiting for input: it turns footprints of one
-anti-cheat under several titles into the shared footprint, which is what makes
-a `shared = true` entry right and what S2 starts from. It needs at least two
-titles' footprints, each from a machine where the anti-cheat was not already
-installed — item 2 is the first such pair.
+**4. Feed `observe intersect`.** It was written on 2026-10-08 and is waiting
+for input. It turns footprints of one anti-cheat under several titles into the
+shared footprint, which is what makes a `shared = true` entry right and what S2
+starts from. It needs two titles' install footprints, each from a machine
+without the anti-cheat. Wuthering Waves' ACE footprint is one, and step 2's NTE
+footprint would be the other.
 
-**4. Run S1 and S2**, which S3 unblocked, in parallel. **Read
-[`15`](15-TEST-MACHINE-PROTOCOL.md) before S1 touches real hardware** — the
+**5. Run S1 and S2**, which S3 unblocked, in parallel. **Read
+[`15`](15-TEST-MACHINE-PROTOCOL.md) before S1 touches real hardware**: the
 failure mode is an unbootable machine. S2 should start from the evidence already
 gathered, below.
 
-**5. `core/src/safety/refcount.rs` and the ownership graph.**
-Pure logic, testable on Linux, and it carries the G1 invariant. Six of the
-fourteen named tests in [`12`](12-TESTING-STRATEGY.md) are waiting on it. The
-three S2 findings below are what it has to be right about.
+**6. `core/src/safety/refcount.rs` and the ownership graph.** Pure logic,
+testable on Linux, and it carries the G1 invariant. Six of the fourteen named
+tests in [`12`](12-TESTING-STRATEGY.md) are waiting on it. The S2 findings below
+are what it has to be right about.
 
-**6. The detection engine (`core/src/scan/`), and then v0.1.**
+**7. The detection engine (`core/src/scan/`), and then v0.1.** It now has
+[`05`](05-DETECTION-ENGINE.md)'s October findings to build in:
+- read the `Services` key as well as asking SCM;
+- a stale SCM entry that fails with error 2 is not a present driver;
+- a missing image under a present key is not a removal;
+- every key is read in both WOW64 views, because EA's own uninstaller missed
+  one.
+
+**8. Harness work the October cycle asked for.**
+- Walk launcher libraries on other volumes, found from the launchers' own
+  manifests.
+- Turn the pre-commit privacy review into an `observe` command. It is still run
+  by hand from scratch scripts, and they belong in the harness. The checks:
+  - identifiers in file and folder names;
+  - names inside hex binaries;
+  - other software's names in rotating slots;
+  - names shaped like a machine key's.
+- `suggest`:
+  - attribute an event source whose name is an attributed service's
+    description, as EA's was;
+  - name per-title files, ACE's `ACE-CORE1<id>.sys`, by pattern rather than by
+    one title's name.
 
 The remaining harness domains — scheduled tasks, firewall, event sources,
 environment — are worth adding when an observation actually needs one, not
@@ -314,7 +330,12 @@ that S2 should start from rather than rediscover:
 - EA AntiCheat keeps a record of the games that installed it under
   `HKLM\SOFTWARE\EA\AC\Installs`, one name per game. That makes it a lead for the
   resolver to cross-check, never a count: the ACE uninstall entry above was a
-  vendor record too, and it named a game that was gone.
+  vendor record too, and it named a game that was gone. EA's uninstaller also
+  left that record's 32-bit view behind, so it can even name a title that is
+  gone along with the anti-cheat.
+- ACE keeps per-title state keyed by a game id: two core drivers named after
+  it, and a per-user key. A refcount resolver can read which titles registered
+  with an installed ACE from those, beside counting installed games itself.
 
 ## Open, needs a maintainer decision
 
@@ -333,6 +354,13 @@ that S2 should start from rather than rediscover:
   launchers lay out today; a new standard profile folder, a new launcher's
   library layout, or a new inbox driver is not covered until someone adds it.
   Worth a review whenever a new launcher or Windows release is observed.
+- **How Stage 3 removes a driver SCM does not know.** [`06`](06-REMOVAL-PIPELINE.md)
+  leaves it open. Two observed drivers need an answer: EA's minifilter, which SCM
+  does not know until a reboot, and NTE's, which SCM never knows.
+- **Catalog entries from the drafts.** Vanguard, ACE (twice) and EA AntiCheat
+  have drafts pinned to their diffs. Turning any of them into a `catalog/` entry
+  needs maintainer sign-off and the `docs/16` checklist (signer verification,
+  and a second title before `shared` can be argued).
 
 ## What S3 changed, in one place
 
