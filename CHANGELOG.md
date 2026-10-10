@@ -217,7 +217,9 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
   is keyed by a game id: two core drivers named after it, and a per-user key.
   Every installed binary is a byte copy of the game's payload, and the
   installer doubles as the uninstaller. The draft needs no scoping, and a test
-  pins it. `docs/16` and the snapshot model now say which roots are walked: a
+  pins it. Its residue half followed: ACE's own uninstaller left nothing of its
+  own, no empty key or directory included. Before removing the two services it
+  installed them again, so an SCM install event alone overstates ACE installs. `docs/16` and the snapshot model now say which roots are walked: a
   launcher library on another volume is not.
 - `docs/05` §"Not SCM alone": a driver whose key was written without SCM is
   invisible to `EnumServicesStatusExW`: a complete key until the next boot, an

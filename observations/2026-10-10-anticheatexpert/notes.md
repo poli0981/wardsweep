@@ -3,7 +3,8 @@
 The second observation of ACE, and the first of its **install**. The August
 observation (`observations/2026-08-19-anticheatexpert/`) saw ACE leave this
 machine through its own uninstaller. This one sees it arrive, from a baseline
-with no ACE on the machine, installed by a different title.
+with no ACE on the machine, installed by a different title, and then leave
+again (`residue.json`).
 
 That makes ACE the first anti-cheat observed here with two titles behind it:
 Neverness To Everness in August, Wuthering Waves now. One title is not enough to
@@ -200,12 +201,44 @@ its own driver, and one run cannot tell which. The diff is kept locally rather
 than committed, since nothing in it is the anti-cheat's, and the privacy review
 it would need buys nothing.
 
+## The residue half
+
+On 2026-10-10 the maintainer ran ACE's own uninstaller,
+`C:\Program Files\AntiCheatExpert\Uninstaller.exe`, which is the game's
+`ACE-Setup64.exe` under another name. Snapshot `05-after-ace-uninstall` (06:32Z)
+followed, in the same boot as `04` (06:13Z), and `residue.json` is the diff
+between them.
+
+**ACE left nothing of its own.** The uninstaller removed:
+- both services, and their keys in both views, `ACE-BASE\Final` included;
+- the uninstall entry;
+- both per-user keys under `appdatalow\AntiCheatExpert`, and the two empty keys
+  beside them;
+- all five files under `C:\Program Files\AntiCheatExpert`, `ace-drc.dat`, the
+  driver image in `System32\drivers`, and both directories.
+
+No directory or key was left standing empty. The diff does report one emptied
+key, `HKCU\SOFTWARE\AppDataLow`, but it is Windows' own: snapshot `01` already
+held it, empty, before ACE arrived.
+
+That agrees with the August observation, which saw an older ACE (28.0.2604.938)
+behind a different title. This time the harness could also see empty keys and
+directories, and August's could not.
+
+**The uninstaller installs before it removes.** At 06:22:49, SCM logged both
+services as installed again:
+- `AntiCheatExpert Protection`, under the signed-in account;
+- `ACE-BASE`, by SYSTEM, 89 ms later.
+
+That is the same pair, in the same order, as the original install. Then nothing:
+at the next check both were gone (1060). The removal evidently runs inside ACE's
+own service. So an install event (7045) for ACE is not evidence of an install
+on its own: an ACE uninstall writes the same two.
+
 ## Still to do
 
-1. **A second title that engages ACE.** Snapshot, play NTE (or another ACE title)
-   past login into the game, close it, snapshot: what a second title adds to a
-   shared ACE, if anything.
-2. **The residue half.** ACE's own `Uninstaller.exe`, then a snapshot. Every
-   title's next launch reinstalls it, which is the cycle `docs/16` describes.
-3. In the PR that adds the catalog entry, paste `signtool verify /v /pa` for
+1. **A second title that engages ACE.** Reinstall ACE by launching a title, then
+   snapshot, play a second ACE title past login into the game, close it, and
+   snapshot. That shows what a second title adds to a shared ACE, if anything.
+2. In the PR that adds the catalog entry, paste `signtool verify /v /pa` for
    every binary (`docs/16` checklist).
