@@ -130,10 +130,10 @@ prompted. That build removed:
 
 | Kind | Removed |
 |---|---|
-| Registry records | 12,306 |
+| Registry records | 13,336 |
 | Registry values | 8 |
-| File records | 77,542 |
-| Unreadable items | 47 |
+| File records | 81,328 |
+| Unreadable items | 53 |
 | Empty keys | 10 |
 | Emptied directory | 1 |
 
@@ -142,7 +142,9 @@ What these were:
 - the Steam account's data and library lists;
 - activity history, crash reports, and the harness's own files;
 - the storage table in which Store applications keep shell links to the files
-  they may reopen.
+  they may reopen;
+- the TPM's key folders and the other key stores, which Safety Gate G3 keeps
+  the walk out of.
 
 That last one was found the hard way. An earlier pass over this diff reported
 no name left, yet the account name sat 72 times inside those shell links,

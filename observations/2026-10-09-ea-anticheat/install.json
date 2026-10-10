@@ -760,11 +760,6 @@
       },
       {
         "domain": "registry",
-        "item": "HKLM\\SOFTWARE\\Microsoft\\GamingServices\\SteamShader [view 64]",
-        "reason": "RegOpenKeyExW returned 5"
-      },
-      {
-        "domain": "registry",
         "item": "HKLM\\SOFTWARE\\Microsoft\\MSDTC\\Security\\XAKeyCNGKeyDataBlob [view 64]",
         "reason": "RegOpenKeyExW returned 5"
       },
@@ -3890,21 +3885,6 @@
       },
       {
         "domain": "filesystem",
-        "item": "C:\\ProgramData\\Microsoft\\Crypto\\PCPKSP\\WindowsAIK",
-        "reason": "Access is denied. (os error 5)"
-      },
-      {
-        "domain": "filesystem",
-        "item": "C:\\ProgramData\\Microsoft\\Crypto\\PCPKSP\\WindowsEK",
-        "reason": "Access is denied. (os error 5)"
-      },
-      {
-        "domain": "filesystem",
-        "item": "C:\\ProgramData\\Microsoft\\Crypto\\SystemKeys",
-        "reason": "Access is denied. (os error 5)"
-      },
-      {
-        "domain": "filesystem",
         "item": "C:\\ProgramData\\Microsoft\\Diagnosis",
         "reason": "Access is denied. (os error 5)"
       },
@@ -4081,16 +4061,6 @@
       {
         "domain": "filesystem",
         "item": "C:\\ProgramData\\Microsoft\\Windows\\Containers\\Layers\\2dd500a8-3660-4f53-9409-dc7c70676250\\Files\\Program Files\\WindowsApps",
-        "reason": "Access is denied. (os error 5)"
-      },
-      {
-        "domain": "filesystem",
-        "item": "C:\\ProgramData\\Microsoft\\Windows\\Containers\\Layers\\2dd500a8-3660-4f53-9409-dc7c70676250\\Files\\ProgramData\\Microsoft\\Crypto\\PCPKSP\\WindowsAIK",
-        "reason": "Access is denied. (os error 5)"
-      },
-      {
-        "domain": "filesystem",
-        "item": "C:\\ProgramData\\Microsoft\\Windows\\Containers\\Layers\\2dd500a8-3660-4f53-9409-dc7c70676250\\Files\\ProgramData\\Microsoft\\Crypto\\PCPKSP\\WindowsEK",
         "reason": "Access is denied. (os error 5)"
       },
       {
@@ -38624,11 +38594,11 @@
     "Valve Corp.": 1
   },
   "refiltered": {
-    "registry_records": 12306,
+    "registry_records": 13336,
     "registry_values": 8,
-    "access_denied": 47,
+    "access_denied": 53,
     "emptied_keys": 10,
-    "files": 77542,
+    "files": 81328,
     "emptied_directories": 1
   }
 }

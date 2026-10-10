@@ -80,10 +80,10 @@
   },
   "privacy": {
     "removed_by_policy": {
-      "registry_records": 12306,
+      "registry_records": 13336,
       "registry_values": 8,
-      "file_records": 77542,
-      "unreadable_items": 47,
+      "file_records": 81328,
+      "unreadable_items": 53,
       "empty_keys": 10,
       "emptied_directories": 1
     },
