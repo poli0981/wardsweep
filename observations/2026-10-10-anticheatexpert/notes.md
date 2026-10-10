@@ -170,10 +170,41 @@ this title's file names. A catalog entry has to cover any title's, and that is
 a reviewer's call, not an observation's. `shared` stays `true`. A test pins
 the draft to `install.json`.
 
+## A second title ran, and engaged nothing of ACE's
+
+On 2026-10-10 the maintainer removed the standalone Neverness To Everness and
+installed it again from Steam (app 4508340). Its folder carries its own ACE
+payload, newer than Wuthering Waves':
+- `ACE-BASE.sys` is 4,282,536 bytes against 4,125,432;
+- `ACE-Service64.exe` and `ACE-Setup64.exe` differ in size;
+- there are three core-driver variants against two.
+
+The maintainer ran it once and closed it, and snapshot `03-after-nte-steam`
+(06:05Z) followed.
+
+Against `02`, the diff holds **nothing of ACE's**:
+- no file, key or service changed;
+- the installed driver image and `ace-drc.dat` still carry the write time of
+  Wuthering Waves' second session;
+- SCM recorded no install.
+
+What NTE did touch is its own driver. Its launcher rewrote `PGameProtectDriver`'s
+`ImagePath` to point at the Steam install's `PGameProtectDriver_X64.sys`. The
+key still holds only `ImagePath`, `Type` and `Start`, and SCM still answers 1060
+for it. A key rewritten at every run is what a program that loads its own driver
+would keep.
+
+So the second-title question is still open: this run never got ACE to start.
+Either NTE engages ACE only past a point this run did not reach, or it relies on
+its own driver, and one run cannot tell which. The diff is kept locally rather
+than committed, since nothing in it is the anti-cheat's, and the privacy review
+it would need buys nothing.
+
 ## Still to do
 
-1. **A second title with ACE installed.** Snapshot, launch NTE until it reaches
-   the game, close it, snapshot: what a second title adds to a shared ACE.
+1. **A second title that engages ACE.** Snapshot, play NTE (or another ACE title)
+   past login into the game, close it, snapshot: what a second title adds to a
+   shared ACE, if anything.
 2. **The residue half.** ACE's own `Uninstaller.exe`, then a snapshot. Every
    title's next launch reinstalls it, which is the cycle `docs/16` describes.
 3. In the PR that adds the catalog entry, paste `signtool verify /v /pa` for

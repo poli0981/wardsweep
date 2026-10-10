@@ -24,7 +24,13 @@
     "also_on_the_machine": [
       {
         "title": "Neverness To Everness",
-        "note": "Ran in the window, about 2026-10-09 18:00Z, and installed or registered nothing of ACE's."
+        "note": "The standalone install ran in the window, about 2026-10-09 18:00Z, and installed or registered nothing of ACE's."
+      },
+      {
+        "title": "NTE: Neverness to Everness (Steam)",
+        "steam_appid": 4508340,
+        "path": "D:/SteamLibrary/steamapps/common/Neverness to Everness",
+        "note": "Installed 2026-10-10, carrying a newer ACE payload of its own. Run once between snapshots 02 and 03: nothing of ACE's changed; its launcher re-pointed PGameProtectDriver at the Steam install."
       }
     ],
     "refcount_at_observation": 1,
@@ -56,7 +62,8 @@
   "snapshots": {
     "01-after-fc26": "2026-10-09T16:37:35Z; the before side; no ACE",
     "02-after-ww": "2026-10-10T04:13:28Z; after two sessions of Wuthering Waves, with the game closed and ACE stopped",
-    "storage": "%LOCALAPPDATA%/WardSweep/observations/ - raw snapshots are NOT committed"
+    "storage": "%LOCALAPPDATA%/WardSweep/observations/ - raw snapshots are NOT committed",
+    "03-after-nte-steam": "2026-10-10T06:05:03Z; after NTE from Steam ran once with ACE installed; diff 02->03 holds nothing of ACE's and is kept locally"
   },
   "install": {
     "trigger": "Wuthering Waves' first launch, 2026-10-10 03:27Z. SCM install events: AntiCheatExpert Protection at 03:27:04 by the signed-in account through an elevated installer, ACE-BASE at 03:27:05 by SYSTEM.",
@@ -116,7 +123,7 @@
     "attribution_note": "No --only needed: nothing else in the window clusters with ACE. suggest tried to add System32/drivers as a path and the deny-list refused it."
   },
   "still_to_do": [
-    "Launch a second ACE title (NTE) with ACE installed, between two snapshots: what it adds to a shared ACE.",
+    "A second title that engages ACE: play NTE (or another ACE title) past login between two snapshots.",
     "Residue half: ACE's own Uninstaller.exe, then a snapshot.",
     "signtool verify /v /pa output for every binary, in the PR that adds the catalog entry."
   ]

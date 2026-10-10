@@ -205,8 +205,10 @@ EA AntiCheat's install footprint, committed. Next:
   installed ACE at its first launch. The diff from `01` is ACE's install
   footprint, committed. NTE also ran in the window and did not install or
   register ACE.
-- Launch NTE once more, with ACE installed, between two snapshots. The diff
-  shows what a second title adds to a shared ACE.
+- **Tried:** NTE, reinstalled from Steam, ran once with ACE installed between
+  `02` and `03`, and nothing of ACE's changed: ACE was not engaged. Next, a
+  second title played past login, between two snapshots, to see what it adds
+  to a shared ACE.
 - Uninstall FC 26 through Steam, whose install script runs EA's uninstaller,
   then snapshot. That diff is EA AntiCheat's residue.
 - Run ACE's own uninstaller, then snapshot. That diff is ACE's residue; a title's

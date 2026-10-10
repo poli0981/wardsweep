@@ -171,7 +171,7 @@ baseline, whose own observation follows):
 | Driver | Its `Services` key | `sc query` | Image |
 |---|---|---|---|
 | EA AntiCheat's `EAAntiCheat`, a file-system minifilter | complete: type, start, error control, image, group, instance and altitude | error 1060 in the boot it was installed in; listed after a restart | absent while no game runs |
-| Neverness To Everness's `PGameProtectDriver` | `ImagePath`, `Type` and `Start` only, none of the values `CreateService` always writes | error 1060, before and after a restart | on a drive the machine no longer has |
+| Neverness To Everness's `PGameProtectDriver` | `ImagePath`, `Type` and `Start` only, none of the values `CreateService` always writes; its launcher rewrites `ImagePath` when it runs | error 1060, before and after a restart | at the baseline, on a drive the machine no longer had; re-pointed at the game's current install once it ran |
 
 Both keys were written into `HKLM\SYSTEM\CurrentControlSet\Services` without
 going through SCM. The filter manager and `NtLoadDriver` read a key there
