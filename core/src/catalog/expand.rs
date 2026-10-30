@@ -68,6 +68,25 @@ fn candidates_for(name: &str) -> Option<&'static [&'static str]> {
 /// Returns [`ExpandError`] if the template names a variable the schema does not
 /// define, or has an unterminated `%`.
 pub fn expand_for_validation(template: &str) -> Result<Vec<String>, ExpandError> {
+    expand_with(template, |name| {
+        candidates_for(name).map(|values| values.iter().map(|value| (*value).to_owned()).collect())
+    })
+}
+
+/// Expand a template with the values a caller supplies: the machine's own, at
+/// scan time. A multi-valued variable — one per discovered game library —
+/// expands to one path per value, and a variable this machine has no value
+/// for expands to nothing, rather than to a path with a hole in it.
+///
+/// # Errors
+///
+/// Returns [`ExpandError`] if the template names a variable the schema does not
+/// define, or has an unterminated `%`. A known variable that `values` cannot
+/// answer is not an error: it yields no expansions.
+pub fn expand_with(
+    template: &str,
+    values: impl Fn(&str) -> Option<Vec<String>>,
+) -> Result<Vec<String>, ExpandError> {
     let mut results = vec![String::new()];
     let mut rest = template;
 
@@ -78,9 +97,13 @@ pub fn expand_for_validation(template: &str) -> Result<Vec<String>, ExpandError>
             return Err(ExpandError::UnterminatedVariable);
         };
         let name = &after[..end];
-        let Some(values) = candidates_for(name) else {
+        if !KNOWN_VARIABLES
+            .iter()
+            .any(|known| known.eq_ignore_ascii_case(name))
+        {
             return Err(ExpandError::UnknownVariable(name.to_owned()));
-        };
+        }
+        let values = values(name).unwrap_or_default();
 
         results = results
             .into_iter()

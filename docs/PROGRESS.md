@@ -310,7 +310,7 @@ S1, S2 and S4–S7 remain unrun. S1, S5 and S7 are deferred for v0.1
 (`docs/13` §Deferral); S2, S4 and S6 are its exit criteria.
 
 Deferred test coverage is tracked in [`spikes/README.md`](../spikes/README.md):
-five of the fourteen named tests are done, one is partial, eight are waiting on
+six of the fourteen named tests are done, one is partial, seven are waiting on
 code that does not exist yet.
 
 ## Evidence gathered for spikes that have not run

@@ -1,5 +1,14 @@
 # 05 — Detection Engine
 
+> **What exists (2026-10-30).** The audit engine, `core/src/scan/engine.rs`,
+> over a read-only machine view: services through SCM and the `Services` key,
+> drivers by the image name of every driver key, registry keys in both views
+> where WOW64 redirects, paths expanded per game library, the deny-list on
+> every path and key, and the classification below. It is tested against a
+> machine built from a committed observation diff. Not yet: the Win32 reader
+> behind the view, games, the bounded filesystem walk, and the ownership graph
+> (S2). The sections below are the specification it follows.
+
 ## Design goal
 
 One pass over each data source, matching every catalog pattern simultaneously,
