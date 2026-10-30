@@ -286,6 +286,16 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
   EA's files failed one under disk load and verify when idle.
 
 ### Changed
+- **EA AntiCheat's residue, computed against the clean baseline** rather than
+  listed by hand (2026-10-30). The maintainer's screenshots showed EA folders
+  the hand-made list did not have. Diffing the after-uninstall snapshot back
+  to the one from before FC 26's first launch found what it missed. The game's
+  install script had installed the whole EA app, which Steam's uninstall of
+  the game left installed: 633 MB, a running service, its data folders, keys,
+  URL handlers and an empty `C:\Program Files\EA Games`. The diff spans
+  fourteen hours of a machine in use and is not committed; its EA records are
+  in the observation's notes and meta. SCM's stale `EAAntiCheat` entry was
+  confirmed gone after a restart.
 - `docs/08-IPC-PROTOCOL.md` amended from the S3 findings, in five places. Events
   now carry a monotonic `seq` and `Hello` carries `resume_from`: the document
   required a reconnecting UI to resume the event stream but gave it no way to
@@ -354,6 +364,15 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
 - `TRUST_E_NOSIGNATURE` is unsigned only when the last error says so; when the
   file could not be read it is an error, retried once and then unknown — the
   failure the 2026-10-09 baseline showed on a saturated disk.
+- **A residue diff could not name the empty folders and keys an uninstall
+  left.** `docs/16` takes residue from after the uninstaller to the clean
+  state, so what was left is in the earlier snapshot only, and a diff recorded
+  emptied directories and keys only the other way round. EA's empty
+  `C:\Program Files\EA Games`, which the maintainer's screenshot showed, was in
+  no diff. A diff now carries `formerly_empty_directories` and
+  `formerly_empty_keys` as well, both directions are refiltered and
+  intersected, `diff` prints them, and reading a diff backwards swaps the two
+  lists instead of forgetting both.
 - **Identity inside binaries in a committed diff, found by `observe review`
   on its first run** (2026-10-30). The ACE install diff carried:
   - a machine SID, as text inside binary values;

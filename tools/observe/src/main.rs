@@ -711,6 +711,34 @@ fn run_diff(before: &PathBuf, after: &PathBuf, output: &PathBuf, no_filter: bool
             "  emptied registry keys are not known: these snapshots did not both record them"
         ),
     }
+    // The mirror: in a residue diff, taken from after the uninstaller to the
+    // clean baseline, these are the empty folders and keys it left.
+    if let Some(directories) = diff
+        .formerly_empty_directories
+        .as_ref()
+        .filter(|list| !list.is_empty())
+    {
+        eprintln!(
+            "  {} director(ies) empty in the earlier snapshot and not in the later:",
+            directories.len()
+        );
+        for directory in directories {
+            eprintln!("    {directory}");
+        }
+    }
+    if let Some(keys) = diff
+        .formerly_empty_keys
+        .as_ref()
+        .filter(|list| !list.is_empty())
+    {
+        eprintln!(
+            "  {} registry key(s) empty in the earlier snapshot and not in the later:",
+            keys.len()
+        );
+        for key in keys {
+            eprintln!("    {} [view {}]", key.key, key.view);
+        }
+    }
     for (signer, count) in &diff.signers {
         eprintln!("  {count} file(s) signed by `{signer}`");
     }
