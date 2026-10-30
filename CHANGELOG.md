@@ -523,6 +523,16 @@ maintainer decision with rationale before it changes.
   stale `Cargo.lock` fails the run instead of being resolved afresh on the
   runner, as `--locked-mode` already did for NuGet. SonarCloud's first
   analysis flagged the catalog gate's build (`githubactions:S8549`).
+- **SonarCloud** (`sonarcloud.yml`): one analysis of the C# and the Rust, the
+  workflows and the scripts, with coverage for both languages — the Rust tests
+  run under `cargo llvm-cov` in a job that holds no secret, the interface's
+  under Microsoft.Testing.Platform's coverage extension. SonarScanner for .NET,
+  the only scanner that analyses C#, does not take Rust in by itself, so the
+  workflow adds `**/*.rs` to `sonar.text.inclusions` and fails if no `.rs` file
+  reached the analysis. It replaces Automatic Analysis, which saw no C# and no
+  coverage. Informational: the quality gate reaches a pull request as the
+  SonarCloud app's own check. Every action in the file is pinned to a commit,
+  GitHub's own included.
 
 ### Handover
 - `docs/PROGRESS.md` records what is true now, what is deliberately absent,

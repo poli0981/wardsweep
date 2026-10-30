@@ -6,13 +6,22 @@
       "version": "3.2501.8",
       "commands": [
         "xstyler"
-      ]
+      ],
+      "rollForward": false
     },
     "vpk": {
       "version": "1.2.161",
       "commands": [
         "vpk"
-      ]
+      ],
+      "rollForward": false
+    },
+    "dotnet-sonarscanner": {
+      "version": "12.0.0",
+      "commands": [
+        "dotnet-sonarscanner"
+      ],
+      "rollForward": false
     }
   }
 }
