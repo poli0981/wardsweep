@@ -970,7 +970,7 @@ mod tests {
         ] {
             let (out, hits) = redact_text(path);
             assert_eq!(out, path, "{path} should be unchanged");
-            assert!(hits.is_empty());
+            assert!(hits.is_empty(), "{hits:?}");
         }
     }
 
@@ -982,7 +982,7 @@ mod tests {
         // SYSTEM and Administrators identify nobody and appear everywhere.
         let (unchanged, hits) = redact_text("S-1-5-18 and S-1-5-32-544");
         assert_eq!(unchanged, "S-1-5-18 and S-1-5-32-544");
-        assert!(hits.is_empty());
+        assert!(hits.is_empty(), "{hits:?}");
     }
 
     #[test]
@@ -993,7 +993,7 @@ mod tests {
         for device in ["\\\\.\\pipe\\wardsweep-abc", "\\\\?\\C:\\Windows"] {
             let (unchanged, hits) = redact_text(device);
             assert_eq!(unchanged, device);
-            assert!(hits.is_empty());
+            assert!(hits.is_empty(), "{hits:?}");
         }
     }
 
@@ -1022,8 +1022,10 @@ mod tests {
         let decoded = decode_hex(&out).expect("still hex");
         let text = String::from_utf16_lossy(
             &decoded[4..]
-                .chunks_exact(2)
-                .map(|pair| u16::from_le_bytes([pair[0], pair[1]]))
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .map(|pair| u16::from_le_bytes(*pair))
                 .collect::<Vec<_>>(),
         );
         assert!(text.starts_with("C:\\Users\\%USER%\\AppData"), "{text}");

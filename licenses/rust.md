@@ -33,7 +33,8 @@ licence it is used under and the licence text it was published with.
 | `ed25519` | 3.0.0 | Apache-2.0 OR MIT |
 | `ed25519-dalek` | 3.0.0 | BSD-3-Clause |
 | `either` | 1.19.0 | MIT OR Apache-2.0 |
-| `equivalent` | 1.0.2 | Apache-2.0 OR MIT |
+| `equivalent` | 1.0.3 | Apache-2.0 OR MIT |
+| `foldhash` | 0.2.0 | Zlib |
 | `getrandom` | 0.4.3 | MIT OR Apache-2.0 |
 | `hashbrown` | 0.17.1 | MIT OR Apache-2.0 |
 | `heck` | 0.5.0 | MIT OR Apache-2.0 |
@@ -59,22 +60,22 @@ licence it is used under and the licence text it was published with.
 | `serde` | 1.0.229 | MIT OR Apache-2.0 |
 | `serde_core` | 1.0.229 | MIT OR Apache-2.0 |
 | `serde_derive` | 1.0.229 | MIT OR Apache-2.0 |
-| `serde_json` | 1.0.151 | MIT OR Apache-2.0 |
+| `serde_json` | 1.0.154 | MIT OR Apache-2.0 |
 | `serde_spanned` | 1.1.2 | MIT OR Apache-2.0 |
-| `sha2` | 0.11.0 | MIT OR Apache-2.0 |
+| `sha2` | 0.11.1 | MIT OR Apache-2.0 |
 | `sharded-slab` | 0.1.7 | MIT |
 | `signature` | 3.0.0 | Apache-2.0 OR MIT |
-| `smallvec` | 1.16.2 | MIT OR Apache-2.0 |
+| `smallvec` | 1.16.4 | MIT OR Apache-2.0 |
 | `strsim` | 0.11.1 | MIT |
 | `subtle` | 2.6.1 | BSD-3-Clause |
 | `syn` | 2.0.119 | MIT OR Apache-2.0 |
-| `syn` | 3.0.6 | MIT OR Apache-2.0 |
+| `syn` | 3.0.9 | MIT OR Apache-2.0 |
 | `thiserror` | 2.0.21 | MIT OR Apache-2.0 |
 | `thiserror-impl` | 2.0.21 | MIT OR Apache-2.0 |
 | `thread_local` | 1.1.10 | MIT OR Apache-2.0 |
-| `toml` | 1.1.7+spec-1.1.0 | MIT OR Apache-2.0 |
+| `toml` | 1.1.8+spec-1.1.0 | MIT OR Apache-2.0 |
 | `toml_datetime` | 1.1.2+spec-1.1.0 | MIT OR Apache-2.0 |
-| `toml_parser` | 1.1.4+spec-1.1.0 | MIT OR Apache-2.0 |
+| `toml_parser` | 1.1.5+spec-1.1.0 | MIT OR Apache-2.0 |
 | `toml_writer` | 1.1.3+spec-1.1.0 | MIT OR Apache-2.0 |
 | `tracing` | 0.1.44 | MIT |
 | `tracing-attributes` | 0.1.31 | MIT |
@@ -82,7 +83,7 @@ licence it is used under and the licence text it was published with.
 | `tracing-log` | 0.2.0 | MIT |
 | `tracing-subscriber` | 0.3.23 | MIT |
 | `typenum` | 1.20.1 | MIT OR Apache-2.0 |
-| `unicode-ident` | 1.0.26 | (MIT OR Apache-2.0) AND Unicode-3.0 |
+| `unicode-ident` | 1.0.27 | (MIT OR Apache-2.0) AND Unicode-3.0 |
 | `utf8parse` | 0.2.2 | Apache-2.0 OR MIT |
 | `windows` | 0.62.2 | MIT OR Apache-2.0 |
 | `windows-collections` | 0.3.2 | MIT OR Apache-2.0 |
@@ -523,7 +524,7 @@ Used by `windows-collections` 0.3.2, `windows-core` 0.62.2, `windows-future` 0.3
 
 ### Apache License 2.0
 
-Used by `clap` 4.6.7, `clap_builder` 4.6.7, `clap_derive` 4.6.7, `clap_lex` 1.1.1, `serde_spanned` 1.1.2, `toml` 1.1.7+spec-1.1.0, `toml_datetime` 1.1.2+spec-1.1.0, `toml_parser` 1.1.4+spec-1.1.0, `toml_writer` 1.1.3+spec-1.1.0.
+Used by `clap` 4.6.7, `clap_builder` 4.6.7, `clap_derive` 4.6.7, `clap_lex` 1.1.1, `serde_spanned` 1.1.2, `toml` 1.1.8+spec-1.1.0, `toml_datetime` 1.1.2+spec-1.1.0, `toml_parser` 1.1.5+spec-1.1.0, `toml_writer` 1.1.3+spec-1.1.0.
 
 ````text
                                  Apache License
@@ -1360,7 +1361,7 @@ limitations under the License.
 
 ### Apache License 2.0
 
-Used by `cfg-if` 1.0.5, `crossbeam-deque` 0.8.8, `crossbeam-epoch` 0.9.21, `crossbeam-utils` 0.8.23, `curve25519-dalek-derive` 0.1.1, `either` 1.19.0, `equivalent` 1.0.2, `hashbrown` 0.17.1, `heck` 0.5.0, `indexmap` 2.14.2, `lazy_static` 1.5.1, `log` 0.4.34, `once_cell` 1.21.4, `rayon-core` 1.13.0, `rayon` 1.12.0, `regex-automata` 0.4.18, `regex-syntax` 0.8.11, `smallvec` 1.16.2, `thread_local` 1.1.10.
+Used by `cfg-if` 1.0.5, `crossbeam-deque` 0.8.8, `crossbeam-epoch` 0.9.21, `crossbeam-utils` 0.8.23, `curve25519-dalek-derive` 0.1.1, `either` 1.19.0, `equivalent` 1.0.3, `hashbrown` 0.17.1, `heck` 0.5.0, `indexmap` 2.14.2, `lazy_static` 1.5.1, `log` 0.4.34, `once_cell` 1.21.4, `rayon-core` 1.13.0, `rayon` 1.12.0, `regex-automata` 0.4.18, `regex-syntax` 0.8.11, `smallvec` 1.16.4, `thread_local` 1.1.10.
 
 ````text
                               Apache License
@@ -1569,7 +1570,7 @@ limitations under the License.
 
 ### Apache License 2.0
 
-Used by `block-buffer` 0.12.1, `const-oid` 0.10.2, `cpufeatures` 0.3.1, `crypto-common` 0.2.2, `digest` 0.11.3, `hybrid-array` 0.4.15, `sha2` 0.11.0, `signature` 3.0.0.
+Used by `block-buffer` 0.12.1, `const-oid` 0.10.2, `cpufeatures` 0.3.1, `crypto-common` 0.2.2, `digest` 0.11.3, `hybrid-array` 0.4.15, `sha2` 0.11.1, `signature` 3.0.0.
 
 ````text
                               Apache License
@@ -1987,7 +1988,7 @@ limitations under the License.
 
 ### Apache License 2.0
 
-Used by `anyhow` 1.0.104, `itoa` 1.0.18, `pin-project-lite` 0.2.17, `proc-macro2` 1.0.107, `quote` 1.0.47, `serde` 1.0.229, `serde_core` 1.0.229, `serde_derive` 1.0.229, `serde_json` 1.0.151, `syn` 2.0.119, `syn` 3.0.6, `thiserror-impl` 2.0.21, `thiserror` 2.0.21, `unicode-ident` 1.0.26, `utf8parse` 0.2.2.
+Used by `anyhow` 1.0.104, `itoa` 1.0.18, `pin-project-lite` 0.2.17, `proc-macro2` 1.0.107, `quote` 1.0.47, `serde` 1.0.229, `serde_core` 1.0.229, `serde_derive` 1.0.229, `serde_json` 1.0.154, `syn` 2.0.119, `syn` 3.0.9, `thiserror-impl` 2.0.21, `thiserror` 2.0.21, `unicode-ident` 1.0.27, `utf8parse` 0.2.2.
 
 ````text
 Apache License
@@ -2441,7 +2442,7 @@ SOFTWARE.
 
 ### Unicode License v3
 
-Used by `unicode-ident` 1.0.26.
+Used by `unicode-ident` 1.0.27.
 
 ````text
 UNICODE LICENSE V3
@@ -2484,4 +2485,30 @@ not be used in advertising or otherwise to promote the sale, use or other
 dealings in these Data Files or Software without prior written
 authorization of the copyright holder.
 
+````
+
+### zlib License
+
+Used by `foldhash` 0.2.0.
+
+````text
+Copyright (c) 2024 Orson Peters
+
+This software is provided 'as-is', without any express or implied warranty. In
+no event will the authors be held liable for any damages arising from the use of
+this software.
+
+Permission is granted to anyone to use this software for any purpose, including
+commercial applications, and to alter it and redistribute it freely, subject to
+the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not claim
+    that you wrote the original software. If you use this software in a product,
+    an acknowledgment in the product documentation would be appreciated but is
+    not required.
+
+2. Altered source versions must be plainly marked as such, and must not be
+    misrepresented as being the original software.
+
+3. This notice may not be removed or altered from any source distribution.
 ````

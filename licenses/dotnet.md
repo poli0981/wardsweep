@@ -5,38 +5,38 @@ Every NuGet package the WPF interface ships with, and the tool whose own
 binaries every release carries, with the licence, copyright and texts each
 package was published with.
 
-Left out as development-only, run by the compiler and never shipped: `Meziantou.Analyzer` 3.0.294, `Roslynator.Analyzers` 5.0.1.
+Left out as development-only, run by the compiler and never shipped: `Meziantou.Analyzer` 3.0.317, `Roslynator.Analyzers` 5.0.1.
 
 | Package | Version | Licence | Copyright |
 | --- | --- | --- | --- |
 | `CommunityToolkit.Mvvm` | 8.4.2 | MIT | (c) .NET Foundation and Contributors. All rights reserved. |
-| `Microsoft.Extensions.Configuration` | 10.0.12 | MIT | © Microsoft Corporation. All rights reserved. |
-| `Microsoft.Extensions.Configuration.Abstractions` | 10.0.12 | MIT | © Microsoft Corporation. All rights reserved. |
-| `Microsoft.Extensions.Configuration.Binder` | 10.0.12 | MIT | © Microsoft Corporation. All rights reserved. |
-| `Microsoft.Extensions.Configuration.CommandLine` | 10.0.12 | MIT | © Microsoft Corporation. All rights reserved. |
-| `Microsoft.Extensions.Configuration.EnvironmentVariables` | 10.0.12 | MIT | © Microsoft Corporation. All rights reserved. |
-| `Microsoft.Extensions.Configuration.FileExtensions` | 10.0.12 | MIT | © Microsoft Corporation. All rights reserved. |
-| `Microsoft.Extensions.Configuration.Json` | 10.0.12 | MIT | © Microsoft Corporation. All rights reserved. |
-| `Microsoft.Extensions.Configuration.UserSecrets` | 10.0.12 | MIT | © Microsoft Corporation. All rights reserved. |
-| `Microsoft.Extensions.DependencyInjection` | 10.0.12 | MIT | © Microsoft Corporation. All rights reserved. |
-| `Microsoft.Extensions.DependencyInjection.Abstractions` | 10.0.12 | MIT | © Microsoft Corporation. All rights reserved. |
-| `Microsoft.Extensions.Diagnostics` | 10.0.12 | MIT | © Microsoft Corporation. All rights reserved. |
-| `Microsoft.Extensions.Diagnostics.Abstractions` | 10.0.12 | MIT | © Microsoft Corporation. All rights reserved. |
-| `Microsoft.Extensions.FileProviders.Abstractions` | 10.0.12 | MIT | © Microsoft Corporation. All rights reserved. |
-| `Microsoft.Extensions.FileProviders.Physical` | 10.0.12 | MIT | © Microsoft Corporation. All rights reserved. |
-| `Microsoft.Extensions.FileSystemGlobbing` | 10.0.12 | MIT | © Microsoft Corporation. All rights reserved. |
-| `Microsoft.Extensions.Hosting` | 10.0.12 | MIT | © Microsoft Corporation. All rights reserved. |
-| `Microsoft.Extensions.Hosting.Abstractions` | 10.0.12 | MIT | © Microsoft Corporation. All rights reserved. |
-| `Microsoft.Extensions.Logging` | 10.0.12 | MIT | © Microsoft Corporation. All rights reserved. |
-| `Microsoft.Extensions.Logging.Abstractions` | 10.0.12 | MIT | © Microsoft Corporation. All rights reserved. |
-| `Microsoft.Extensions.Logging.Configuration` | 10.0.12 | MIT | © Microsoft Corporation. All rights reserved. |
-| `Microsoft.Extensions.Logging.Console` | 10.0.12 | MIT | © Microsoft Corporation. All rights reserved. |
-| `Microsoft.Extensions.Logging.Debug` | 10.0.12 | MIT | © Microsoft Corporation. All rights reserved. |
-| `Microsoft.Extensions.Logging.EventLog` | 10.0.12 | MIT | © Microsoft Corporation. All rights reserved. |
-| `Microsoft.Extensions.Logging.EventSource` | 10.0.12 | MIT | © Microsoft Corporation. All rights reserved. |
-| `Microsoft.Extensions.Options` | 10.0.12 | MIT | © Microsoft Corporation. All rights reserved. |
-| `Microsoft.Extensions.Options.ConfigurationExtensions` | 10.0.12 | MIT | © Microsoft Corporation. All rights reserved. |
-| `Microsoft.Extensions.Primitives` | 10.0.12 | MIT | © Microsoft Corporation. All rights reserved. |
+| `Microsoft.Extensions.Configuration` | 10.0.14 | MIT | © Microsoft Corporation. All rights reserved. |
+| `Microsoft.Extensions.Configuration.Abstractions` | 10.0.14 | MIT | © Microsoft Corporation. All rights reserved. |
+| `Microsoft.Extensions.Configuration.Binder` | 10.0.14 | MIT | © Microsoft Corporation. All rights reserved. |
+| `Microsoft.Extensions.Configuration.CommandLine` | 10.0.14 | MIT | © Microsoft Corporation. All rights reserved. |
+| `Microsoft.Extensions.Configuration.EnvironmentVariables` | 10.0.14 | MIT | © Microsoft Corporation. All rights reserved. |
+| `Microsoft.Extensions.Configuration.FileExtensions` | 10.0.14 | MIT | © Microsoft Corporation. All rights reserved. |
+| `Microsoft.Extensions.Configuration.Json` | 10.0.14 | MIT | © Microsoft Corporation. All rights reserved. |
+| `Microsoft.Extensions.Configuration.UserSecrets` | 10.0.14 | MIT | © Microsoft Corporation. All rights reserved. |
+| `Microsoft.Extensions.DependencyInjection` | 10.0.14 | MIT | © Microsoft Corporation. All rights reserved. |
+| `Microsoft.Extensions.DependencyInjection.Abstractions` | 10.0.14 | MIT | © Microsoft Corporation. All rights reserved. |
+| `Microsoft.Extensions.Diagnostics` | 10.0.14 | MIT | © Microsoft Corporation. All rights reserved. |
+| `Microsoft.Extensions.Diagnostics.Abstractions` | 10.0.14 | MIT | © Microsoft Corporation. All rights reserved. |
+| `Microsoft.Extensions.FileProviders.Abstractions` | 10.0.14 | MIT | © Microsoft Corporation. All rights reserved. |
+| `Microsoft.Extensions.FileProviders.Physical` | 10.0.14 | MIT | © Microsoft Corporation. All rights reserved. |
+| `Microsoft.Extensions.FileSystemGlobbing` | 10.0.14 | MIT | © Microsoft Corporation. All rights reserved. |
+| `Microsoft.Extensions.Hosting` | 10.0.14 | MIT | © Microsoft Corporation. All rights reserved. |
+| `Microsoft.Extensions.Hosting.Abstractions` | 10.0.14 | MIT | © Microsoft Corporation. All rights reserved. |
+| `Microsoft.Extensions.Logging` | 10.0.14 | MIT | © Microsoft Corporation. All rights reserved. |
+| `Microsoft.Extensions.Logging.Abstractions` | 10.0.14 | MIT | © Microsoft Corporation. All rights reserved. |
+| `Microsoft.Extensions.Logging.Configuration` | 10.0.14 | MIT | © Microsoft Corporation. All rights reserved. |
+| `Microsoft.Extensions.Logging.Console` | 10.0.14 | MIT | © Microsoft Corporation. All rights reserved. |
+| `Microsoft.Extensions.Logging.Debug` | 10.0.14 | MIT | © Microsoft Corporation. All rights reserved. |
+| `Microsoft.Extensions.Logging.EventLog` | 10.0.14 | MIT | © Microsoft Corporation. All rights reserved. |
+| `Microsoft.Extensions.Logging.EventSource` | 10.0.14 | MIT | © Microsoft Corporation. All rights reserved. |
+| `Microsoft.Extensions.Options` | 10.0.14 | MIT | © Microsoft Corporation. All rights reserved. |
+| `Microsoft.Extensions.Options.ConfigurationExtensions` | 10.0.14 | MIT | © Microsoft Corporation. All rights reserved. |
+| `Microsoft.Extensions.Primitives` | 10.0.14 | MIT | © Microsoft Corporation. All rights reserved. |
 | `vpk` (Velopack, whose installer and updater `vpk pack` writes into the package) | 1.2.161 | MIT | Copyright © Velopack Ltd. All rights reserved. |
 | `WPF-UI` | 4.3.0 | MIT | Copyright (C) 2021-2026 Leszek Pomianowski and WPF UI Contributors |
 | `WPF-UI.Abstractions` | 4.3.0 | MIT | Copyright (C) 2021-2026 Leszek Pomianowski and WPF UI Contributors |
@@ -65,7 +65,7 @@ THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ### MIT — the SPDX text, with the copyright the package declares
 
-Used by `Microsoft.Extensions.Configuration` 10.0.12, `Microsoft.Extensions.Configuration.Abstractions` 10.0.12, `Microsoft.Extensions.Configuration.Binder` 10.0.12, `Microsoft.Extensions.Configuration.CommandLine` 10.0.12, `Microsoft.Extensions.Configuration.EnvironmentVariables` 10.0.12, `Microsoft.Extensions.Configuration.FileExtensions` 10.0.12, `Microsoft.Extensions.Configuration.Json` 10.0.12, `Microsoft.Extensions.Configuration.UserSecrets` 10.0.12, `Microsoft.Extensions.DependencyInjection` 10.0.12, `Microsoft.Extensions.DependencyInjection.Abstractions` 10.0.12, `Microsoft.Extensions.Diagnostics` 10.0.12, `Microsoft.Extensions.Diagnostics.Abstractions` 10.0.12, `Microsoft.Extensions.FileProviders.Abstractions` 10.0.12, `Microsoft.Extensions.FileProviders.Physical` 10.0.12, `Microsoft.Extensions.FileSystemGlobbing` 10.0.12, `Microsoft.Extensions.Hosting` 10.0.12, `Microsoft.Extensions.Hosting.Abstractions` 10.0.12, `Microsoft.Extensions.Logging` 10.0.12, `Microsoft.Extensions.Logging.Abstractions` 10.0.12, `Microsoft.Extensions.Logging.Configuration` 10.0.12, `Microsoft.Extensions.Logging.Console` 10.0.12, `Microsoft.Extensions.Logging.Debug` 10.0.12, `Microsoft.Extensions.Logging.EventLog` 10.0.12, `Microsoft.Extensions.Logging.EventSource` 10.0.12, `Microsoft.Extensions.Options` 10.0.12, `Microsoft.Extensions.Options.ConfigurationExtensions` 10.0.12, `Microsoft.Extensions.Primitives` 10.0.12.
+Used by `Microsoft.Extensions.Configuration` 10.0.14, `Microsoft.Extensions.Configuration.Abstractions` 10.0.14, `Microsoft.Extensions.Configuration.Binder` 10.0.14, `Microsoft.Extensions.Configuration.CommandLine` 10.0.14, `Microsoft.Extensions.Configuration.EnvironmentVariables` 10.0.14, `Microsoft.Extensions.Configuration.FileExtensions` 10.0.14, `Microsoft.Extensions.Configuration.Json` 10.0.14, `Microsoft.Extensions.Configuration.UserSecrets` 10.0.14, `Microsoft.Extensions.DependencyInjection` 10.0.14, `Microsoft.Extensions.DependencyInjection.Abstractions` 10.0.14, `Microsoft.Extensions.Diagnostics` 10.0.14, `Microsoft.Extensions.Diagnostics.Abstractions` 10.0.14, `Microsoft.Extensions.FileProviders.Abstractions` 10.0.14, `Microsoft.Extensions.FileProviders.Physical` 10.0.14, `Microsoft.Extensions.FileSystemGlobbing` 10.0.14, `Microsoft.Extensions.Hosting` 10.0.14, `Microsoft.Extensions.Hosting.Abstractions` 10.0.14, `Microsoft.Extensions.Logging` 10.0.14, `Microsoft.Extensions.Logging.Abstractions` 10.0.14, `Microsoft.Extensions.Logging.Configuration` 10.0.14, `Microsoft.Extensions.Logging.Console` 10.0.14, `Microsoft.Extensions.Logging.Debug` 10.0.14, `Microsoft.Extensions.Logging.EventLog` 10.0.14, `Microsoft.Extensions.Logging.EventSource` 10.0.14, `Microsoft.Extensions.Options` 10.0.14, `Microsoft.Extensions.Options.ConfigurationExtensions` 10.0.14, `Microsoft.Extensions.Primitives` 10.0.14.
 
 ````text
 MIT License
@@ -301,7 +301,7 @@ END OF Sergio0694/ComputeSharp NOTICES AND INFORMATION
 
 ### `THIRD-PARTY-NOTICES.TXT`
 
-Carried by `Microsoft.Extensions.Configuration` 10.0.12, `Microsoft.Extensions.Configuration.Abstractions` 10.0.12, `Microsoft.Extensions.Configuration.Binder` 10.0.12, `Microsoft.Extensions.Configuration.CommandLine` 10.0.12, `Microsoft.Extensions.Configuration.EnvironmentVariables` 10.0.12, `Microsoft.Extensions.Configuration.FileExtensions` 10.0.12, `Microsoft.Extensions.Configuration.Json` 10.0.12, `Microsoft.Extensions.Configuration.UserSecrets` 10.0.12, `Microsoft.Extensions.DependencyInjection` 10.0.12, `Microsoft.Extensions.DependencyInjection.Abstractions` 10.0.12, `Microsoft.Extensions.Diagnostics` 10.0.12, `Microsoft.Extensions.Diagnostics.Abstractions` 10.0.12, `Microsoft.Extensions.FileProviders.Abstractions` 10.0.12, `Microsoft.Extensions.FileProviders.Physical` 10.0.12, `Microsoft.Extensions.FileSystemGlobbing` 10.0.12, `Microsoft.Extensions.Hosting` 10.0.12, `Microsoft.Extensions.Hosting.Abstractions` 10.0.12, `Microsoft.Extensions.Logging` 10.0.12, `Microsoft.Extensions.Logging.Abstractions` 10.0.12, `Microsoft.Extensions.Logging.Configuration` 10.0.12, `Microsoft.Extensions.Logging.Console` 10.0.12, `Microsoft.Extensions.Logging.Debug` 10.0.12, `Microsoft.Extensions.Logging.EventLog` 10.0.12, `Microsoft.Extensions.Logging.EventSource` 10.0.12, `Microsoft.Extensions.Options` 10.0.12, `Microsoft.Extensions.Options.ConfigurationExtensions` 10.0.12, `Microsoft.Extensions.Primitives` 10.0.12.
+Carried by `Microsoft.Extensions.Configuration` 10.0.14, `Microsoft.Extensions.Configuration.Abstractions` 10.0.14, `Microsoft.Extensions.Configuration.Binder` 10.0.14, `Microsoft.Extensions.Configuration.CommandLine` 10.0.14, `Microsoft.Extensions.Configuration.EnvironmentVariables` 10.0.14, `Microsoft.Extensions.Configuration.FileExtensions` 10.0.14, `Microsoft.Extensions.Configuration.Json` 10.0.14, `Microsoft.Extensions.Configuration.UserSecrets` 10.0.14, `Microsoft.Extensions.DependencyInjection` 10.0.14, `Microsoft.Extensions.DependencyInjection.Abstractions` 10.0.14, `Microsoft.Extensions.Diagnostics` 10.0.14, `Microsoft.Extensions.Diagnostics.Abstractions` 10.0.14, `Microsoft.Extensions.FileProviders.Abstractions` 10.0.14, `Microsoft.Extensions.FileProviders.Physical` 10.0.14, `Microsoft.Extensions.FileSystemGlobbing` 10.0.14, `Microsoft.Extensions.Hosting` 10.0.14, `Microsoft.Extensions.Hosting.Abstractions` 10.0.14, `Microsoft.Extensions.Logging` 10.0.14, `Microsoft.Extensions.Logging.Abstractions` 10.0.14, `Microsoft.Extensions.Logging.Configuration` 10.0.14, `Microsoft.Extensions.Logging.Console` 10.0.14, `Microsoft.Extensions.Logging.Debug` 10.0.14, `Microsoft.Extensions.Logging.EventLog` 10.0.14, `Microsoft.Extensions.Logging.EventSource` 10.0.14, `Microsoft.Extensions.Options` 10.0.14, `Microsoft.Extensions.Options.ConfigurationExtensions` 10.0.14, `Microsoft.Extensions.Primitives` 10.0.14.
 
 ````text
 .NET Runtime uses third-party libraries or other resources that may be

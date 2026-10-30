@@ -1595,8 +1595,8 @@ pub(crate) mod tests {
 
         let diff = compare(&before, &after, &NoiseFilter::permissive()).unwrap();
 
-        assert!(diff.services.is_empty());
-        assert!(diff.suppressed.is_empty());
+        assert!(diff.services.is_empty(), "{:?}", diff.services);
+        assert!(diff.suppressed.is_empty(), "{:?}", diff.suppressed);
     }
 
     #[test]
@@ -1673,7 +1673,7 @@ pub(crate) mod tests {
         let diff = compare(&before, &after, &NoiseFilter::permissive()).unwrap();
 
         // Not "two services removed": the later snapshot never looked.
-        assert!(diff.services.is_empty());
+        assert!(diff.services.is_empty(), "{:?}", diff.services);
         assert!(diff.coverage.not_captured.contains(&Domain::Services));
     }
 
@@ -1698,7 +1698,7 @@ pub(crate) mod tests {
 
         let diff = compare(&before, &after, &NoiseFilter::standard()).unwrap();
 
-        assert!(diff.services.is_empty());
+        assert!(diff.services.is_empty(), "{:?}", diff.services);
         assert_eq!(diff.suppressed.len(), 1);
         assert_eq!(diff.suppressed[0].rule, "volatile-service");
         // The change itself survives intact, so the filter can be argued with.
@@ -1716,7 +1716,7 @@ pub(crate) mod tests {
         let diff = compare(&before, &after, &NoiseFilter::standard()).unwrap();
 
         assert_eq!(diff.services.len(), 2);
-        assert!(diff.suppressed.is_empty());
+        assert!(diff.suppressed.is_empty(), "{:?}", diff.suppressed);
     }
 
     #[test]
@@ -2022,7 +2022,11 @@ pub(crate) mod tests {
             assert!(!text.contains(needle), "{needle} survived: {text}");
         }
         assert_eq!(diff.files.len(), 1);
-        assert!(diff.suppressed_files.is_empty());
+        assert!(
+            diff.suppressed_files.is_empty(),
+            "{:?}",
+            diff.suppressed_files
+        );
         assert_eq!(diff.emptied_directories, Some(Vec::new()));
         assert_eq!(
             report,
@@ -2272,7 +2276,7 @@ pub(crate) mod tests {
         )
         .unwrap();
 
-        assert!(same.registry.is_empty());
+        assert!(same.registry.is_empty(), "{:?}", same.registry);
         assert_eq!(grown.registry.len(), 1);
         assert_eq!(
             grown.registry[0].fields[0].after,

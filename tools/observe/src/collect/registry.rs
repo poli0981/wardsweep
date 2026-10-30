@@ -627,8 +627,10 @@ mod win32 {
 
     fn wide_from_bytes(data: &[u8]) -> String {
         let units: Vec<u16> = data
-            .chunks_exact(2)
-            .map(|pair| u16::from_le_bytes([pair[0], pair[1]]))
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|pair| u16::from_le_bytes(*pair))
             .collect();
         String::from_utf16_lossy(&units)
     }
@@ -674,6 +676,6 @@ mod tests {
             .into_iter()
             .collect();
 
-        assert!(topmost_empty(&read, &holding).is_empty());
+        assert_eq!(topmost_empty(&read, &holding), Vec::<String>::new());
     }
 }

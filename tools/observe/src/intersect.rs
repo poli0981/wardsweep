@@ -493,8 +493,16 @@ mod tests {
         let suppressed_everywhere = intersect(vec![b, c]).unwrap();
 
         assert_eq!(kept_somewhere.services.len(), 1);
-        assert!(kept_somewhere.suppressed.is_empty());
-        assert!(suppressed_everywhere.services.is_empty());
+        assert!(
+            kept_somewhere.suppressed.is_empty(),
+            "{:?}",
+            kept_somewhere.suppressed
+        );
+        assert!(
+            suppressed_everywhere.services.is_empty(),
+            "{:?}",
+            suppressed_everywhere.services
+        );
         assert_eq!(suppressed_everywhere.suppressed.len(), 1);
     }
 
@@ -510,7 +518,7 @@ mod tests {
         let shared = intersect(vec![a, b]).unwrap();
 
         // Not "no file is shared": one footprint never looked.
-        assert!(shared.files.is_empty());
+        assert!(shared.files.is_empty(), "{:?}", shared.files);
         assert!(!shared.coverage.covers(Domain::Filesystem));
     }
 

@@ -1123,7 +1123,7 @@ fn path_entries(
             // `%SystemRoot%\System32\drivers`, which is shared with the whole
             // operating system: naming it here would be an entry the runtime
             // refuses, and the reviewer could not tell by reading it.
-            let allowed = canonicalise_syntactic(path).ok().is_some_and(|canonical| {
+            let allowed = canonicalise_syntactic(path).is_ok_and(|canonical| {
                 check_path(&canonical, exceptions, Stage::CatalogLoad).is_ok()
             });
             if !allowed {
@@ -1225,8 +1225,7 @@ fn registry_entries(
         .filter(|candidate| !has_listed_ancestor(candidate, &keys))
         .filter(|key| {
             let allowed = canonicalise_reg_key(key)
-                .ok()
-                .is_some_and(|canonical| check_registry_key(&canonical, exceptions).is_ok());
+                .is_ok_and(|canonical| check_registry_key(&canonical, exceptions).is_ok());
             if !allowed {
                 review.push(format!("`{key}` was dropped: the deny-list refuses it."));
             }
@@ -1956,7 +1955,11 @@ mod tests {
     fn an_event_source_nothing_attributes_is_named_not_dropped() {
         let generated = draft(&ea_like(), None, Some("Electronic Arts, Inc."));
 
-        assert!(generated.entry.event_sources.is_empty());
+        assert!(
+            generated.entry.event_sources.is_empty(),
+            "{:?}",
+            generated.entry.event_sources
+        );
         assert!(
             generated
                 .review
