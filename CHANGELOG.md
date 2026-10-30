@@ -186,6 +186,15 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
   rebuilt with it from its committed diff and pinned by a test, as the Vanguard
   draft already was; the rebuild leaves out `ACE-ADVT`, which nothing in the
   diff ties to the publisher, and names it for a reviewer instead.
+- **Game libraries on other volumes are walked**, found from the launchers'
+  own manifests — Steam's `libraryfolders.vdf`, the Epic Games Launcher's
+  `.item` files — by `wardsweep_core::scan::libraries`, the detection engine's
+  first piece and shared with the harness. Never by enumerating volumes, which
+  Safety Gate G3 forbids. Both October 2026 titles lived in a Steam library on
+  `D:` that nothing walked. A snapshot records the libraries it covered, a
+  diff the ones both snapshots covered, and a library a manifest names that is
+  not there is `access_denied`. `suggest` attributes nothing inside a library
+  to an anti-cheat: a game's own copy of its anti-cheat is the game's.
 - Generated third-party notices, checked by CI. `licenses/rust.md` comes from
   `cargo about` over `Cargo.lock` and `licenses/dotnet.md` from the interface's
   `packages.lock.json` and the restored packages, with Velopack included

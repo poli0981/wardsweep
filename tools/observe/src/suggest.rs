@@ -165,6 +165,22 @@ pub fn draft_scoped(
         .map(|text| text.trim().to_ascii_lowercase())
         .filter(|text| !text.is_empty())
         .collect();
+
+    // A game's files are the game's footprint, its own copy of the anti-cheat
+    // included: an anti-cheat entry claiming them would take them away with
+    // the anti-cheat while the game still needed them. They are set aside
+    // before anything is attributed, and named.
+    let (footprint, mut set_aside) = without_game_files(footprint);
+    let footprint = &footprint;
+    let residue = residue
+        .map(without_game_files)
+        .map(|(diff, residue_set_aside)| {
+            set_aside.extend(residue_set_aside);
+            diff
+        });
+    let residue = residue.as_ref();
+    note_game_files(&set_aside, chosen.as_deref(), &mut review);
+
     note_scope(footprint, residue, chosen.as_deref(), &only, &mut review);
 
     // Services first: an attributed service's image and name are evidence for
@@ -807,6 +823,98 @@ fn note_registry_drivers(
             driver.name, driver.key, driver.image
         ));
     }
+}
+
+/// A file set aside because it is inside a game library: its path, the title
+/// folder it is in, and who signed it.
+struct GameFile {
+    title: String,
+    signer: Option<String>,
+}
+
+/// The diff without the files inside game libraries, and those files.
+///
+/// A library is one the diff says both snapshots walked, or any Steam library,
+/// which `steamapps\common` marks wherever it is: Steam's own library under
+/// `%ProgramFiles(x86)%` was always walked, and no snapshot lists it as a
+/// library. Without this, a signed file in `D:\SteamLibrary\steamapps\common`
+/// would make `steamlibrary` and `steamapps` identifiers, and claim every game.
+fn without_game_files(diff: &Diff) -> (Diff, Vec<GameFile>) {
+    let games: Vec<String> = diff
+        .libraries
+        .iter()
+        .map(|library| format!("{}\\", library.games().to_ascii_lowercase()))
+        .collect();
+    let mut kept = diff.clone();
+    let mut set_aside = Vec::new();
+    kept.files.retain(|change| {
+        let lowered = change.path.to_ascii_lowercase();
+        let below = games
+            .iter()
+            .find_map(|root| lowered.strip_prefix(root.as_str()))
+            .or_else(|| {
+                lowered
+                    .find("\\steamapps\\common\\")
+                    .map(|at| &lowered[at + "\\steamapps\\common\\".len()..])
+            });
+        let Some(below) = below else {
+            return true;
+        };
+        // Lower-casing ASCII keeps byte offsets, so the title can be cut from
+        // the original path in its own spelling.
+        let start = change.path.len() - below.len();
+        let title = change.path[start..]
+            .split('\\')
+            .next()
+            .unwrap_or_default()
+            .to_owned();
+        set_aside.push(GameFile {
+            title,
+            signer: change.signer.clone(),
+        });
+        false
+    });
+    (kept, set_aside)
+}
+
+/// Name what [`without_game_files`] set aside, and how much of it the chosen
+/// publisher signed: a game shipping its own copy of the anti-cheat is the
+/// usual reason a draft would have reached into a library.
+fn note_game_files(set_aside: &[GameFile], signer: Option<&str>, review: &mut Vec<String>) {
+    if set_aside.is_empty() {
+        return;
+    }
+    let titles: BTreeSet<&str> = set_aside
+        .iter()
+        .map(|file| file.title.as_str())
+        .filter(|title| !title.is_empty())
+        .collect();
+    let by_publisher = signer
+        .map(|publisher| {
+            let count = set_aside
+                .iter()
+                .filter(|file| {
+                    file.signer
+                        .as_deref()
+                        .is_some_and(|have| have.eq_ignore_ascii_case(publisher))
+                })
+                .count();
+            (publisher, count)
+        })
+        .filter(|&(_, count)| count > 0)
+        .map(|(publisher, count)| format!(", {count} of them signed by {publisher}"))
+        .unwrap_or_default();
+    review.push(format!(
+        "{} file(s) inside game libraries were left out{by_publisher}: a game's own files, \
+         its copy of the anti-cheat included, are the game's footprint, and an anti-cheat \
+         entry must not claim them. Title folders: {}.",
+        set_aside.len(),
+        titles
+            .iter()
+            .map(|title| format!("`{title}`"))
+            .collect::<Vec<_>>()
+            .join(", ")
+    ));
 }
 
 /// Say how far attribution reached: limited by `--only`, or — when it was not —
@@ -2220,5 +2328,107 @@ mod tests {
         .expect("the draft serialises");
 
         assert_eq!(rendered, EA_DRAFT);
+    }
+
+    /// The paths a draft takes, as written.
+    fn draft_paths(generated: &Draft) -> Vec<String> {
+        generated
+            .entry
+            .paths
+            .iter()
+            .map(|entry| entry.path.clone())
+            .collect()
+    }
+
+    #[test]
+    fn a_games_copy_of_its_anti_cheat_stays_the_games() {
+        // FC 26 ships EA's installer in its own folder, in a library on D:.
+        // Without the library rule, `steamlibrary` and `steamapps` became
+        // identifiers and the draft claimed the game.
+        let mut diff = crate::diff::tests::diff_with_added_files(&[
+            r"C:\Program Files\EA\AC\EAAntiCheat.GameService.dll",
+            r"D:\SteamLibrary\steamapps\common\FC 26\__Installer\EAAntiCheat.Installer.exe",
+            r"D:\SteamLibrary\steamapps\common\FC 26\FC26.exe",
+        ]);
+        for file in ["GameService.dll", "EAAntiCheat.Installer.exe", "FC26.exe"] {
+            sign_one(&mut diff, file, "Electronic Arts, Inc.");
+        }
+
+        let generated = draft(&diff, None, Some("Electronic Arts, Inc."));
+
+        let paths = draft_paths(&generated);
+        assert!(
+            paths
+                .iter()
+                .all(|path| !path.to_ascii_lowercase().contains("steam")),
+            "{paths:?}"
+        );
+        assert!(
+            paths.iter().any(|path| path.contains(r"EA\AC")),
+            "{paths:?}"
+        );
+        let note = generated
+            .review
+            .iter()
+            .find(|note| note.contains("inside game libraries"))
+            .expect("the set-aside files are named");
+        assert!(note.starts_with("2 file(s)"), "{note}");
+        assert!(
+            note.contains("2 of them signed by Electronic Arts, Inc."),
+            "{note}"
+        );
+        assert!(note.contains("`FC 26`"), "{note}");
+    }
+
+    #[test]
+    fn a_library_the_diff_names_is_a_games_footprint_too() {
+        // An Epic library has no marker in its path; the diff says it is one.
+        let mut diff = crate::diff::tests::diff_with_added_files(&[
+            r"C:\Program Files (x86)\Example AC\ac.sys",
+            r"E:\Epic Games\Example Shooter\Example AC\ac.sys",
+        ]);
+        sign_one(
+            &mut diff,
+            r"Program Files (x86)\Example AC\ac.sys",
+            "Example Vendor",
+        );
+        sign_one(
+            &mut diff,
+            r"Example Shooter\Example AC\ac.sys",
+            "Example Vendor",
+        );
+        diff.libraries = vec![wardsweep_core::scan::libraries::Library {
+            launcher: wardsweep_core::scan::libraries::Launcher::Epic,
+            path: r"E:\Epic Games".to_owned(),
+        }];
+
+        let generated = draft(&diff, None, Some("Example Vendor"));
+
+        let paths = draft_paths(&generated);
+        assert!(
+            paths.iter().all(|path| !path.contains("Epic Games")),
+            "{paths:?}"
+        );
+        assert!(
+            generated
+                .review
+                .iter()
+                .any(|note| note.contains("`Example Shooter`")),
+            "{:?}",
+            generated.review
+        );
+    }
+
+    #[test]
+    fn a_draft_with_no_library_files_says_nothing_about_libraries() {
+        let generated = draft(&ea_like(), None, Some("Electronic Arts, Inc."));
+        assert!(
+            generated
+                .review
+                .iter()
+                .all(|note| !note.contains("inside game libraries")),
+            "{:?}",
+            generated.review
+        );
     }
 }

@@ -69,8 +69,10 @@ compare against. The third, in October, added three more:
 - **A full-machine diff of a machine in use carries personal data no rule
   names.** That took two harness PRs and a review step before anything could be
   committed (`docs/16`). The review is still partly by hand.
-- **The walk does not cover a launcher library on another volume**, and both
+- **The walk did not cover a launcher library on another volume**, and both
   October titles live on one. Their folders were listed and hashed by hand.
+  Since 2026-10-30 the libraries Steam and Epic name are walked
+  (`docs/16`).
 
 ## What exists and is verified
 
@@ -285,8 +287,8 @@ are what it has to be right about.
   one.
 
 **8. Harness work the October cycle asked for.**
-- Walk launcher libraries on other volumes, found from the launchers' own
-  manifests.
+- ~~Walk launcher libraries on other volumes, found from the launchers' own
+  manifests.~~ Done for Steam and Epic, 2026-10-30.
 - ~~Turn the pre-commit privacy review into an `observe` command.~~ Done,
   2026-10-30: `observe review`. Its first run found a machine SID and the
   DHCP option cache inside hex in a committed diff, now scrubbed from HEAD
