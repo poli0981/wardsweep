@@ -207,20 +207,38 @@ Steam ran the install script's uninstall step. Its record for the game swapped
 None of these is in `residue.json`. They did not change between `03` and `04`,
 so they were found by hand and are in the meta.
 
-**Left by the game, Steam and the EA app** (by hand where unchanged):
+**Left by the game, Steam and the EA app.** First found by hand, which
+missed most of it: the maintainer's screenshots of `%LOCALAPPDATA%` and
+`C:\Program Files` on 2026-10-30 showed folders the list did not have. So the
+residue was computed instead, the way `docs/16` takes it: a diff from `04`,
+after the uninstall, back to `00`, the clean baseline from before FC 26's
+first launch (`wardsweep-observe diff`, build `9449990` with #66). What
+`04` holds and `00` does not is what the uninstall left, plus the rest of
+fourteen hours of the machine in use, so the diff is not committed — it
+carries a day of unrelated activity — and its EA records are below.
 
-- `HKLM\SOFTWARE\EA Sports\EA SPORTS FC 26`, in both views, and the game's
-  uninstall entry `{CC38BDAB-…}`. The install script's named values are gone,
-  and each key keeps only an empty default value.
-- Steam's record for the game, in the 32-bit view, now holding the uninstall
-  flags.
-- The EA app's `Origin Games` key, left empty, and
-  `ProgramData\Origin\LocalContent`, left empty.
-- `%LOCALAPPDATA%\EA SPORTS FC 26`: 66 files, 142 MB of settings and caches.
-  `HKCU\SOFTWARE\Electronic Arts\FC` and the game's DirectInput key.
-- On `D:`, which the walk does not cover: the game's folder with one file in
-  it, `steam_appid.txt`. The game wrote that file at its first launch, so it was
-  never Steam's to remove.
+| Left by | What |
+|---|---|
+| The anti-cheat | `HKLM\SOFTWARE\WOW6432Node\EA\AC\Installs\fc26` and the keys above it; `HKCU\SOFTWARE\EA\AC` |
+| FC 26 | `%LOCALAPPDATA%\EA SPORTS FC 26`: 66 files, 142 MB of settings and caches, and the empty `replays` and `umcache`; `HKLM\SOFTWARE\EA Sports\EA SPORTS FC 26` in both views and its uninstall entry `{CC38BDAB-…}`, each keeping an empty default value; `HKCU\SOFTWARE\Electronic Arts\FC`; the game's DirectInput key; the empty `%ProgramData%\Frostbite` |
+| The EA app | **The whole app, still installed**: `C:\Program Files\Electronic Arts\EA Desktop`, 966 files and 633 MB, and its service `EABackgroundService`. FC 26's install script installed it (`EADesktopSetup`), and Steam's uninstall of the game does not remove a launcher. Beside it: `%ProgramData%\EA Desktop` (logs, settings, two folders named by hashes, an empty `PLR`), `%ProgramData%\Electronic Arts`, `%LOCALAPPDATA%\EADesktop`, `%LOCALAPPDATA%\EALaunchHelper`, `%LOCALAPPDATA%\Electronic Arts\EA Desktop` (with an empty `OfflineCache`), the EA SDK's store under `%APPDATA%\Electronic Arts`, and **the empty `C:\Program Files\EA Games`**, the app's default library folder. Keys: `HKLM\SOFTWARE\Electronic Arts\EA Core`, `EA Desktop` and, in the 32-bit view, `EADM`; `HKCU\SOFTWARE\Electronic Arts\EA Desktop`; the `origin` and `origin2` URL handlers. The Origin remnants it carries: `%ProgramData%\Origin\LocalContent` (empty), `%LOCALAPPDATA%\Origin` (its cloud-save stubs and an empty `Web Cache`), the empty `Origin Games` key and `HKLM\SOFTWARE\Origin` |
+| Steam | its record for the game under `HKLM\SOFTWARE\WOW6432Node\Valve\Steam\Apps`, now holding the uninstall flags |
+| — | On `D:`, which the walk did not cover then: the game's folder with one file in it, `steam_appid.txt`, which the game wrote at its first launch, so it was never Steam's to remove |
+
+Checked by hand on 2026-10-30, three weeks later: the EA app is still
+installed, updated itself from 13.805 to 13.813 on 2026-10-22, and
+`EABackgroundService` runs. `EADesktop` and `EALaunchHelper` are empty now; the
+app emptied its caches and kept the folders.
+
+The empty folders were the hardest part to see. A diff recorded only
+directories that *became* empty, so one an uninstall left — empty in the
+earlier snapshot of a residue diff, gone in the later — was in no diff at all.
+#66 records that direction too, and every empty folder above came from it.
+
+What this means for WardSweep: a game's install script can install a whole
+launcher, and uninstalling the game leaves it. Whether a launcher pulled in
+that way is in scope, refcounted like a shared anti-cheat across the games
+that use it, is a maintainer's decision; `docs/PROGRESS.md` lists it.
 
 So EA AntiCheat leaves little of its own, and two pieces of it are
 instructive. The 32-bit view of a key the uninstaller cleaned in the 64-bit one
@@ -233,4 +251,7 @@ that WMI did the same.
 
 1. In the PR that adds the catalog entry, paste `signtool verify /v /pa` for
    every binary (`docs/16` checklist).
-2. After the next restart, confirm SCM no longer lists `EAAntiCheat`.
+2. ~~After the next restart, confirm SCM no longer lists `EAAntiCheat`.~~
+   Done on 2026-10-30, after a restart that morning: `sc query EAAntiCheat`
+   answers 1060, "does not exist as an installed service". The stale entry
+   lasted exactly until the next boot.

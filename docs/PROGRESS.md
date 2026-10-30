@@ -37,7 +37,11 @@ uninstallers:
   reinstall did not reset either.
 - **EA AntiCheat**, observed from a clean baseline, left the 32-bit view of a
   key it removed in the 64-bit one and its per-user key. Until the next boot it
-  also left an SCM entry for a driver whose key was already gone.
+  also left an SCM entry for a driver whose key was already gone. The game left
+  more: its install script had installed **the whole EA app**, which Steam's
+  uninstall of the game leaves installed, with its folders, keys and an empty
+  default library folder. Computed on 2026-10-30 against the clean baseline
+  after the maintainer's screenshots showed what the hand-made list missed.
 
 **That is the honest scale of the residue problem so far**, and it is a long way
 from what the subject is usually claimed to be. Anyone picking this up should
@@ -234,8 +238,9 @@ fixes those diffs prompted first (#50 to #52):
 - **A second ACE title did not engage ACE.** NTE, from Steam, ran once with ACE
   installed and touched nothing of ACE's.
 
-One follow-up needs the maintainer's hands: after the next restart,
-`sc query EAAntiCheat` should answer 1060. Record that in the EA notes.
+The follow-up is done: after a restart, `sc query EAAntiCheat` answered 1060 on
+2026-10-30. Recorded in the EA notes, with the residue computed against the
+clean baseline.
 
 **2. ACE from a second title, on a machine without it.** ACE is uninstalled
 now, so the next ACE title to run installs it from scratch. Take a new cycle
@@ -303,6 +308,12 @@ are what it has to be right about.
   - name per-title files, ACE's `ACE-CORE1<id>.sys`, by pattern rather than by
     one title's name. Pointed out in the review notes now; a pattern in an
     entry needs a schema decision, under "Open, needs a maintainer decision".
+- A scoped residue diff. A residue taken against a clean baseline spans the
+  hours between the two snapshots, and EA's spanned fourteen of a machine in
+  use: committing it would publish a day of unrelated activity, so its EA
+  records went into the notes instead. `diff --only`, scoping a diff the way
+  `suggest --only` scopes a draft and saying so in the diff, would let a
+  residue be committed and pinned like a footprint.
 
 The remaining harness domains — scheduled tasks, firewall, event sources,
 environment — are worth adding when an observation actually needs one, not
@@ -369,6 +380,11 @@ that S2 should start from rather than rediscover:
   have drafts pinned to their diffs. Turning any of them into a `catalog/` entry
   needs maintainer sign-off and the `docs/16` checklist (signer verification,
   and a second title before `shared` can be argued).
+- **A launcher a game's install script installs.** FC 26's Steam install script
+  installed the EA app; uninstalling the game left it installed, 633 MB and a
+  running service. Whether WardSweep offers to remove such a launcher —
+  refcounted across the games that use it, as a shared anti-cheat is — or
+  only reports it, is a product decision this observation raised.
 - **Per-title driver names.** ACE installs `ACE-CORE1<id>.sys` and
   `ACE-CORE2<id>.sys` for each title. The catalog lists drivers by exact name
   and the deny-list's carve-outs are exact, so an entry either lists every

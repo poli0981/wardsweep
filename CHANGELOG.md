@@ -251,6 +251,16 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
   EA's files failed one under disk load and verify when idle.
 
 ### Changed
+- **EA AntiCheat's residue, computed against the clean baseline** rather than
+  listed by hand (2026-10-30). The maintainer's screenshots showed EA folders
+  the hand-made list did not have. Diffing the after-uninstall snapshot back
+  to the one from before FC 26's first launch found what it missed. The game's
+  install script had installed the whole EA app, which Steam's uninstall of
+  the game left installed: 633 MB, a running service, its data folders, keys,
+  URL handlers and an empty `C:\Program Files\EA Games`. The diff spans
+  fourteen hours of a machine in use and is not committed; its EA records are
+  in the observation's notes and meta. SCM's stale `EAAntiCheat` entry was
+  confirmed gone after a restart.
 - `docs/08-IPC-PROTOCOL.md` amended from the S3 findings, in five places. Events
   now carry a monotonic `seq` and `Hello` carries `resume_from`: the document
   required a reconnecting UI to resume the event stream but gave it no way to
