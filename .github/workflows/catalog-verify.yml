@@ -50,7 +50,8 @@ jobs:
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
 
       - name: Build catalog tool
-        run: cargo build -p wardsweep-catalog --release
+        # --locked: the lock file is authoritative, as in rust-ci.yml.
+        run: cargo build --locked -p wardsweep-catalog --release
 
       - name: Schema validation
         run: ./target/release/wardsweep-catalog validate catalog/catalog.toml
