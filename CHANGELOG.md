@@ -311,6 +311,15 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
   platform.
 
 ### Fixed
+- **A residue diff could not name the empty folders and keys an uninstall
+  left.** `docs/16` takes residue from after the uninstaller to the clean
+  state, so what was left is in the earlier snapshot only, and a diff recorded
+  emptied directories and keys only the other way round. EA's empty
+  `C:\Program Files\EA Games`, which the maintainer's screenshot showed, was in
+  no diff. A diff now carries `formerly_empty_directories` and
+  `formerly_empty_keys` as well, both directions are refiltered and
+  intersected, `diff` prints them, and reading a diff backwards swaps the two
+  lists instead of forgetting both.
 - **Identity inside binaries in a committed diff, found by `observe review`
   on its first run** (2026-10-30). The ACE install diff carried:
   - a machine SID, as text inside binary values;

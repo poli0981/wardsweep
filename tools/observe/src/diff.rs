@@ -292,6 +292,20 @@ pub struct Diff {
     /// nobody can.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub emptied_keys: Option<Vec<RegistryKeyRef>>,
+    /// Directories that held no file in the earlier snapshot and are gone, or
+    /// hold files, in the later one: the mirror of `emptied_directories`.
+    ///
+    /// In a residue diff, taken the way `docs/16` takes one — from after the
+    /// uninstaller to the clean baseline — these are the empty folders the
+    /// uninstall left behind, and nothing else in such a diff can show them.
+    /// EA's `C:\Program Files\EA Games` was invisible to one until 2026-10-30.
+    /// `None` under the same rule as `emptied_directories`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub formerly_empty_directories: Option<Vec<String>>,
+    /// The registry twin of `formerly_empty_directories`: keys that held no
+    /// value in the earlier snapshot and are gone, or hold one, in the later.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub formerly_empty_keys: Option<Vec<RegistryKeyRef>>,
     /// What both snapshots covered. A diff can speak only about these domains.
     pub coverage: Coverage,
     /// Service and driver changes that survived the noise filter.
@@ -507,6 +521,10 @@ pub fn compare(
 
     // Directories are part of the filesystem domain, so they answer to the same
     // coverage rule the file list does. Empty keys likewise to the registry's.
+    // The same comparison both ways round: what is empty now and was not, and
+    // what was empty and is not now.
+    let formerly_empty_directories = emptied_directories(after, before, &coverage, &mut refiltered);
+    let formerly_empty_keys = emptied_keys(after, before, &coverage, &mut refiltered);
     let emptied_directories = emptied_directories(before, after, &coverage, &mut refiltered);
     let emptied_keys = emptied_keys(before, after, &coverage, &mut refiltered);
     let signers = signer_counts(&files);
@@ -519,6 +537,8 @@ pub fn compare(
         rebooted_between: rebooted_between(before, after),
         emptied_directories,
         emptied_keys,
+        formerly_empty_directories,
+        formerly_empty_keys,
         coverage,
         services: kept,
         suppressed,
@@ -599,8 +619,12 @@ pub fn reversed(diff: &Diff) -> Diff {
         before_taken_utc: diff.after_taken_utc.clone(),
         after_taken_utc: diff.before_taken_utc.clone(),
         rebooted_between: diff.rebooted_between,
-        emptied_directories: None,
-        emptied_keys: None,
+        // Read backwards, what became empty is what was empty before, and the
+        // other way round. A diff that never recorded one side stays unknown.
+        emptied_directories: diff.formerly_empty_directories.clone(),
+        emptied_keys: diff.formerly_empty_keys.clone(),
+        formerly_empty_directories: diff.emptied_directories.clone(),
+        formerly_empty_keys: diff.emptied_keys.clone(),
         coverage: diff.coverage.clone(),
         services: diff.services.iter().map(service).collect(),
         suppressed: diff
@@ -658,15 +682,27 @@ pub fn refilter(diff: &mut Diff, policy: &Policy) -> Refiltered {
         access_denied: drop_excluded_denials(&mut diff.coverage),
         ..Refiltered::default()
     };
-    if let Some(keys) = diff.emptied_keys.as_mut() {
+    for keys in [
+        diff.emptied_keys.as_mut(),
+        diff.formerly_empty_keys.as_mut(),
+    ]
+    .into_iter()
+    .flatten()
+    {
         let listed = keys.len();
         keys.retain(|key| !is_excluded(&key.key));
-        report.emptied_keys = listed - keys.len();
+        report.emptied_keys += listed - keys.len();
     }
-    if let Some(directories) = diff.emptied_directories.as_mut() {
+    for directories in [
+        diff.emptied_directories.as_mut(),
+        diff.formerly_empty_directories.as_mut(),
+    ]
+    .into_iter()
+    .flatten()
+    {
         let listed = directories.len();
         directories.retain(|directory| !filesystem::is_excluded(Path::new(directory)));
-        report.emptied_directories = listed - directories.len();
+        report.emptied_directories += listed - directories.len();
     }
     report.files = drop_excluded_files(diff);
 
@@ -2167,19 +2203,63 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn reading_a_diff_backwards_does_not_invent_emptied_lists() {
+    fn reading_a_diff_backwards_swaps_its_emptied_lists_and_invents_none() {
         let mut before = snapshot(vec![]);
         let mut after = snapshot(vec![]);
         for side in [&mut before, &mut after] {
             side.coverage.captured.push(Domain::Filesystem);
-            side.file_empty_directories = Some(Vec::new());
         }
+        before.file_empty_directories = Some(vec![r"C:\Program Files\EA Games".to_owned()]);
+        after.file_empty_directories = Some(vec![r"C:\Program Files\Vendor".to_owned()]);
 
         let diff = compare(&before, &after, &NoiseFilter::permissive()).unwrap();
+        let backwards = reversed(&diff);
 
-        assert_eq!(diff.emptied_directories, Some(Vec::new()));
-        // Empty before and gone after is not what either snapshot recorded.
-        assert_eq!(reversed(&diff).emptied_directories, None);
+        assert_eq!(
+            backwards.emptied_directories,
+            diff.formerly_empty_directories
+        );
+        assert_eq!(
+            backwards.formerly_empty_directories,
+            diff.emptied_directories
+        );
+
+        // A diff written before the mirror existed does not know it, and
+        // reading it backwards must not pretend to.
+        let mut older = diff;
+        older.formerly_empty_directories = None;
+        assert_eq!(reversed(&older).emptied_directories, None);
+    }
+
+    #[test]
+    fn an_empty_folder_left_behind_shows_in_a_residue_diff() {
+        // docs/16 takes residue from after the uninstaller to the clean
+        // baseline. EA's empty `EA Games` was in the first and not the second,
+        // and until 2026-10-30 no diff said so.
+        let mut after_uninstall = snapshot(vec![]);
+        let mut clean = snapshot(vec![]);
+        for side in [&mut after_uninstall, &mut clean] {
+            side.coverage.captured.push(Domain::Filesystem);
+            side.coverage.captured.push(Domain::Registry);
+        }
+        after_uninstall.file_empty_directories =
+            Some(vec![r"C:\Program Files\EA Games".to_owned()]);
+        clean.file_empty_directories = Some(Vec::new());
+        let left_key = RegistryKeyRef {
+            key: r"HKLM\SOFTWARE\Origin Games".to_owned(),
+            view: "32".to_owned(),
+        };
+        after_uninstall.registry_empty_keys = Some(vec![left_key.clone()]);
+        clean.registry_empty_keys = Some(Vec::new());
+
+        let residue = compare(&after_uninstall, &clean, &NoiseFilter::permissive()).unwrap();
+
+        assert_eq!(
+            residue.formerly_empty_directories,
+            Some(vec![r"C:\Program Files\EA Games".to_owned()])
+        );
+        assert_eq!(residue.formerly_empty_keys, Some(vec![left_key]));
+        assert_eq!(residue.emptied_directories, Some(Vec::new()));
     }
 
     #[test]

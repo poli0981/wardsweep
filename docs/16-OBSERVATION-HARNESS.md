@@ -602,6 +602,13 @@ state. Recovering it:
 Step 4 alone justifies the cycle. It answers "what does the official uninstaller
 miss?" with evidence, which is the founding claim of the whole project.
 
+In such a residue diff — from after the uninstaller to the clean state — what
+was left is what the earlier snapshot holds and the later does not, so it
+appears as *removed*. An empty folder or key it left appears in
+`formerly_empty_directories` and `formerly_empty_keys`: empty in the earlier
+snapshot, gone in the later. Until 2026-10-30 a diff recorded only the other
+direction, and EA's empty `C:\Program Files\EA Games` was in no diff at all.
+
 Until the reinstall half exists, the uninstall half can still be drafted from: a
 diff taken from `00-current` to `01-clean` holds what the uninstaller removed as
 *removals*, and `suggest --removed` reads it the other way round so that they

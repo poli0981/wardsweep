@@ -204,6 +204,18 @@ pub fn intersect(mut footprints: Vec<Diff>) -> Result<Diff, IntersectError> {
                 .map(|footprint| footprint.emptied_keys.as_deref()),
             key_identity,
         ),
+        formerly_empty_directories: shared_list(
+            footprints
+                .iter()
+                .map(|footprint| footprint.formerly_empty_directories.as_deref()),
+            |directory: &String| folded(directory),
+        ),
+        formerly_empty_keys: shared_list(
+            footprints
+                .iter()
+                .map(|footprint| footprint.formerly_empty_keys.as_deref()),
+            key_identity,
+        ),
         coverage,
         services,
         suppressed,
