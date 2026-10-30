@@ -55,6 +55,16 @@ impl ServiceKey {
     }
 }
 
+/// The driver keys under `Services`, and the keys there that could not be read.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct DriverKeys {
+    /// Every key whose `Type` is a driver's.
+    pub drivers: Vec<ServiceKey>,
+    /// Keys that could not be opened, by name, and why. Any of them could be a
+    /// driver's, so none is taken for absent.
+    pub unreadable: Vec<(String, String)>,
+}
+
 /// What is at a path.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PathKind {
@@ -86,8 +96,9 @@ pub trait MachineView {
     fn service(&self, name: &str) -> Lookup<ServiceStatus>;
     /// A service's key in the registry, whether or not SCM knows it.
     fn service_key(&self, name: &str) -> Lookup<ServiceKey>;
-    /// Every service key whose `Type` is a driver's.
-    fn driver_keys(&self) -> Lookup<Vec<ServiceKey>>;
+    /// Every service key whose `Type` is a driver's, and every key that could
+    /// not be read.
+    fn driver_keys(&self) -> Lookup<DriverKeys>;
     /// Whether a key exists in one WOW64 view.
     fn registry_key(&self, key: &str, view: RegView) -> Lookup<()>;
     /// What is at a path, without following a reparse point.

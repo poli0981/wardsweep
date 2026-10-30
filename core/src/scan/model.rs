@@ -8,6 +8,8 @@
 
 use serde::Serialize;
 
+use crate::catalog::schema::Risk;
+
 /// The report's wire version, `"v"` in every JSON record.
 pub const REPORT_VERSION: u32 = 1;
 
@@ -85,6 +87,9 @@ pub enum Artifact {
 pub struct Finding {
     /// The catalog entry's id.
     pub anticheat: String,
+    /// How much damage removing it wrongly would do, as the catalog rates the
+    /// anti-cheat.
+    pub risk: Risk,
     /// What was found.
     #[serde(flatten)]
     pub artifact: Artifact,
@@ -151,5 +156,133 @@ impl Report {
     #[must_use]
     pub fn partial(&self) -> bool {
         !self.unreadable.is_empty()
+    }
+
+    /// How many findings have a classification.
+    #[must_use]
+    pub fn count(&self, classification: Classification) -> usize {
+        self.findings
+            .iter()
+            .filter(|finding| finding.classification == classification)
+            .count()
+    }
+
+    /// The report as `wardsweep scan --json` writes it (`docs/11`): one JSON
+    /// object per line, each carrying `"v"` and a `"type"` — `finding`,
+    /// `protected`, `disbelieved` or `unreadable` — and a closing `summary`.
+    ///
+    /// # Errors
+    ///
+    /// Returns serde's error if a record cannot be written as JSON, which the
+    /// types here do not give it a way to do.
+    pub fn to_ndjson(&self) -> Result<String, serde_json::Error> {
+        let mut lines = Vec::new();
+        for finding in &self.findings {
+            lines.push(record("finding", finding)?);
+        }
+        for protected in &self.protected {
+            lines.push(record("protected", protected)?);
+        }
+        for disbelieved in &self.disbelieved {
+            lines.push(record("disbelieved", disbelieved)?);
+        }
+        for unreadable in &self.unreadable {
+            lines.push(record("unreadable", unreadable)?);
+        }
+        lines.push(record(
+            "summary",
+            &Summary {
+                findings: self.findings.len(),
+                confirmed: self.count(Classification::Confirmed),
+                probable: self.count(Classification::Probable),
+                suspicious: self.count(Classification::Suspicious),
+                protected: self.protected.len(),
+                disbelieved: self.disbelieved.len(),
+                unreadable: self.unreadable.len(),
+                partial: self.partial(),
+            },
+        )?);
+        let mut text = lines.join("\n");
+        text.push('\n');
+        Ok(text)
+    }
+}
+
+/// One line of `--json` output: the version, the record's type, and its fields.
+#[derive(Serialize)]
+struct Record<'a, T> {
+    v: u32,
+    #[serde(rename = "type")]
+    kind: &'static str,
+    #[serde(flatten)]
+    body: &'a T,
+}
+
+fn record<T: Serialize>(kind: &'static str, body: &T) -> Result<String, serde_json::Error> {
+    serde_json::to_string(&Record {
+        v: REPORT_VERSION,
+        kind,
+        body,
+    })
+}
+
+/// The closing line of `--json` output.
+#[derive(Serialize)]
+struct Summary {
+    findings: usize,
+    confirmed: usize,
+    probable: usize,
+    suspicious: usize,
+    protected: usize,
+    disbelieved: usize,
+    unreadable: usize,
+    partial: bool,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn every_json_line_carries_its_version_and_type() {
+        let report = Report {
+            v: REPORT_VERSION,
+            findings: vec![Finding {
+                anticheat: "example-ac".to_owned(),
+                risk: Risk::Critical,
+                artifact: Artifact::RegistryKey {
+                    key: "HKLM\\SOFTWARE\\Example\\AC".to_owned(),
+                    view: RegView::Bits32,
+                },
+                classification: Classification::Probable,
+                evidence: vec!["present in the 32-bit view (WOW6432Node)".to_owned()],
+            }],
+            protected: Vec::new(),
+            disbelieved: Vec::new(),
+            unreadable: vec![Unreadable {
+                anticheat: None,
+                item: "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Locked".to_owned(),
+                reason: "access denied".to_owned(),
+            }],
+        };
+
+        let text = report.to_ndjson().expect("the report is JSON");
+        let lines: Vec<serde_json::Value> = text
+            .lines()
+            .map(|line| serde_json::from_str(line).expect("each line is one JSON object"))
+            .collect();
+
+        assert!(text.ends_with('\n'));
+        assert_eq!(lines.len(), 3);
+        assert!(lines.iter().all(|line| line["v"] == 1));
+        assert_eq!(lines[0]["type"], "finding");
+        assert_eq!(lines[0]["artifact"], "registry_key");
+        assert_eq!(lines[0]["view"], "32");
+        assert_eq!(lines[0]["classification"], "probable");
+        assert_eq!(lines[0]["risk"], "critical");
+        assert_eq!(lines[1]["type"], "unreadable");
+        assert_eq!(lines[2]["type"], "summary");
+        assert_eq!(lines[2]["probable"], 1);
+        assert_eq!(lines[2]["partial"], true);
     }
 }

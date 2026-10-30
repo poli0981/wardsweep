@@ -34,6 +34,22 @@ Exit: `0` findings present · `1` nothing found · `2` scan error ·
 
 Treat `3` as "run elevated for a complete picture", not as a failure.
 
+**This build** (2026-10-30) audits. `--mode audit` is the default and the only
+mode that runs: `orphan` and `full` need reference counting, which waits for
+spike S2, and exit `64` saying so. `--deep-fs` is not in this build. A scan
+with no catalog exits `2` — it looked for nothing, which is not "nothing
+found" — and a partial scan exits `3` whatever it found.
+
+With `--json`, each line is one object with `"v": 1` and a `"type"`:
+
+| `type` | Fields |
+|---|---|
+| `finding` | `anticheat` (the entry's id), `risk` (the entry's), `artifact` — `service` (`name`, `image`, `registry_only`), `driver` (`file`, `service`, `image`, `image_present`), `registry_key` (`key`, `view`: `"64"` or `"32"`) or `path` (`path`, `directory`) — then `classification` and `evidence` |
+| `protected` | `anticheat`, `target`, `reason`: what the deny-list refused |
+| `disbelieved` | `anticheat`, `item`, `reason`: a stale SCM entry, not reported as present |
+| `unreadable` | `anticheat` (or `null`), `item`, `reason` |
+| `summary` | the counts, and `partial` — always the last line |
+
 ## `plan`
 
 ```

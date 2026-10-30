@@ -83,7 +83,8 @@ compare against. The third, in October, added three more:
 | `core/src/safety/denylist.rs` — the deny-list | Done, with the adversarial path table from [`12`](12-TESTING-STRATEGY.md). Cannot be widened by a catalog; carve-outs are earned per anti-cheat entry, and a game entry earns none. Refuses folders and keys that hold other software when targeted as a whole, Windows-owned subtrees, and inbox driver and service names. |
 | `core/src/catalog/` — schema, Ed25519, integrity checks | Done |
 | `tools/catalog/` — `wardsweep-catalog` | Done. Implements the six invocations `catalog-verify.yml` runs, with a parity test; `sign` refuses a catalog any of them would refuse. |
-| `cli/` — `wardsweep catalog …`, `wardsweep observe …` | Verifies the signature **and** runs the four integrity checks before using a catalog, and warns when `minimum_app_version` is newer than the build. `observe` runs the harness from beside the CLI, never from `PATH`. |
+| `cli/` — `wardsweep catalog …`, `wardsweep scan`, `wardsweep observe …` | Verifies the signature **and** runs the four integrity checks before using a catalog, and warns when `minimum_app_version` is newer than the build. `scan` audits this machine (`--mode audit` only) and writes NDJSON with `--json`. `observe` runs the harness from beside the CLI, never from `PATH`. |
+| `core/src/scan/` — the detection engine, audit mode | The audit over a read-only machine view, and on Windows the view itself: SCM and the `Services` key, both WOW64 views, paths without following links, Authenticode offline. Unreadable is reported, never absent. Tested on a machine built from the EA install diff, and on Windows against the real one. Run here on 2026-10-30 with the committed drafts: ACE found and confirmed, EA's leftover keys found. Not yet: games, the filesystem walk, refcount (S2). |
 | `catalog/catalog.toml` | Signed, and **empty of entries** on purpose — see below |
 | `core/benches/scan_corpus.rs` | Done, gated on the hard-fail budgets in [`10`](10-PERF-BUDGET.md) |
 | `ui/` — WPF shell | Shell only, plus the architecture tests that assert the UI has no destructive code path |
@@ -113,7 +114,8 @@ has seen fail is not a gate.
 - **Any catalog entry.** `CONTRIBUTING.md` rejects entries not derived from an
   observation diff and none has been taken. An empty catalog finds nothing,
   which is harmless; a guessed catalog deletes the wrong thing.
-- **The scanner**, the plan builder, refcount and IPC.
+- **The plan builder, refcount and IPC**, and of the scanner, games and the
+  filesystem walk: `scan` audits only what a catalog names.
 
 ## The 2026-10-08 audit
 

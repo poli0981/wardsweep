@@ -45,6 +45,7 @@ use super::view::{Lookup, MachineView, PathKind, ServiceKey, Signature};
 #[derive(Debug, Clone, Default)]
 pub struct Environment {
     values: BTreeMap<String, Vec<String>>,
+    unreadable: Vec<(String, String)>,
 }
 
 impl Environment {
@@ -58,6 +59,15 @@ impl Environment {
     #[must_use]
     pub fn with(mut self, name: &str, values: Vec<String>) -> Self {
         self.values.insert(name.to_ascii_uppercase(), values);
+        self
+    }
+
+    /// Record a source of values that could not be read: a launcher's library
+    /// list. An audit with this environment is partial, as a library nobody
+    /// could list may hold what the catalog names.
+    #[must_use]
+    pub fn with_unreadable(mut self, item: &str, reason: &str) -> Self {
+        self.unreadable.push((item.to_owned(), reason.to_owned()));
         self
     }
 
@@ -82,11 +92,30 @@ pub fn audit(catalog: &Catalog, machine: &dyn MachineView, environment: &Environ
         findings: Vec::new(),
         protected: Vec::new(),
         disbelieved: Vec::new(),
-        unreadable: Vec::new(),
+        unreadable: environment
+            .unreadable
+            .iter()
+            .map(|(item, reason)| Unreadable {
+                anticheat: None,
+                item: item.clone(),
+                reason: reason.clone(),
+            })
+            .collect(),
     };
     // Read once: every driver key, for every entry's driver names.
     let driver_keys = match machine.driver_keys() {
-        Lookup::Found(keys) => keys,
+        Lookup::Found(found) => {
+            // Unowned: a key nobody could read is no entry's yet, and every
+            // entry's drivers could be behind it.
+            for (name, reason) in found.unreadable {
+                report.unreadable.push(Unreadable {
+                    anticheat: None,
+                    item: format!("{SERVICES_KEY}\\{name}"),
+                    reason,
+                });
+            }
+            found.drivers
+        }
         Lookup::Absent => Vec::new(),
         Lookup::Unreadable(reason) => {
             report.unreadable.push(Unreadable {
@@ -420,6 +449,7 @@ impl Audit<'_> {
             });
             self.report.findings.push(Finding {
                 anticheat: self.entry.id.clone(),
+                risk: self.entry.risk,
                 artifact: pending.artifact,
                 classification,
                 evidence,
@@ -442,6 +472,12 @@ fn views(key: &str, view: View) -> Vec<RegView> {
     }
 }
 
+/// The signer of an attestation-signed kernel driver. Microsoft re-signs every
+/// third-party driver submitted through its hardware dev center, so the
+/// signature verifies the file and names no vendor: every `.sys` of ACE's
+/// footprint carries it (`observations/2026-08-19-anticheatexpert/notes.md`).
+const ATTESTATION_SIGNER: &str = "Microsoft Windows Hardware Compatibility Publisher";
+
 /// Judge a file by its signature against the publishers the entry names.
 fn judge(signature: Signature, entry: &AntiCheat) -> (Classification, String) {
     let ours = |signer: &str| {
@@ -451,6 +487,14 @@ fn judge(signature: Signature, entry: &AntiCheat) -> (Classification, String) {
             .any(|name| name.eq_ignore_ascii_case(signer))
     };
     match signature {
+        // First, so no catalog can make Microsoft's attestation its vendor.
+        Signature::Verified(signer) if signer.eq_ignore_ascii_case(ATTESTATION_SIGNER) => (
+            Classification::Probable,
+            format!(
+                "signed by {signer}, Microsoft's attestation of a kernel driver, which names no \
+                 vendor to check"
+            ),
+        ),
         Signature::Verified(signer) if ours(&signer) => {
             (Classification::Confirmed, format!("signed by {signer}"))
         }
@@ -535,7 +579,7 @@ mod tests {
     use std::collections::BTreeMap;
 
     use super::*;
-    use crate::scan::view::ServiceStatus;
+    use crate::scan::view::{DriverKeys, ServiceStatus};
 
     const HEADER: &str = "schema_version = 1\n\
                           catalog_version = \"0.0.1-test\"\n\
@@ -554,6 +598,8 @@ mod tests {
         paths: BTreeMap<String, Lookup<PathKind>>,
         signatures: BTreeMap<String, Signature>,
         driver_keys_unreadable: bool,
+        /// Keys under `Services` that cannot be opened, with the reason.
+        closed_keys: Vec<(String, String)>,
     }
 
     impl Fake {
@@ -590,17 +636,19 @@ mod tests {
                 .cloned()
                 .map_or(Lookup::Absent, Lookup::Found)
         }
-        fn driver_keys(&self) -> Lookup<Vec<ServiceKey>> {
+        fn driver_keys(&self) -> Lookup<DriverKeys> {
             if self.driver_keys_unreadable {
                 return Lookup::Unreadable("access denied".to_owned());
             }
-            Lookup::Found(
-                self.keys
+            Lookup::Found(DriverKeys {
+                drivers: self
+                    .keys
                     .values()
                     .filter(|key| key.is_driver())
                     .cloned()
                     .collect(),
-            )
+                unreadable: self.closed_keys.clone(),
+            })
         }
         fn registry_key(&self, key: &str, view: RegView) -> Lookup<()> {
             self.registry
@@ -766,6 +814,41 @@ mod tests {
     }
 
     #[test]
+    fn a_library_list_nobody_can_read_makes_the_scan_partial() {
+        let manifest = "C:\\Program Files (x86)\\Steam\\steamapps\\libraryfolders.vdf";
+        let environment = environment().with_unreadable(manifest, "access denied");
+
+        let report = audit(&catalog(EXAMPLE), &Fake::default(), &environment);
+
+        assert!(report.partial());
+        assert_eq!(report.unreadable[0].item, manifest);
+    }
+
+    #[test]
+    fn a_service_key_nobody_can_read_makes_the_scan_partial() {
+        // An anti-cheat can deny its own key to the user running the scan. Its
+        // driver could be behind it, so the scan is partial, not clean.
+        let body = format!("{EXAMPLE}drivers = [\"ExampleAC.sys\"]\n");
+        let machine = Fake {
+            closed_keys: vec![("Locked".to_owned(), "access denied".to_owned())],
+            ..Fake::default()
+        };
+
+        let report = audit(&catalog(&body), &machine, &environment());
+
+        assert_eq!(report.findings, []);
+        assert!(report.partial());
+        assert_eq!(
+            report.unreadable,
+            [Unreadable {
+                anticheat: None,
+                item: "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Locked".to_owned(),
+                reason: "access denied".to_owned(),
+            }]
+        );
+    }
+
+    #[test]
     fn what_the_deny_list_protects_is_reported_not_found() {
         // A library as a whole is a container: never a finding, however the
         // catalog came to name it.
@@ -867,6 +950,67 @@ mod tests {
         let report = audit(&catalog(&body), &alone, &environment());
         assert_eq!(report.findings.len(), 1);
         assert_eq!(report.findings[0].classification, Classification::Probable);
+    }
+
+    #[test]
+    fn an_attestation_signed_driver_is_probable_and_never_suspicious() {
+        // ACE's shape, as `wardsweep scan` found it on 2026-10-30: the service
+        // binary signed by the vendor, the driver re-signed by Microsoft. The
+        // driver names no vendor, so it neither confirms nor contradicts one.
+        let body = format!(
+            "{EXAMPLE}services = [\"ExampleAC Protection\"]\n\
+             drivers = [\"ExampleAC.sys\"]\n\
+             registry = [{{ key = \"HKLM\\\\SOFTWARE\\\\ExampleAC\", view = \"64\", class = \"config\" }}]\n"
+        );
+        let mut machine = Fake::default()
+            .key("HKLM\\SOFTWARE\\ExampleAC", RegView::Bits64)
+            .file(
+                "C:\\Program Files\\ExampleAC\\service.exe",
+                Signature::Verified("Example Vendor".to_owned()),
+            )
+            .file(
+                "C:\\Windows\\System32\\drivers\\ExampleAC.sys",
+                Signature::Verified(ATTESTATION_SIGNER.to_owned()),
+            );
+        machine.services.insert(
+            "exampleac protection".to_owned(),
+            Lookup::Found(ServiceStatus {
+                image: "\"C:\\Program Files\\ExampleAC\\service.exe\" -autorun".to_owned(),
+                stale: false,
+            }),
+        );
+        machine.keys.insert(
+            "exampleac".to_owned(),
+            ServiceKey {
+                name: "ExampleAC".to_owned(),
+                image: "\\??\\C:\\Windows\\system32\\drivers\\ExampleAC.sys".to_owned(),
+                service_type: 1,
+            },
+        );
+
+        let report = audit(&catalog(&body), &machine, &environment());
+
+        assert_eq!(
+            kinds(&report)
+                .into_iter()
+                .map(|(_, class)| class)
+                .collect::<Vec<_>>(),
+            [
+                Classification::Confirmed,
+                Classification::Probable,
+                Classification::Confirmed,
+            ],
+            "{:#?}",
+            report.findings
+        );
+        // Not even a catalog that names Microsoft makes it the vendor.
+        let naming = body.replace(
+            "authenticode_cn = [\"Example Vendor\"]",
+            &format!("authenticode_cn = [\"Example Vendor\", \"{ATTESTATION_SIGNER}\"]"),
+        );
+        assert_ne!(naming, body);
+        let report = audit(&catalog(&naming), &machine, &environment());
+        assert_eq!(report.count(Classification::Probable), 1);
     }
 
     /// The machine as FC 26's first launch left it, from the committed install

@@ -16,16 +16,29 @@
 //! answer is the launcher's own record, not a guess at where games might be.
 //!
 //! Everything here is parsing and `std::fs` reads, so it is portable and tested
-//! on Linux. Where a launcher keeps its manifests — Steam's install directory
-//! is in the registry — is the caller's question.
+//! on Linux. Epic's manifests are under `%ProgramData%` ([`epic_manifests`]);
+//! Steam's install directory is in the registry, which `scan::win` reads.
 //!
 //! Steam and Epic are read today. EA app, Ubisoft Connect, Battle.net and Riot
 //! keep theirs elsewhere and are not, so a game installed only through one of
 //! them is outside these libraries.
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
+
+/// The Epic Games Launcher's `Data\Manifests` directory under `%ProgramData%`,
+/// whether or not it exists. `None` when `%ProgramData%` is not set.
+#[must_use]
+pub fn epic_manifests() -> Option<PathBuf> {
+    std::env::var_os("ProgramData").map(|data| {
+        PathBuf::from(data)
+            .join("Epic")
+            .join("EpicGamesLauncher")
+            .join("Data")
+            .join("Manifests")
+    })
+}
 
 /// The launcher whose manifest names a library.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]

@@ -2,10 +2,11 @@
 //!
 //! `docs/11-CLI-REFERENCE.md` describes the full surface: `scan`, `plan`,
 //! `apply`, `resume`, `rollback`, `quarantine`, `report`, `catalog`, `observe`.
-//! This build implements `catalog`, because only the catalog machinery exists,
-//! and `observe`, which runs the separate read-only harness — `docs/19-ROADMAP.md`
-//! v0.1 is audit-only and `docs/13-P0-SPIKES.md` gates the rest behind seven
-//! recorded spike verdicts.
+//! This build implements `catalog`; `scan` in its audit mode, the read-only
+//! detection `docs/19-ROADMAP.md` makes v0.1; and `observe`, which runs the
+//! separate read-only harness. `docs/13-P0-SPIKES.md` gates the rest behind
+//! recorded spike verdicts: the orphan and full scan modes need reference
+//! counting, which waits for S2.
 //!
 //! The unimplemented subcommands are **absent** rather than present-and-stubbed.
 //! `wardsweep apply` returning "not implemented" reads like a temporary outage;
@@ -17,15 +18,18 @@ use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
 use wardsweep_core::catalog::{self, Catalog, validate, verify};
 
 /// Success.
 const EXIT_OK: u8 = 0;
 /// Nothing found / nothing to do.
 const EXIT_NOTHING: u8 = 1;
-/// The scan failed — here, the harness could not be run at all.
+/// The scan failed, or the harness could not be run at all.
 const EXIT_SCAN_ERROR: u8 = 2;
+/// A partial scan: something could not be read. Only a Windows scan can be.
+#[cfg(any(windows, test))]
+const EXIT_PARTIAL: u8 = 3;
 /// Catalog verification failed.
 const EXIT_CATALOG_FAILED: u8 = 9;
 /// Usage error.
@@ -57,6 +61,26 @@ enum Command {
     #[command(subcommand)]
     Catalog(CatalogCommand),
 
+    /// Audit this machine against the catalog. Reads only.
+    ///
+    /// Runs without elevation: what cannot be read is reported as unreadable,
+    /// never as absent, and the scan exits 3 — run it elevated for a complete
+    /// picture.
+    Scan {
+        /// What to look for.
+        #[arg(long, value_enum, default_value_t = Mode::Audit)]
+        mode: Mode,
+
+        /// Newline-delimited JSON, one record per line, `"v": 1`; human text
+        /// goes to stderr.
+        #[arg(long)]
+        json: bool,
+
+        /// Write the output to a file instead of stdout.
+        #[arg(short = 'o', long = "output", value_name = "FILE")]
+        output: Option<PathBuf>,
+    },
+
     /// Run the read-only observation harness, `wardsweep-observe`.
     ///
     /// Every argument after `observe` is passed to it unchanged, `--help`
@@ -73,6 +97,17 @@ enum Command {
         )]
         args: Vec<OsString>,
     },
+}
+
+/// What `scan` looks for (`docs/11-CLI-REFERENCE.md`).
+#[derive(Clone, Copy, PartialEq, Eq, ValueEnum)]
+enum Mode {
+    /// Every artifact of every anti-cheat the catalog defines.
+    Audit,
+    /// Anti-cheat no installed game references. Needs reference counting.
+    Orphan,
+    /// Both. Needs reference counting.
+    Full,
 }
 
 #[derive(Subcommand)]
@@ -106,8 +141,25 @@ fn main() -> ExitCode {
         Command::Catalog(command) => {
             let path = resolve_catalog_path(cli.catalog.as_deref(), cli.data_dir.as_deref());
             match load_verified(&path) {
-                Err(code) => code,
+                Err(code) => ExitCode::from(code),
                 Ok(loaded) => run_catalog(command, &loaded),
+            }
+        }
+        Command::Scan { mode, json, output } => {
+            if *mode != Mode::Audit {
+                eprintln!(
+                    "--mode orphan and --mode full need reference counting, which waits for \
+                     spike S2 (docs/13-P0-SPIKES.md); this build audits"
+                );
+                return ExitCode::from(EXIT_USAGE);
+            }
+            let path = resolve_catalog_path(cli.catalog.as_deref(), cli.data_dir.as_deref());
+            match load_verified(&path) {
+                // A scan with no catalog looked for nothing: an error, never
+                // "nothing found".
+                Err(EXIT_NOTHING) => ExitCode::from(EXIT_SCAN_ERROR),
+                Err(code) => ExitCode::from(code),
+                Ok(loaded) => ExitCode::from(run_scan(&loaded, *json, output.as_deref())),
             }
         }
     }
@@ -199,34 +251,34 @@ struct Loaded {
 ///
 /// Verification is unconditional (`docs/04-CATALOG-SCHEMA.md`). There is no
 /// flag to skip it and no "used with a warning" path.
-fn load_verified(path: &Path) -> Result<Loaded, ExitCode> {
+fn load_verified(path: &Path) -> Result<Loaded, u8> {
     let Ok(bytes) = std::fs::read(path) else {
         eprintln!("no catalog at {}", path.display());
         eprintln!(
             "  pass --catalog <path>, or install one under %ProgramData%\\WardSweep\\catalog"
         );
-        return Err(ExitCode::from(EXIT_NOTHING));
+        return Err(EXIT_NOTHING);
     };
 
     let signature_path = signature_path(path);
     let Ok(signature) = std::fs::read(&signature_path) else {
         eprintln!("no signature at {}", signature_path.display());
         eprintln!("  an unverified catalog is refused, never used with a warning");
-        return Err(ExitCode::from(EXIT_CATALOG_FAILED));
+        return Err(EXIT_CATALOG_FAILED);
     };
 
     if let Err(error) =
         verify::verify_detached(&bytes, &signature, verify::COMPILED_IN_PUBLIC_KEY_HEX)
     {
         eprintln!("catalog signature is not valid: {error}");
-        return Err(ExitCode::from(EXIT_CATALOG_FAILED));
+        return Err(EXIT_CATALOG_FAILED);
     }
 
     let catalog = match catalog::parse_bytes(&bytes) {
         Ok(catalog) => catalog,
         Err(error) => {
             eprintln!("catalog is signed but not readable: {error}");
-            return Err(ExitCode::from(EXIT_CATALOG_FAILED));
+            return Err(EXIT_CATALOG_FAILED);
         }
     };
 
@@ -249,7 +301,7 @@ fn load_verified(path: &Path) -> Result<Loaded, ExitCode> {
         for problem in &problems {
             eprintln!("  {problem}");
         }
-        return Err(ExitCode::from(EXIT_CATALOG_FAILED));
+        return Err(EXIT_CATALOG_FAILED);
     }
 
     // docs/04-CATALOG-SCHEMA.md: "warns if minimum_app_version exceeds its own".
@@ -369,6 +421,183 @@ fn run_catalog(command: &CatalogCommand, loaded: &Loaded) -> ExitCode {
     }
 }
 
+/// Audit this machine, write the report, and say how the scan went.
+#[cfg(windows)]
+fn run_scan(loaded: &Loaded, json: bool, file: Option<&Path>) -> u8 {
+    use wardsweep_core::scan::{engine, win};
+
+    let report = engine::audit(&loaded.catalog, &win::Machine, &win::environment());
+    let text = if json {
+        match report.to_ndjson() {
+            Ok(text) => text,
+            Err(error) => {
+                eprintln!("the report could not be written as JSON: {error}");
+                return EXIT_SCAN_ERROR;
+            }
+        }
+    } else {
+        output::render(&report, &loaded.catalog)
+    };
+    match file {
+        Some(path) => {
+            if let Err(error) = std::fs::write(path, text) {
+                eprintln!("cannot write {}: {error}", path.display());
+                return EXIT_SCAN_ERROR;
+            }
+        }
+        None => print!("{text}"),
+    }
+    // With --json, stdout is the records' alone; the verdict is for a person.
+    if json || file.is_some() {
+        eprintln!("{}", output::verdict(&report));
+    }
+    output::exit_code(&report)
+}
+
+/// `scan` reads a Windows machine; elsewhere there is none to read.
+#[cfg(not(windows))]
+fn run_scan(_loaded: &Loaded, _json: bool, _file: Option<&Path>) -> u8 {
+    eprintln!("scan reads a Windows machine, and this is not one");
+    EXIT_SCAN_ERROR
+}
+
+/// How a scan's report reads and what it exits with. Pure, so its tests run on
+/// every platform; outside them only Windows has a machine to report on.
+#[cfg(any(windows, test))]
+mod output {
+    use std::fmt::Write as _;
+
+    use wardsweep_core::catalog::Catalog;
+    use wardsweep_core::scan::model::{Artifact, Classification, RegView, Report};
+
+    use super::{EXIT_NOTHING, EXIT_OK, EXIT_PARTIAL};
+
+    /// `docs/11`: findings 0, nothing 1, partial 3. Partial wins: a scan that could
+    /// not read everything has not found everything, whatever it did find.
+    pub(super) fn exit_code(report: &Report) -> u8 {
+        if report.partial() {
+            EXIT_PARTIAL
+        } else if report.findings.is_empty() {
+            EXIT_NOTHING
+        } else {
+            EXIT_OK
+        }
+    }
+
+    /// The report for a person: findings by anti-cheat, then what was protected,
+    /// disbelieved and unreadable, then the verdict.
+    pub(super) fn render(report: &Report, catalog: &Catalog) -> String {
+        let mut text = String::new();
+        let mut current: Option<&str> = None;
+        for finding in &report.findings {
+            if current != Some(finding.anticheat.as_str()) {
+                current = Some(finding.anticheat.as_str());
+                let display = catalog
+                    .anticheat
+                    .iter()
+                    .find(|entry| entry.id == finding.anticheat)
+                    .map_or(finding.anticheat.as_str(), |entry| entry.display.as_str());
+                let _ = writeln!(text, "{display} ({})", finding.anticheat);
+            }
+            let _ = writeln!(
+                text,
+                "  {:<11} {}",
+                classification_name(finding.classification),
+                describe(&finding.artifact)
+            );
+            for line in &finding.evidence {
+                let _ = writeln!(text, "              {line}");
+            }
+        }
+        for item in &report.protected {
+            let _ = writeln!(
+                text,
+                "protected   {} ({}): {}",
+                item.target, item.anticheat, item.reason
+            );
+        }
+        for item in &report.disbelieved {
+            let _ = writeln!(
+                text,
+                "disbelieved {} ({}): {}",
+                item.item, item.anticheat, item.reason
+            );
+        }
+        for item in &report.unreadable {
+            let _ = writeln!(text, "unreadable  {}: {}", item.item, item.reason);
+        }
+        let _ = writeln!(text, "{}", verdict(report));
+        text
+    }
+
+    fn classification_name(classification: Classification) -> &'static str {
+        match classification {
+            Classification::Confirmed => "confirmed",
+            Classification::Probable => "probable",
+            Classification::Suspicious => "suspicious",
+        }
+    }
+
+    fn describe(artifact: &Artifact) -> String {
+        match artifact {
+            Artifact::Service {
+                name,
+                registry_only: true,
+                ..
+            } => format!("service {name}, in the registry only"),
+            Artifact::Service { name, .. } => format!("service {name}"),
+            Artifact::Driver {
+                file,
+                service,
+                image_present,
+                ..
+            } => {
+                let registered = service
+                    .as_ref()
+                    .map_or_else(String::new, |service| format!(", registered as {service}"));
+                let missing = if *image_present {
+                    ""
+                } else {
+                    ", image not on disk"
+                };
+                format!("driver {file}{registered}{missing}")
+            }
+            Artifact::RegistryKey {
+                key,
+                view: RegView::Bits64,
+            } => format!("key {key}, 64-bit view"),
+            Artifact::RegistryKey {
+                key,
+                view: RegView::Bits32,
+            } => format!("key {key}, 32-bit view"),
+            Artifact::Path {
+                path,
+                directory: true,
+            } => format!("folder {path}"),
+            Artifact::Path { path, .. } => format!("file {path}"),
+        }
+    }
+
+    /// One line on how the scan went.
+    pub(super) fn verdict(report: &Report) -> String {
+        let found = format!(
+            "{} finding(s): {} confirmed, {} probable, {} suspicious",
+            report.findings.len(),
+            report.count(Classification::Confirmed),
+            report.count(Classification::Probable),
+            report.count(Classification::Suspicious)
+        );
+        if report.partial() {
+            format!(
+                "{found}. Partial: {} item(s) could not be read; run elevated for a complete picture",
+                report.unreadable.len()
+            )
+        } else {
+            format!("{found}.")
+        }
+    }
+}
+
 fn join_or_none(values: &[String]) -> String {
     if values.is_empty() {
         "-".to_owned()
@@ -379,6 +608,8 @@ fn join_or_none(values: &[String]) -> String {
 
 #[cfg(test)]
 mod tests {
+    use wardsweep_core::scan::model::{Classification, Report};
+
     use super::*;
 
     #[test]
@@ -412,7 +643,7 @@ mod tests {
         let parsed = |args: &[&str]| -> Vec<OsString> {
             match Cli::try_parse_from(args).expect("parses").command {
                 Command::Observe { args } => args,
-                Command::Catalog(_) => panic!("parsed as catalog"),
+                _ => panic!("parsed as another command"),
             }
         };
 
@@ -443,6 +674,116 @@ mod tests {
         // STATUS_ACCESS_VIOLATION, as Windows reports a crashed process.
         assert_eq!(exit_code_of(Some(-1_073_741_819)), EXIT_SCAN_ERROR);
         assert_eq!(exit_code_of(None), EXIT_SCAN_ERROR);
+    }
+
+    #[test]
+    fn scan_parses_the_way_docs_11_writes_it() {
+        let parsed = |args: &[&str]| match Cli::try_parse_from(args).expect("parses").command {
+            Command::Scan { mode, json, output } => (mode, json, output),
+            _ => panic!("parsed as another command"),
+        };
+
+        let (mode, json, output) = parsed(&[
+            "wardsweep",
+            "scan",
+            "--mode",
+            "audit",
+            "--json",
+            "-o",
+            "audit.json",
+        ]);
+        assert!(mode == Mode::Audit && json);
+        assert_eq!(output, Some(PathBuf::from("audit.json")));
+
+        let (mode, json, output) = parsed(&["wardsweep", "scan"]);
+        assert!(mode == Mode::Audit && !json && output.is_none());
+
+        // Parsed, so that the refusal can say why rather than "invalid value".
+        assert!(parsed(&["wardsweep", "scan", "--mode", "orphan"]).0 == Mode::Orphan);
+        assert!(Cli::try_parse_from(["wardsweep", "scan", "--mode", "deep"]).is_err());
+    }
+
+    fn report(findings: Vec<Classification>, unreadable: usize) -> Report {
+        use wardsweep_core::catalog::schema::Risk;
+        use wardsweep_core::scan::model::{Artifact, Finding, REPORT_VERSION, Unreadable};
+
+        Report {
+            v: REPORT_VERSION,
+            findings: findings
+                .into_iter()
+                .map(|classification| Finding {
+                    anticheat: "example-ac".to_owned(),
+                    risk: Risk::High,
+                    artifact: Artifact::Driver {
+                        file: "ExampleAC.sys".to_owned(),
+                        service: Some("ExampleAC".to_owned()),
+                        image: r"C:\Windows\System32\drivers\ExampleAC.sys".to_owned(),
+                        image_present: false,
+                    },
+                    classification,
+                    evidence: vec!["registered by `ExampleAC`".to_owned()],
+                })
+                .collect(),
+            protected: Vec::new(),
+            disbelieved: Vec::new(),
+            unreadable: (0..unreadable)
+                .map(|_| Unreadable {
+                    anticheat: None,
+                    item: r"HKLM\SYSTEM\CurrentControlSet\Services\Locked".to_owned(),
+                    reason: "access denied".to_owned(),
+                })
+                .collect(),
+        }
+    }
+
+    #[test]
+    fn a_partial_scan_exits_3_whatever_it_found() {
+        assert_eq!(
+            output::exit_code(&report(vec![Classification::Confirmed], 0)),
+            EXIT_OK
+        );
+        assert_eq!(output::exit_code(&report(Vec::new(), 0)), EXIT_NOTHING);
+        assert_eq!(output::exit_code(&report(Vec::new(), 1)), EXIT_PARTIAL);
+        assert_eq!(
+            output::exit_code(&report(vec![Classification::Confirmed], 1)),
+            EXIT_PARTIAL
+        );
+    }
+
+    #[test]
+    fn the_human_report_names_the_entry_and_says_when_it_is_partial() {
+        let catalog = catalog::parse(
+            "schema_version = 1\n\
+             catalog_version = \"0.0.1-test\"\n\
+             minimum_app_version = \"0.1.0\"\n\n\
+             [[anticheat]]\n\
+             id = \"example-ac\"\n\
+             display = \"Example AC\"\n\
+             kind = \"kernel\"\n\
+             shared = true\n\
+             risk = \"high\"\n",
+        )
+        .expect("the test catalog parses");
+
+        let text = output::render(&report(vec![Classification::Probable], 1), &catalog);
+
+        assert!(text.starts_with("Example AC (example-ac)\n"), "{text}");
+        assert!(
+            text.contains(
+                "  probable    driver ExampleAC.sys, registered as ExampleAC, image not on disk\n"
+            ),
+            "{text}"
+        );
+        assert!(
+            text.contains(
+                "unreadable  HKLM\\SYSTEM\\CurrentControlSet\\Services\\Locked: access denied\n"
+            ),
+            "{text}"
+        );
+        assert!(
+            text.contains("Partial: 1 item(s) could not be read"),
+            "{text}"
+        );
     }
 
     #[test]
