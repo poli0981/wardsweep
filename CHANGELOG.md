@@ -400,6 +400,13 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
   `exec/` and `quar/` modules are empty, and `core/tests/no_destructive_code.rs`
   asserts no destructive Win32 or filesystem call exists outside them, and that
   nothing reads a hardware identifier (Safety Gate G3).
+- **Spikes S1, S5 and S7 are deferred for v0.1, and the detection engine may
+  begin** (maintainer decision, 2026-10-30; `docs/13` §Deferral). All three are
+  about removing something, and v0.1 removes nothing; they still gate v0.5 and
+  v1.0. S2, S4 and S6 are not deferred: S4 and S6 measure the scanner and its
+  release artifacts, so they are run against them, and all three remain v0.1's
+  exit criteria. The ownership graph waits for S2. Comments that still said S3
+  had no result now point at its PASS.
 
 ### Safety Gate decisions
 Recorded here because `docs/02-SAFETY-GATE.md` is frozen and requires a

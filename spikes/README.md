@@ -1,7 +1,10 @@
 # P0 Spikes
 
 Seven go/no-go gates. **No feature work begins until all seven have a recorded
-PASS, FAIL, or explicit deferral** — see [`docs/13-P0-SPIKES.md`](../docs/13-P0-SPIKES.md).
+PASS, FAIL, or explicit deferral** — see [`docs/13-P0-SPIKES.md`](../docs/13-P0-SPIKES.md),
+which also records the 2026-10-30 amendment: S4 and S6 measure the scanner, so
+they run against it rather than before it, and stay exit criteria of v0.1 with
+S2.
 
 Each spike is throwaway code. The deliverable is a written finding, not a merged
 implementation.
@@ -9,17 +12,19 @@ implementation.
 ## Status
 
 A missing `SN-RESULT.md` means the spike has not been attempted; that is
-deliberately unambiguous, and `ls spikes/*-RESULT.md` is the gate check.
+deliberately unambiguous, and `ls spikes/*-RESULT.md` is the gate check. A
+deferral is not an attempt: it is recorded in `docs/13` §Deferral, with its
+reason and scope reduction, and leaves no result file.
 
 | Spike | Question | Verdict |
 |---|---|---|
-| S1 | Boot-start driver removal across a reboot | — |
-| S2 | Shared anti-cheat reference counting | — |
+| S1 | Boot-start driver removal across a reboot | **Deferred for v0.1** (2026-10-30): v0.1 removes nothing. Gates v1.0. |
+| S2 | Shared anti-cheat reference counting | — Exit criterion of v0.1; the ownership graph waits for it. |
 | S3 | Split-privilege architecture | **PASS** — [`S3-RESULT.md`](S3-RESULT.md). All six criteria measured; 23 checks, 0 failed. No design change to `docs/03` implied; `docs/08` amended in five places. |
-| S4 | Performance on a genuinely messy machine | — |
-| S5 | Rollback fidelity | — |
-| S6 | Antivirus false-positive rate | — |
-| S7 | Silent vendor uninstall coverage | — |
+| S4 | Performance on a genuinely messy machine | — Exit criterion of v0.1, run against the scanner. |
+| S5 | Rollback fidelity | **Deferred for v0.1** (2026-10-30): v0.1 removes nothing. Gates v0.5. |
+| S6 | Antivirus false-positive rate | — Exit criterion of v0.1, run against its release artifacts. |
+| S7 | Silent vendor uninstall coverage | **Deferred for v0.1** (2026-10-30): v0.1 removes nothing. Gates v0.5. |
 
 ## Order
 

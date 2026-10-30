@@ -14,7 +14,9 @@ it are under "The 2026-10-08 audit".
 The repository builds, CI runs and is green, and **nothing here can delete
 anything**. That is the intended state: `docs/19-ROADMAP.md` makes v0.1
 audit-only, and `docs/13-P0-SPIKES.md` gates all feature work behind seven
-recorded verdicts, of which **one exists** (S3, below).
+recorded verdicts. **One exists** (S3, below); since 2026-10-30, S1, S5 and S7
+are deferred for v0.1, which removes nothing, and S2, S4 and S6 stand as its
+exit criteria — so the detection engine may begin.
 
 M0 delivered the parts that had to come before any of that: a workspace shaped
 to what CI requires, the safety gate's first real code, and a catalog integrity
@@ -301,7 +303,8 @@ The remaining harness domains — scheduled tasks, firewall, event sources,
 environment — are worth adding when an observation actually needs one, not
 before. Nothing observed so far has.
 
-S1, S2 and S4–S7 remain unrun.
+S1, S2 and S4–S7 remain unrun. S1, S5 and S7 are deferred for v0.1
+(`docs/13` §Deferral); S2, S4 and S6 are its exit criteria.
 
 Deferred test coverage is tracked in [`spikes/README.md`](../spikes/README.md):
 five of the fourteen named tests are done, one is partial, eight are waiting on

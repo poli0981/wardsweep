@@ -2,10 +2,10 @@
 //! architecture described in `docs/03-ARCHITECTURE.md`.
 //!
 //! It does nothing yet, and saying so precisely is the point of this build.
-//! Whether the split-privilege design works at all is spike **S3**
-//! (`docs/13-P0-SPIKES.md`), which is the root of the dependency graph:
-//! S3 → S1 → S5 and S3 → S2 → S5. Until S3 has a recorded verdict there is no
-//! IPC server, no pipe DACL, and no job state.
+//! The split-privilege design passed spike **S3** (`spikes/S3-RESULT.md`),
+//! the root of the dependency graph in `docs/13-P0-SPIKES.md`. There is still
+//! no IPC server, no pipe DACL and no job state: they are written to
+//! `docs/08-IPC-PROTOCOL.md` as S3 amended it, not yet.
 //!
 //! What this binary establishes now is the boundary: it exists, it is separate
 //! from the UI, and it is the only place elevated work will ever happen.
@@ -50,6 +50,6 @@ fn main() -> ExitCode {
         "wardsweep-broker {} has no IPC server and performs no operations.",
         wardsweep_core::VERSION
     );
-    eprintln!("The split-privilege design is spike S3 — see docs/13-P0-SPIKES.md.");
+    eprintln!("The split-privilege design passed spike S3; see spikes/S3-RESULT.md.");
     ExitCode::SUCCESS
 }

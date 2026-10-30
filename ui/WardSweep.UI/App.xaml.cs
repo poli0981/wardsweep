@@ -24,10 +24,10 @@ public partial class App : Application
         _host = Host.CreateDefaultBuilder()
             .ConfigureServices(static (_, services) =>
             {
-                // The real client speaks the named-pipe protocol in
-                // docs/08-IPC-PROTOCOL.md. Whether that design works at all is
-                // spike S3, so this build runs against the fake and says so on
-                // screen rather than pretending to be connected.
+                // The real client will speak the named-pipe protocol in
+                // docs/08-IPC-PROTOCOL.md, which spike S3 proved and amended.
+                // Until the broker serves it, this build runs against the fake
+                // and says so on screen rather than pretending to be connected.
                 services.AddSingleton<IBrokerClient, FakeBrokerClient>();
                 services.AddSingleton<MainWindowViewModel>();
                 services.AddSingleton<MainWindow>();
