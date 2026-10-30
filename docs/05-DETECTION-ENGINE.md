@@ -5,9 +5,13 @@
 > drivers by the image name of every driver key, registry keys in both views
 > where WOW64 redirects, paths expanded per game library, the deny-list on
 > every path and key, and the classification below. It is tested against a
-> machine built from a committed observation diff. Not yet: the Win32 reader
-> behind the view, games, the bounded filesystem walk, and the ownership graph
-> (S2). The sections below are the specification it follows.
+> machine built from a committed observation diff. On Windows the view is
+> `core/src/scan/win.rs` — SCM, the `Services` key, the registry in the view
+> asked for, `symlink_metadata`, and `WinVerifyTrust` offline — and
+> `wardsweep scan` runs the audit ([`11`](11-CLI-REFERENCE.md)), tested against
+> the machine the tests run on. Not yet: games, the bounded filesystem walk,
+> the signature cache, and the ownership graph (S2). The sections below are the
+> specification it follows.
 
 ## Design goal
 
@@ -38,6 +42,17 @@ Detection is a scored, multi-signal decision — never a single filename match.
 `suspicious` is **never** auto-selected for removal. Something sitting at the
 Easy Anti-Cheat path signed by nobody is exactly what you do not want a tool
 silently deleting — it is reported prominently and the user decides.
+
+**An attestation signature names no vendor.** Microsoft re-signs every
+third-party kernel driver submitted through its hardware dev center as
+*Microsoft Windows Hardware Compatibility Publisher*; every `.sys` of ACE's
+footprint carries that signature and nothing of ACE's
+(`observations/2026-08-19-anticheatexpert/notes.md`). It verifies the file and
+leaves the publisher unverifiable, so a driver signed that way is `probable`:
+neither the mismatch that makes `suspicious` nor the match that confirms,
+whatever the catalog lists. The first `wardsweep scan` of a machine with ACE
+installed, on 2026-10-30, called ACE's driver `suspicious` until this rule
+existed.
 
 ## Aho–Corasick single pass
 
@@ -231,6 +246,20 @@ after Bloom + Aho–Corasick have narrowed the set.
 Expired certificates on old anti-cheat builds are **normal** and are not
 downgraded — countersigned timestamps are honoured.
 
+> **Offline, as built (2026-10-30).** WardSweep makes no network call
+> ([`19`](19-ROADMAP.md)), so `WTD_REVOKE_WHOLECHAIN` goes with
+> `WTD_CACHE_ONLY_URL_RETRIEVAL`: revocation is checked against what the
+> machine has cached. A revocation the cache cannot answer does not fail a
+> signature that otherwise verifies; one it does know makes it invalid.
+> `TRUST_E_NOSIGNATURE` is unsigned only when the last error says the file
+> carries no signature, and otherwise an error — the file could not be read.
+> The signer's name comes from the embedded signature once it has verified,
+> by the same code the observation harness uses. A file signed only through a
+> Windows catalog file reads as unsigned, as `WinVerifyTrust` on one file does
+> not consult catalogs; anti-cheat binaries carry their own signature. The cache above is not built:
+> an audit verifies only the files a catalog names, a handful per anti-cheat,
+> and the walk that needs it is not either.
+
 **A verification that fails is unknown, not unsigned.** During the 2026-10-09
 baseline, with a snapshot saturating the disk, a signature pass over EA
 AntiCheat's files reported one as not signed and another with an unknown error.
@@ -239,7 +268,8 @@ timestamped. `suspicious` needs a signature that verifies and names the wrong
 publisher, or one that is invalid. An error — I/O, a timeout, a chain that cannot
 be built — is retried, and an artifact whose publisher still cannot be verified
 is `probable`, as one whose file is already gone is. It is never `suspicious` on
-the strength of an error, and never `confirmed`.
+the strength of an error, and never `confirmed`. As built, an error is retried
+once.
 
 ## Ownership graph and reference counting
 

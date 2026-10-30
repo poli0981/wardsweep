@@ -222,6 +222,19 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
   templates now expand with a caller's values (`expand_with`) as well as for
   validation. Not yet: the Win32 reader behind the view, games, and the
   ownership graph, which waits for S2.
+- **`wardsweep scan`**, the audit on this machine: `core/src/scan/win.rs` reads
+  services through SCM and the `Services` key, keys in the WOW64 view asked
+  for, paths without following a reparse point, and Authenticode through
+  `WinVerifyTrust` with revocation checked offline against the machine's
+  cache. `--json` writes one record per line, each with `"v": 1` and a
+  `type`; exits are `docs/11`'s 0, 1, 2 and 3, and `--mode orphan` or `full`
+  is refused with 64 until reference counting exists. What could not be read
+  is reported, never taken for absent: a service key the scanning user is
+  denied, a listing that stopped part-way, a library list that would not
+  parse. The harness now reads Steam's directory and signer names through the
+  same core code. Run on 2026-10-30 against the committed drafts, it found
+  ACE's service, driver, keys and folders and EA AntiCheat's leftover keys;
+  findings carry the entry's `risk`.
 - Generated third-party notices, checked by CI. `licenses/rust.md` comes from
   `cargo about` over `Cargo.lock` and `licenses/dotnet.md` from the interface's
   `packages.lock.json` and the restored packages, with Velopack included
@@ -343,6 +356,14 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
   platform.
 
 ### Fixed
+- An attestation-signed kernel driver no longer makes an audit `suspicious`.
+  Microsoft re-signs third-party drivers as *Microsoft Windows Hardware
+  Compatibility Publisher*, which names no vendor: such a driver is now
+  `probable`, whatever the catalog lists. The first real scan reported ACE's
+  driver as suspicious, and with it every other ACE artifact as unconfirmed.
+- `TRUST_E_NOSIGNATURE` is unsigned only when the last error says so; when the
+  file could not be read it is an error, retried once and then unknown — the
+  failure the 2026-10-09 baseline showed on a saturated disk.
 - **A residue diff could not name the empty folders and keys an uninstall
   left.** `docs/16` takes residue from after the uninstaller to the clean
   state, so what was left is in the earlier snapshot only, and a diff recorded
