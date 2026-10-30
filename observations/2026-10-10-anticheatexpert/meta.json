@@ -103,19 +103,21 @@
   "privacy": {
     "removed_by_policy": {
       "registry_records": 13442,
-      "registry_values": 8,
+      "registry_values": 12,
       "file_records": 81481,
       "unreadable_items": 43,
       "emptied_directories": 8
     },
     "redacted": {
       "account_names": 3110,
-      "machine_sids": 296,
+      "machine_sids": 320,
       "machine_name_in_binary_values": 4,
       "identifiers": 55,
       "identifiers_supplied_with_also_id": 9,
-      "also_id_note": "NTE save files named after the player's account, Unreal crash-reporter folders named after an installation id, the Kuro SDK's account-file prefix, and an EA app folder named after a hash."
-    }
+      "also_id_note": "NTE save files named after the player's account, Unreal crash-reporter folders named after an installation id, the Kuro SDK's account-file prefix, and an EA app folder named after a hash.",
+      "identity_store_sids": 6
+    },
+    "rescrubbed_2026_10_30": "observe review found a machine SID inside binary values (24), the DHCP option cache with the machine's name and the adapter's client identifier as binary value changes, and an identity-store SID as a ProfileList key name (6). redact now replaces SIDs inside hex and decodes binary value changes; the DHCP option cache is refused under G3 and refilter removed 4 values. Nothing of the anti-cheat's changed; history still holds the earlier file."
   },
   "draft": {
     "file": "draft.toml",

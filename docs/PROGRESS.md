@@ -289,8 +289,10 @@ are what it has to be right about.
 **8. Harness work the October cycle asked for.**
 - ~~Walk launcher libraries on other volumes, found from the launchers' own
   manifests.~~ Done for Steam and Epic, 2026-10-30.
-- Turn the pre-commit privacy review into an `observe` command. It is still run
-  by hand from scratch scripts, and they belong in the harness. The checks:
+- ~~Turn the pre-commit privacy review into an `observe` command.~~ Done,
+  2026-10-30: `observe review`. Its first run found a machine SID and the
+  DHCP option cache inside hex in a committed diff, now scrubbed from HEAD
+  (`docs/16`). The checks it replaced:
   - identifiers in file and folder names;
   - names inside hex binaries;
   - other software's names in rotating slots;

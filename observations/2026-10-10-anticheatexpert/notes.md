@@ -153,6 +153,25 @@ Nine of the identifiers were supplied with `--also-id` after reading the diff:
 `Anonymous` survives four times, and the report flags it because it begins with
 a name it looked for; it is the ordinary word.
 
+**Scrubbed again on 2026-10-30**, after `observe review` was first run over the
+committed diffs. Three things had reached this file:
+
+- A machine SID inside binary values, 24 times: a notification store and the
+  search indexer's crawl list write it as text inside a binary, where the text
+  rule never looked. `redact` now replaces SIDs inside hex too.
+- The machine's name and the DHCP client's identifier inside the DHCP option
+  cache under `Tcpip\Parameters\Interfaces`, as the `binary:` value changes of
+  a modified key. The masking above reached the record's own values and not
+  the value changes, which `redact` never decoded. The client identifier is the
+  adapter's MAC, so the value is now refused outright under G3; `refilter`
+  removed 4.
+- An identity-store SID as a `ProfileList` key name, 6 times. The #52 rule
+  removed the identity-store cache it keys, not this; `redact` now masks that
+  SID domain as it masks machine SIDs.
+
+None of them is the anti-cheat's, and the draft is unchanged. The repository's
+history still holds the earlier version of this file.
+
 ## The draft
 
 ```

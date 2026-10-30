@@ -167,6 +167,13 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
   global analysers, and any package it needs has to be added to the central
   version file that `dotnet-ci.yml` path-filters on — so throwaway code would
   re-run the whole .NET pipeline and leave a permanent entry behind.
+- `observe review`: the pre-commit privacy review, as a command rather than a
+  handful of scratch scripts. It lists what still looks like an identifier in
+  a diff, grouped by kind and by where it occurs — identity `redact` would
+  remove, identity inside hex, machine-key file names, long digit and hex runs
+  and per-user GUIDs in paths and keys, and paths on the earlier side of a
+  history slot — changes nothing, and exits 1 while anything is listed.
+  Harmless contexts are data in `review-benign.txt`.
 - `observe intersect`: what every footprint of one anti-cheat holds, across
   titles, written as a diff so `suggest` drafts from it. Matched by identity,
   never content, since titles ship different builds; a change kept by any
@@ -304,6 +311,18 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
   platform.
 
 ### Fixed
+- **Identity inside binaries in a committed diff, found by `observe review`
+  on its first run** (2026-10-30). The ACE install diff carried:
+  - a machine SID, as text inside binary values;
+  - the DHCP client's option cache, whose client identifier is the adapter's
+    MAC and which also holds the machine's name, in the `binary:` value
+    changes `redact` never decoded;
+  - an identity-store SID as a key name.
+
+  `redact` now decodes `binary:` values, replaces SIDs inside hex in their own
+  encoding, and masks `S-1-5-99-` SIDs as it masks machine ones. The DHCP
+  option cache and gateway record are refused under G3. HEAD is refiltered and
+  re-redacted; the history is not rewritten.
 - `README.md` and `COPYING.md` pointed at a `COPYING` file that does not exist;
   the licence is in `LICENSE`.
 - `docs/04-CATALOG-SCHEMA.md` said `WOW64Node`, which is not a real registry

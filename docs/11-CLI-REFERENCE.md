@@ -152,6 +152,7 @@ wardsweep observe suggest --diff diff.json -o draft.toml   # a draft catalog ent
 wardsweep observe intersect --diff a.json --diff b.json -o shared.json
 wardsweep observe refilter --in diff.json -o diff.json     # current policy and format
 wardsweep observe redact --in diff.json -o shared-diff.json
+wardsweep observe review --in shared-diff.json             # what still looks like an identifier
 ```
 
 The harness is run from the directory `wardsweep.exe` is in, never from `PATH`
