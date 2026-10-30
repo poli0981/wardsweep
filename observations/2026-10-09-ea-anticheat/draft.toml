@@ -37,9 +37,6 @@
 #     diff if the footprint looks short.
 #   - 204 added registry key(s) could not be attributed to this anti-cheat and
 #     were left out.
-#   - event log source `Application\EA Javelin Anticheat` was registered and
-#     nothing ties its name to this anti-cheat, so it is not in `event_sources`.
-#     Add it if it is this anti-cheat's.
 #   - no residue diff was given, so every path is classified from the install
 #     diff alone. docs/16 calls the residue diff the more valuable of the two
 #     — it is the exact set of things the vendor's uninstaller leaves behind.
@@ -65,7 +62,7 @@ services = [
 drivers = ["eaanticheat.sys"]
 tasks = []
 firewall_rules = []
-event_sources = []
+event_sources = ["EA Javelin Anticheat"]
 
 [[anticheat.paths]]
 path = '%ProgramFiles%\EA\AC'

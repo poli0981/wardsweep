@@ -497,8 +497,18 @@ places:
 
 Event log sources the footprint registered are put in `event_sources` when
 their name carries one of the anti-cheat's identifiers or the publisher's name,
-and named in the review notes otherwise. A source's key says little about its
-owner — EA's names Windows' generic `EventCreate.exe` as its message file.
+or is exactly how an attributed service describes itself, and named in the
+review notes otherwise. A source's key says little about its owner — EA's
+names Windows' generic `EventCreate.exe` as its message file — but EA's source
+is called `EA Javelin Anticheat`, the description of `EAAntiCheatService`.
+
+**Drivers named after one title are pointed out.** ACE installs
+`ACE-CORE1<id>.sys` and `ACE-CORE2<id>.sys` for each title, the id zero-padded,
+beside a key `…\Tencent\<id>`. When a driver's name ends in a number that also
+names one of the anti-cheat's keys, the review notes say so: a draft lists the
+names it saw, another title installs its own pair, and the catalog lists
+drivers by exact name. Covering every title needs a pattern the schema does not
+have, which is a maintainer's decision.
 
 When an entry's key absorbs keys below it, it takes their WOW64 views too: EA
 writes `EA\AC` through the 64-bit view and `EA\AC\Installs\fc26` through the
