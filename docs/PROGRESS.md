@@ -78,6 +78,17 @@ compare against. The third, in October, added three more:
   Since 2026-10-30 the libraries Steam and Epic name are walked
   (`docs/16`).
 
+**Since 2026-10-30 WardSweep can audit.** With S1, S5 and S7 deferred for v0.1,
+the detection engine began: `wardsweep scan` matches a catalog against this
+machine through SCM, the `Services` key, both WOW64 views and `WinVerifyTrust`
+offline, and reports what it found, what the deny-list protects, what it
+disbelieved and what it could not read. Its first run, here, with the committed
+drafts, found ACE as Wuthering Waves installed it and EA AntiCheat's two
+leftover keys — and called ACE's driver suspicious, because Microsoft re-signs
+every third-party kernel driver under its own name. That is now `probable`
+(`docs/05`). It still removes nothing, and the shipped catalog has no entries,
+so it finds nothing until one is signed.
+
 ## What exists and is verified
 
 | Area | State |
@@ -245,16 +256,27 @@ The follow-up is done: after a restart, `sc query EAAntiCheat` answered 1060 on
 2026-10-30. Recorded in the EA notes, with the residue computed against the
 clean baseline.
 
-**2. ACE from a second title, on a machine without it.** ACE is uninstalled
-now, so the next ACE title to run installs it from scratch. Take a new cycle
-with a freshly pinned collector:
+**2. ACE from two more titles: prepared, waiting for the maintainer.** ACE is
+installed again — Wuthering Waves reinstalled it on 2026-10-12 — and two ACE
+titles are in the Steam library on `D:`: Stella Sora and Arknights: Endfield.
+The cycle is ready in `%LOCALAPPDATA%\WardSweep\observations\2026-10-30-ace\`:
+a collector pinned for it (built from `c3e1532`, its SHA-256 in
+`collector.txt`) and `run-cycle.ps1`, which takes each snapshot in turn,
+refuses while a game or ACE runs, and resumes where it stopped. Run it in an
+**elevated** PowerShell:
 
-- Snapshot. Play NTE past login, into the game. Close it. Snapshot. That diff
-  is ACE's install footprint by a second title, from a clean machine, which is
-  exactly what `observe intersect` needs (step 4).
-- Then launch Wuthering Waves between two more snapshots. That diff shows what
-  a second title adds to an ACE already installed: by October's evidence, its
-  own pair of core drivers and its own per-user key, named by its game id.
+1. `00`, ACE as Wuthering Waves installed it.
+2. Stella Sora, played past login, closed; then `01`. `00`→`01` is what a
+   second title adds to an ACE already installed.
+3. ACE's own `Uninstaller.exe`; then `02`.
+4. Arknights: Endfield, played past login, closed; then `03`. `02`→`03` is
+   ACE's install footprint by a third title, from a machine without it —
+   the second input `observe intersect` has been waiting for (step 4).
+
+Then: the two diffs, `intersect` with
+`observations/2026-10-10-anticheatexpert/install.json`, `suggest`, `review`
+and `redact`, and `observations/2026-10-30-anticheatexpert/` with notes, meta,
+draft and a pinned test.
 
 **3. A second title carrying Riot Vanguard**: blocked on this machine while
 Vanguard is failing (step 0). The Vanguard cycle is complete, both halves, and
@@ -273,8 +295,8 @@ forward:
 for input. It turns footprints of one anti-cheat under several titles into the
 shared footprint, which is what makes a `shared = true` entry right and what S2
 starts from. It needs two titles' install footprints, each from a machine
-without the anti-cheat. Wuthering Waves' ACE footprint is one, and step 2's NTE
-footprint would be the other.
+without the anti-cheat. Wuthering Waves' ACE footprint is one, and step 2's
+Arknights: Endfield footprint will be the other.
 
 **5. Run S1 and S2**, which S3 unblocked, in parallel. **Read
 [`15`](15-TEST-MACHINE-PROTOCOL.md) before S1 touches real hardware**: the
@@ -286,13 +308,16 @@ testable on Linux, and it carries the G1 invariant. Six of the fourteen named
 tests in [`12`](12-TESTING-STRATEGY.md) are waiting on it. The S2 findings below
 are what it has to be right about.
 
-**7. The detection engine (`core/src/scan/`), and then v0.1.** It now has
-[`05`](05-DETECTION-ENGINE.md)'s October findings to build in:
-- read the `Services` key as well as asking SCM;
-- a stale SCM entry that fails with error 2 is not a present driver;
-- a missing image under a present key is not a removal;
-- every key is read in both WOW64 views, because EA's own uninstaller missed
-  one.
+**7. The detection engine (`core/src/scan/`), and then v0.1.** The audit
+exists, on Windows, with [`05`](05-DETECTION-ENGINE.md)'s October findings built
+in (#65, #68): the `Services` key as well as SCM, a stale SCM entry disbelieved,
+a missing image under a present key not a removal, both WOW64 views, and
+unreadable never absent. Next for it:
+- games, from the launchers' install records (`appmanifest_*.acf`, Epic's
+  `.item` files), which the residue and the refcount both need;
+- the bounded filesystem walk, with the signature cache `docs/05` describes;
+- `--mode orphan` and `full`, after refcount (step 6);
+- S4 and S6, which measure the scanner and can now be run against it.
 
 **8. Harness work the October cycle asked for.**
 - ~~Walk launcher libraries on other volumes, found from the launchers' own
@@ -323,7 +348,8 @@ environment — are worth adding when an observation actually needs one, not
 before. Nothing observed so far has.
 
 S1, S2 and S4–S7 remain unrun. S1, S5 and S7 are deferred for v0.1
-(`docs/13` §Deferral); S2, S4 and S6 are its exit criteria.
+(`docs/13` §Deferral); S2, S4 and S6 are its exit criteria, and since
+2026-10-30 S4 and S6 have a scanner to measure.
 
 Deferred test coverage is tracked in [`spikes/README.md`](../spikes/README.md):
 six of the fourteen named tests are done, one is partial, seven are waiting on

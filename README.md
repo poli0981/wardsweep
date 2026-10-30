@@ -94,8 +94,10 @@ game that references it.
 
 ## Status
 
-Pre-alpha. **No removal code exists yet.** Current state and what comes
-next are in [`docs/PROGRESS.md`](docs/PROGRESS.md). The seven P0 spikes in
+Pre-alpha. **No removal code exists yet.** The read-only audit,
+`wardsweep scan`, does; the shipped catalog has no entries yet, so it finds
+nothing until one is signed. Current state and what comes next are in
+[`docs/PROGRESS.md`](docs/PROGRESS.md). The seven P0 spikes in
 [`docs/13-P0-SPIKES.md`](docs/13-P0-SPIKES.md) are go/no-go gates: three of them
 (S1 boot-start driver removal, S2 shared anti-cheat reference counting, S5
 rollback fidelity) decide whether the automatic-removal product is viable at all.
