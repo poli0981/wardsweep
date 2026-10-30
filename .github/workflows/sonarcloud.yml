@@ -218,6 +218,18 @@ jobs:
           $hits = @(Get-ChildItem .sonarqube -Recurse -File -Include *.properties, *.txt -ErrorAction SilentlyContinue |
             Select-String -Pattern '[\\/][\w-]+\.rs\b')
           if ($hits.Count -eq 0) {
+            # What the scanner did take, so the failure can be read without
+            # re-running: the files it wrote, the extensions they list, and the
+            # inclusions it recorded.
+            Get-ChildItem .sonarqube -Recurse -File -Include *.properties, *.txt, *.xml -ErrorAction SilentlyContinue |
+              ForEach-Object { Write-Host "  $($_.FullName.Substring((Get-Location).Path.Length + 1)) ($($_.Length) bytes)" }
+            Get-ChildItem .sonarqube -Recurse -File -Include *.properties -ErrorAction SilentlyContinue |
+              Select-String -Pattern '\.([A-Za-z0-9]{1,10})(?:,|\\|$)' -AllMatches |
+              ForEach-Object { $_.Matches } | ForEach-Object { $_.Groups[1].Value.ToLowerInvariant() } |
+              Group-Object | Sort-Object Count -Descending | Select-Object -First 15 |
+              ForEach-Object { Write-Host "  .$($_.Name): $($_.Count)" }
+            Get-ChildItem .sonarqube -Recurse -File -Include *.xml -ErrorAction SilentlyContinue |
+              Select-String -Pattern 'text\.inclusions|scanAll' | ForEach-Object { Write-Host "  $($_.Line.Trim())" }
             Write-Host "::error::No .rs file reached the SonarCloud analysis: SonarScanner for .NET no longer takes Rust in through sonar.text.inclusions."
             exit 1
           }
