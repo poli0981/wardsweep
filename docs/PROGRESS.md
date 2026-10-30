@@ -85,7 +85,7 @@ offline, and reports what it found, what the deny-list protects, what it
 disbelieved and what it could not read. Its first run, here, with the committed
 drafts, found ACE as Wuthering Waves installed it and EA AntiCheat's two
 leftover keys — and called ACE's driver suspicious, because Microsoft re-signs
-every third-party kernel driver under its own name. That is now `probable`
+the kernel drivers it attests under its own name. That is now `probable`
 (`docs/05`). It still removes nothing, and the shipped catalog has no entries,
 so it finds nothing until one is signed.
 
