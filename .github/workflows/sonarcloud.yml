@@ -180,6 +180,10 @@ jobs:
           $scannerArgs = @(
             'begin', '/k:poli0981_wardsweep', '/o:poli0981', "/v:$version",
             '/d:sonar.host.url=https://sonarcloud.io', "/d:sonar.token=$env:SONAR_TOKEN",
+            # The repository root, stated rather than inferred: the scanner
+            # otherwise derives it from the MSBuild projects, which are all
+            # under ui/, and the Rust is not.
+            "/d:sonar.projectBaseDir=$((Get-Location).Path)",
             "/d:sonar.text.inclusions=$textInclusions",
             '/d:sonar.rust.lcov.reportPaths=coverage/rust.lcov',
             '/d:sonar.cs.cobertura.reportsPaths=TestResults/**/*.cobertura.xml',
