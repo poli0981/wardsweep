@@ -787,6 +787,88 @@ mod tests {
     }
 
     #[test]
+    fn every_artifact_and_every_list_reads_as_a_line() {
+        use wardsweep_core::scan::model::{Artifact, Disbelieved, Protected, RegView};
+
+        let template = report(vec![Classification::Confirmed], 0).findings[0].clone();
+        let mut report = report(Vec::new(), 0);
+        let artifacts = [
+            Artifact::Service {
+                name: "ExampleAC".to_owned(),
+                image: None,
+                registry_only: false,
+            },
+            Artifact::Service {
+                name: "ExampleAC Helper".to_owned(),
+                image: None,
+                registry_only: true,
+            },
+            Artifact::Driver {
+                file: "ExampleAC.sys".to_owned(),
+                service: None,
+                image: r"C:\Windows\System32\drivers\ExampleAC.sys".to_owned(),
+                image_present: true,
+            },
+            Artifact::RegistryKey {
+                key: r"HKLM\SOFTWARE\ExampleAC".to_owned(),
+                view: RegView::Bits64,
+            },
+            Artifact::RegistryKey {
+                key: r"HKLM\SOFTWARE\ExampleAC".to_owned(),
+                view: RegView::Bits32,
+            },
+            Artifact::Path {
+                path: r"C:\Program Files\ExampleAC".to_owned(),
+                directory: true,
+            },
+            Artifact::Path {
+                path: r"C:\Program Files\ExampleAC\ExampleAC.exe".to_owned(),
+                directory: false,
+            },
+        ];
+        for artifact in artifacts {
+            let mut finding = template.clone();
+            finding.artifact = artifact;
+            report.findings.push(finding);
+        }
+        report.protected.push(Protected {
+            anticheat: "example-ac".to_owned(),
+            target: r"C:\Windows\System32".to_owned(),
+            reason: "a Windows-owned folder".to_owned(),
+        });
+        report.disbelieved.push(Disbelieved {
+            anticheat: "example-ac".to_owned(),
+            item: "ExampleAC".to_owned(),
+            reason: "its key is gone".to_owned(),
+        });
+        let catalog = catalog::parse(
+            "schema_version = 1\n\
+             catalog_version = \"0.0.1-test\"\n\
+             minimum_app_version = \"0.1.0\"\n",
+        )
+        .expect("the test catalog parses");
+
+        let text = output::render(&report, &catalog);
+
+        // No entry in this catalog: the heading falls back to the id.
+        assert!(text.starts_with("example-ac (example-ac)\n"), "{text}");
+        for line in [
+            "  confirmed   service ExampleAC\n",
+            "  confirmed   service ExampleAC Helper, in the registry only\n",
+            "  confirmed   driver ExampleAC.sys\n",
+            r"  confirmed   key HKLM\SOFTWARE\ExampleAC, 64-bit view",
+            r"  confirmed   key HKLM\SOFTWARE\ExampleAC, 32-bit view",
+            r"  confirmed   folder C:\Program Files\ExampleAC",
+            r"  confirmed   file C:\Program Files\ExampleAC\ExampleAC.exe",
+            r"protected   C:\Windows\System32 (example-ac): a Windows-owned folder",
+            "disbelieved ExampleAC (example-ac): its key is gone\n",
+            "7 finding(s): 7 confirmed, 0 probable, 0 suspicious.\n",
+        ] {
+            assert!(text.contains(line), "missing {line:?} in\n{text}");
+        }
+    }
+
+    #[test]
     fn versions_compare_by_component_not_by_text() {
         assert_eq!(requires_newer("0.1.0", "0.0.1"), Some(true));
         assert_eq!(requires_newer("0.10.0", "0.9.0"), Some(true));

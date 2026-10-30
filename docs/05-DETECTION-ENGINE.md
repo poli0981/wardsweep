@@ -254,7 +254,9 @@ downgraded — countersigned timestamps are honoured.
 > `TRUST_E_NOSIGNATURE` is unsigned only when the last error says the file
 > carries no signature, and otherwise an error — the file could not be read.
 > The signer's name comes from the embedded signature once it has verified,
-> by the same code the observation harness uses. The cache above is not built:
+> by the same code the observation harness uses. A file signed only through a
+> Windows catalog file reads as unsigned, as `WinVerifyTrust` on one file does
+> not consult catalogs; anti-cheat binaries carry their own signature. The cache above is not built:
 > an audit verifies only the files a catalog names, a handful per anti-cheat,
 > and the walk that needs it is not either.
 

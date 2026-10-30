@@ -1,8 +1,8 @@
 //! The machine view over Win32, against the machine the tests run on.
 //!
 //! The always-on tests read what every Windows has — the event log service,
-//! the TCP/IP driver's key, `CurrentVersion` — so they hold on a developer's
-//! machine and on a CI runner alike. The ignored one audits this machine with
+//! the TCP/IP driver's key, `CurrentVersion` — and verify the signatures of
+//! programs a developer and a CI runner both have, so they hold on either. The ignored one audits this machine with
 //! the drafts the observation cycles committed and prints what it found; what
 //! that is depends on what is installed, so it checks only what holds anywhere:
 //!
@@ -11,14 +11,57 @@
 //! ```
 #![cfg(windows)]
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use wardsweep_core::catalog::{self, Catalog};
 use wardsweep_core::scan::engine::audit;
 use wardsweep_core::scan::model::{Classification, RegView};
-use wardsweep_core::scan::view::{Lookup, MachineView, PathKind};
-use wardsweep_core::scan::win::{Machine, environment};
+use wardsweep_core::scan::view::{Lookup, MachineView, PathKind, Signature};
+use wardsweep_core::scan::win::{Machine, environment, signature, signer_name};
+
+#[test]
+fn an_embedded_signature_verifies_offline_and_names_its_signer() {
+    // Programs a developer's machine and a CI runner both have, signed in the
+    // file itself. Windows' own files are signed through catalog files, which
+    // WinVerifyTrust on one file does not consult.
+    let program_files = std::env::var_os("ProgramFiles").expect("ProgramFiles is set");
+    let root = Path::new(&program_files);
+    let present: Vec<PathBuf> = [
+        root.join("Git").join("cmd").join("git.exe"),
+        root.join("PowerShell").join("7").join("pwsh.exe"),
+    ]
+    .into_iter()
+    .filter(|path| path.is_file())
+    .collect();
+    if present.is_empty() {
+        eprintln!("neither Git nor PowerShell 7 is where this looks: nothing to verify");
+        return;
+    }
+    for path in present {
+        match Machine.signature(&path.to_string_lossy()) {
+            Signature::Verified(signer) => {
+                assert_eq!(signer_name(&path).as_deref(), Some(signer.as_str()));
+            }
+            other => panic!("{}: {other:?}", path.display()),
+        }
+    }
+}
+
+#[test]
+fn no_signature_is_unsigned_and_a_file_that_cannot_be_read_is_unknown() {
+    // This test's own executable: built here, and signed by nobody.
+    let unsigned = std::env::current_exe().expect("the test knows where it is");
+    assert_eq!(signature(&unsigned), Signature::Unsigned);
+    assert_eq!(signer_name(&unsigned), None);
+
+    let folder = tempfile::tempdir().expect("a temporary folder");
+    let absent = folder.path().join("absent.exe");
+    assert!(
+        matches!(signature(&absent), Signature::Unknown(_)),
+        "a file that is not there is unknown, not unsigned"
+    );
+}
 
 #[test]
 fn a_service_every_windows_has_is_found_and_one_nobody_has_is_absent() {
@@ -33,6 +76,10 @@ fn a_service_every_windows_has_is_found_and_one_nobody_has_is_absent() {
         Machine.service("WardSweepTestNoSuchService"),
         Lookup::Absent
     );
+    match Machine.service_key("Tcpip") {
+        Lookup::Found(key) => assert!(key.is_driver(), "{key:?}"),
+        other => panic!("Tcpip's key: {other:?}"),
+    }
     assert_eq!(
         Machine.service_key("WardSweepTestNoSuchService"),
         Lookup::Absent
@@ -81,6 +128,23 @@ fn a_key_is_looked_for_in_the_view_it_names() {
         ),
         Lookup::Absent
     );
+    // Every hive the deny-list names can be read.
+    for hive_key in [
+        "HKCU\\Software",
+        "HKU\\.DEFAULT",
+        "HKCR\\.txt",
+        "HKCC\\System",
+    ] {
+        assert_eq!(
+            Machine.registry_key(hive_key, RegView::Bits64),
+            Lookup::Found(()),
+            "{hive_key}"
+        );
+    }
+    assert!(matches!(
+        Machine.registry_key("HKXX\\Nowhere", RegView::Bits64),
+        Lookup::Unreadable(_)
+    ));
 }
 
 #[test]
