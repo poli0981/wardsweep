@@ -12,8 +12,8 @@ namespace WardSweep.UI.Services;
 /// contain it.
 /// </para>
 /// <para>
-/// Only <c>Hello</c> exists in this build. The rest of the protocol depends on
-/// spike S3 (docs/13-P0-SPIKES.md) having a recorded verdict.
+/// Only <c>Hello</c> exists in this build. Spike S3 passed
+/// (spikes/S3-RESULT.md); the rest of the protocol arrives with the broker.
 /// </para>
 /// </remarks>
 public interface IBrokerClient

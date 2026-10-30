@@ -4,6 +4,16 @@ Seven go/no-go gates. **No feature work begins until all seven have a recorded
 PASS, FAIL, or explicit deferral.** Three of them (S1, S2, S5) determine whether
 the automatic-removal product exists at all.
 
+One amendment, made by the maintainer on 2026-10-30: a spike whose own method
+measures a build of the feature it gates cannot be made to precede that build.
+S4 times "the audit scan" and S6 uploads "release artifacts", so both are run
+against the scanner rather than before it, and both stay exit criteria of v0.1
+([`19`](19-ROADMAP.md)): v0.1 does not ship while either is open. S2 stays a
+v0.1 exit criterion too, and the ownership graph and reference counting it
+decides are not written before it has a verdict. S1, S5 and S7 are deferred
+below. On that record the detection engine — the audit path, which removes
+nothing — may begin.
+
 Each spike is throwaway code. The deliverable is a written finding in
 `spikes/SXX-RESULT.md`, not a merged implementation.
 
@@ -179,3 +189,21 @@ among the blockers, since it validates the others' output.
 A spike may be deferred only with a written reason and a scope reduction that
 makes it irrelevant to the milestone. "We'll figure it out later" is not a
 deferral — the point of a gate is that it holds.
+
+### Recorded deferrals
+
+**2026-10-30 — S1, S5 and S7, for v0.1.** Maintainer decision.
+
+- **Reason.** All three answer questions about removing something: a
+  boot-start driver across a reboot (S1), restoring what a removal took (S5),
+  and running a vendor's uninstaller unattended (S7). None of them can change
+  what a build that removes nothing does, or whether it is safe.
+- **Scope reduction.** v0.1 is audit-only: "No removal code exists in the
+  binary" ([`19`](19-ROADMAP.md)), and `core/tests/no_destructive_code.rs`
+  enforces that. Nothing in `exec/` or `quar/` is written while these are
+  open.
+- **Where they still gate.** S5 and S7 are exit criteria of v0.5 and S1 of
+  v1.0, as [`19`](19-ROADMAP.md) already says. Deferring them for v0.1
+  answers none of their questions.
+
+S2, S4 and S6 are not deferred; see the amendment at the top of this file.
