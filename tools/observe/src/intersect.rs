@@ -216,6 +216,10 @@ pub fn intersect(mut footprints: Vec<Diff>) -> Result<Diff, IntersectError> {
         filesystem_policy_changed: footprints
             .iter()
             .any(|footprint| footprint.filesystem_policy_changed),
+        // Coverage is what every footprint covered, libraries included.
+        libraries: wardsweep_core::scan::libraries::common(
+            footprints.iter().map(|footprint| &footprint.libraries[..]),
+        ),
         signers,
         refiltered,
         intersection_of: Some(sources),

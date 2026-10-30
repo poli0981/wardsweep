@@ -198,6 +198,8 @@ pub fn walk(roots: &[PathBuf], signer: SignerLookup) -> Captured {
             .map(|extension| (*extension).to_owned())
             .collect(),
         max_hash_bytes: MAX_HASH_BYTES,
+        // The caller knows which roots are libraries; see `collect::snapshot`.
+        libraries: Vec::new(),
     };
 
     let mut pending: Vec<(PathBuf, std::fs::Metadata)> = Vec::new();

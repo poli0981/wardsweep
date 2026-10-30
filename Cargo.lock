@@ -975,6 +975,8 @@ dependencies = [
  "ed25519-dalek",
  "hex",
  "serde",
+ "serde_json",
+ "tempfile",
  "thiserror",
  "toml",
  "tracing",

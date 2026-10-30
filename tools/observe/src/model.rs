@@ -305,6 +305,14 @@ pub struct FilesystemPolicy {
     pub hashed_extensions: Vec<String>,
     /// Files larger than this were not hashed, and say so individually.
     pub max_hash_bytes: u64,
+    /// The game libraries the launchers named and the walk covered, whether
+    /// as roots of their own or inside a root above.
+    ///
+    /// Empty in a snapshot taken before libraries were walked, and on a
+    /// machine with no launcher that names one. A library a manifest named and
+    /// the machine did not have is in the snapshot's `access_denied` instead.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub libraries: Vec<wardsweep_core::scan::libraries::Library>,
 }
 
 /// What the registry walk covered.

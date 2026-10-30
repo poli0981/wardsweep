@@ -15,12 +15,15 @@
 pub mod authenticode;
 pub mod boot;
 pub mod filesystem;
+pub mod launchers;
 pub mod registry;
 pub mod services;
 
 use std::path::PathBuf;
 
-use crate::model::{Coverage, Domain, Snapshot};
+use wardsweep_core::scan::libraries::{self, Library};
+
+use crate::model::{AccessDenied, Coverage, Domain, Snapshot};
 
 /// Which domains a snapshot should try to capture.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -67,6 +70,76 @@ pub fn default_roots() -> Vec<PathBuf> {
     .collect()
 }
 
+/// The roots to walk: [`default_roots`], then the games folder of every
+/// library that none of them already holds.
+///
+/// A library inside a default root — Steam's own, under
+/// `%ProgramFiles(x86)%` — is already walked, and walking it twice would
+/// record every file in it twice. The libraries come after the default roots,
+/// ordered by path, so two snapshots of the same machine list their roots in
+/// the same order.
+#[must_use]
+pub fn walk_roots(defaults: Vec<PathBuf>, libraries: &[Library]) -> Vec<PathBuf> {
+    let mut roots = defaults;
+    let mut extra: Vec<PathBuf> = libraries
+        .iter()
+        .map(|library| PathBuf::from(library.games()))
+        .filter(|games| !roots.iter().any(|root| is_within(games, root)))
+        .collect();
+    extra.sort_by_key(|path| path.to_string_lossy().to_ascii_lowercase());
+    extra.dedup_by(|later, earlier| {
+        later
+            .to_string_lossy()
+            .eq_ignore_ascii_case(&earlier.to_string_lossy())
+    });
+    roots.extend(extra);
+    roots
+}
+
+/// Whether `path` is `root` or below it, compared as Windows compares paths:
+/// without regard to case, and only at a separator.
+fn is_within(path: &std::path::Path, root: &std::path::Path) -> bool {
+    let path = path.to_string_lossy().to_ascii_lowercase();
+    let root = root.to_string_lossy().to_ascii_lowercase();
+    let root = root.trim_end_matches('\\');
+    path == root
+        || path
+            .strip_prefix(root)
+            .is_some_and(|rest| rest.starts_with('\\'))
+}
+
+/// The libraries the launchers name, split into those whose games folder is
+/// there to walk and the coverage gaps: manifests that could not be read and
+/// libraries on a volume or in a folder that is not there.
+fn libraries_to_walk() -> (Vec<Library>, Vec<AccessDenied>) {
+    let found = libraries::discover(
+        launchers::steam_install().as_deref(),
+        launchers::epic_manifests().as_deref(),
+    );
+    let mut gaps: Vec<AccessDenied> = found
+        .unreadable
+        .into_iter()
+        .map(|manifest| AccessDenied {
+            domain: Domain::Filesystem,
+            item: manifest.path,
+            reason: format!("library manifest unreadable: {}", manifest.reason),
+        })
+        .collect();
+    let mut present = Vec::new();
+    for library in found.libraries {
+        if std::path::Path::new(&library.games()).is_dir() {
+            present.push(library);
+        } else {
+            gaps.push(AccessDenied {
+                domain: Domain::Filesystem,
+                item: library.games(),
+                reason: "named by a launcher's library manifest and not present".to_owned(),
+            });
+        }
+    }
+    (present, gaps)
+}
+
 /// Take a snapshot.
 ///
 /// # Errors
@@ -100,8 +173,12 @@ pub fn snapshot(label: &str, taken_utc: String, request: Request) -> anyhow::Res
 
     if request.filesystem {
         domain_started_utc.insert(Domain::Filesystem.to_string(), crate::clock::now_utc());
-        let result = filesystem::walk(&default_roots(), authenticode::signer_of);
+        let (libraries, gaps) = libraries_to_walk();
+        let roots = walk_roots(default_roots(), &libraries);
+        let mut result = filesystem::walk(&roots, authenticode::signer_of);
+        result.policy.libraries = libraries;
         files = result.files;
+        access_denied.extend(gaps);
         access_denied.extend(result.access_denied);
         filesystem_policy = Some(result.policy);
         file_empty_directories = Some(result.file_empty_directories);
@@ -146,4 +223,59 @@ pub fn snapshot(label: &str, taken_utc: String, request: Request) -> anyhow::Res
         registry_policy,
         registry_empty_keys,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+
+    use wardsweep_core::scan::libraries::{Launcher, Library};
+
+    use super::walk_roots;
+
+    fn library(launcher: Launcher, path: &str) -> Library {
+        Library {
+            launcher,
+            path: path.to_owned(),
+        }
+    }
+
+    #[test]
+    fn libraries_follow_the_default_roots_once_each_in_order() {
+        let defaults = vec![
+            PathBuf::from(r"C:\Program Files"),
+            PathBuf::from(r"C:\Program Files (x86)"),
+        ];
+        let libraries = [
+            library(Launcher::Steam, r"D:\SteamLibrary"),
+            // Steam's own library is under a default root, so already walked.
+            library(Launcher::Steam, r"C:\Program Files (x86)\Steam"),
+            library(Launcher::Epic, r"E:\Epic Games"),
+            library(Launcher::Epic, r"e:\epic games"),
+            library(Launcher::Steam, r"C:\SteamLibrary"),
+        ];
+
+        let roots = walk_roots(defaults, &libraries);
+
+        assert_eq!(
+            roots,
+            [
+                PathBuf::from(r"C:\Program Files"),
+                PathBuf::from(r"C:\Program Files (x86)"),
+                PathBuf::from(r"C:\SteamLibrary\steamapps\common"),
+                PathBuf::from(r"D:\SteamLibrary\steamapps\common"),
+                PathBuf::from(r"E:\Epic Games"),
+            ]
+        );
+    }
+
+    #[test]
+    fn a_root_holds_only_what_is_below_it_at_a_separator() {
+        // `C:\Program FilesX` is not inside `C:\Program Files`.
+        let roots = walk_roots(
+            vec![PathBuf::from(r"C:\Program Files")],
+            &[library(Launcher::Epic, r"C:\Program FilesX\Epic Games")],
+        );
+        assert_eq!(roots.len(), 2, "{roots:?}");
+    }
 }

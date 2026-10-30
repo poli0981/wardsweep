@@ -23,12 +23,17 @@ aho-corasick.workspace = true
 ed25519-dalek.workspace = true
 hex.workspace = true
 serde.workspace = true
+# Epic's library manifests are JSON (`scan::libraries`).
+serde_json.workspace = true
 thiserror.workspace = true
 toml.workspace = true
 tracing.workspace = true
 
 [dev-dependencies]
 criterion.workspace = true
+# Cleans up its own temp trees on Drop; see the note in tools/observe/Cargo.toml
+# on why an inline test module may not call std::fs::remove_dir_all itself.
+tempfile.workspace = true
 
 # Everything Win32 lives here, never behind a cargo feature: the CI lint job
 # runs `clippy --all-features` on ubuntu-latest and a feature-gated windows
