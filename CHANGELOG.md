@@ -188,6 +188,11 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
   diff the ones both snapshots covered, and a library a manifest names that is
   not there is `access_denied`. `suggest` attributes nothing inside a library
   to an anti-cheat: a game's own copy of its anti-cheat is the game's.
+- `suggest` keeps an event source named exactly as an attributed service
+  describes itself, which is how EA's `EA Javelin Anticheat` reaches its draft,
+  and points out drivers named after one title's id — ACE's
+  `ACE-CORE{1,2}<id>.sys` beside `…\Tencent\<id>` — since naming them by
+  pattern is a schema decision. The three pinned drafts are regenerated.
 - Generated third-party notices, checked by CI. `licenses/rust.md` comes from
   `cargo about` over `Cargo.lock` and `licenses/dotnet.md` from the interface's
   `packages.lock.json` and the restored packages, with Velopack included

@@ -39,6 +39,13 @@
 #     (64-bit view only). `HKLM\SOFTWARE` is redirected and `HKLM\SYSTEM` is
 #     not, so a single view is usually a fact about redirection — but confirm
 #     it, because widening to `both` claims a key the observation never saw.
+#   - `ACE-CORE106095005.sys` and `ACE-CORE206095005.sys` carry the id
+#     `6095005`, which also names
+#     `HKCU\SOFTWARE\appdatalow\AntiCheatExpert\{F63EEEBB-2033-42E2-818E-2126FDEB47C4}\Tencent\6095005`:
+#     per-title drivers. Another title installs its own under its own id, and
+#     the catalog lists drivers by exact name, so an entry covering every title
+#     needs a pattern the schema does not have (docs/04) — a maintainer's
+#     decision, not a draft's.
 #   - no residue diff was given, so every path is classified from the install
 #     diff alone. docs/16 calls the residue diff the more valuable of the two
 #     — it is the exact set of things the vendor's uninstaller leaves behind.

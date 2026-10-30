@@ -295,11 +295,12 @@ are what it has to be right about.
   - names inside hex binaries;
   - other software's names in rotating slots;
   - names shaped like a machine key's.
-- `suggest`:
+- ~~`suggest`:~~ done, 2026-10-30:
   - attribute an event source whose name is an attributed service's
     description, as EA's was;
   - name per-title files, ACE's `ACE-CORE1<id>.sys`, by pattern rather than by
-    one title's name.
+    one title's name. Pointed out in the review notes now; a pattern in an
+    entry needs a schema decision, under "Open, needs a maintainer decision".
 
 The remaining harness domains — scheduled tasks, firewall, event sources,
 environment — are worth adding when an observation actually needs one, not
@@ -366,6 +367,12 @@ that S2 should start from rather than rediscover:
   have drafts pinned to their diffs. Turning any of them into a `catalog/` entry
   needs maintainer sign-off and the `docs/16` checklist (signer verification,
   and a second title before `shared` can be argued).
+- **Per-title driver names.** ACE installs `ACE-CORE1<id>.sys` and
+  `ACE-CORE2<id>.sys` for each title. The catalog lists drivers by exact name
+  and the deny-list's carve-outs are exact, so an entry either lists every
+  title's pair it has seen or the schema gains a pattern — which touches
+  `catalog/` and `core/src/safety/` and needs sign-off. `suggest` points such
+  drivers out and decides nothing.
 
 ## What S3 changed, in one place
 

@@ -133,32 +133,7 @@ pub fn draft_scoped(
     only: &[String],
 ) -> Draft {
     let mut review = Vec::new();
-
-    let mut signers: Vec<(String, usize)> = footprint
-        .signers
-        .iter()
-        .map(|(name, count)| (name.clone(), *count))
-        .collect();
-    signers.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
-
-    // The signer to attribute the footprint to. Given explicitly, or the most
-    // common one — but never silently, because on a machine that installed two
-    // things at once the most common is not necessarily the right one.
-    let chosen = signer
-        .map(str::to_owned)
-        .or_else(|| signers.first().map(|(name, _)| name.clone()));
-    if signer.is_none() && signers.len() > 1 {
-        review.push(format!(
-            "several publishers appear in this diff ({}); the draft attributes it to `{}` \
-             because it signed the most files. Re-run with --signer to choose another.",
-            signers
-                .iter()
-                .map(|(name, count)| format!("{name} ×{count}"))
-                .collect::<Vec<_>>()
-                .join(", "),
-            chosen.clone().unwrap_or_default()
-        ));
-    }
+    let (signers, chosen) = choose_signer(footprint, signer, &mut review);
 
     let only: Vec<String> = only
         .iter()
@@ -269,7 +244,14 @@ pub fn draft_scoped(
 
     let paths = path_entries(footprint, residue, &attribution, &exceptions, &mut review);
     let registry = registry_entries(footprint, &attribution, &exceptions, &mut review);
-    let event_sources = event_sources(footprint, &attribution, chosen.as_deref(), &mut review);
+    note_per_title_drivers(footprint, &attribution, drivers.kept.values(), &mut review);
+    let event_sources = event_sources(
+        footprint,
+        &attribution,
+        &service_descriptions(&services),
+        chosen.as_deref(),
+        &mut review,
+    );
 
     if residue.is_none() {
         review.push(
@@ -744,6 +726,7 @@ const EVENT_LOG_KEY: &str = "HKLM\\SYSTEM\\CurrentControlSet\\Services\\EventLog
 fn event_sources(
     footprint: &Diff,
     attribution: &Attribution,
+    descriptions: &BTreeSet<String>,
     signer: Option<&str>,
     review: &mut Vec<String>,
 ) -> Vec<String> {
@@ -768,14 +751,18 @@ fn event_sources(
             continue;
         }
         let lowered = source.to_ascii_lowercase();
-        let claimed = attribution.in_scope(&change.key.to_ascii_lowercase())
-            && (attribution
-                .tokens
-                .iter()
-                .any(|token| contains_token(&lowered, token))
-                || publisher
-                    .as_deref()
-                    .is_some_and(|name| lowered.contains(name)));
+        // `--only` narrows what a name or a token claims. A source named
+        // exactly as an attributed service describes itself is that service's,
+        // which `--only` has already let through.
+        let claimed = descriptions.contains(&lowered)
+            || attribution.in_scope(&change.key.to_ascii_lowercase())
+                && (attribution
+                    .tokens
+                    .iter()
+                    .any(|token| contains_token(&lowered, token))
+                    || publisher
+                        .as_deref()
+                        .is_some_and(|name| lowered.contains(name)));
         let into = if claimed { &mut kept } else { &mut left_out };
         into.entry(lowered)
             .or_insert_with(|| format!("{log}\\{source}"));
@@ -796,6 +783,130 @@ fn event_sources(
                 .map_or(place.clone(), |(_, source)| source.to_owned())
         })
         .collect()
+}
+
+/// The diff's signers, most files first, and the one to attribute it to.
+///
+/// Given explicitly, or the most common one — but never silently, because on a
+/// machine that installed two things at once the most common is not
+/// necessarily the right one.
+fn choose_signer(
+    footprint: &Diff,
+    signer: Option<&str>,
+    review: &mut Vec<String>,
+) -> (Vec<(String, usize)>, Option<String>) {
+    let mut signers: Vec<(String, usize)> = footprint
+        .signers
+        .iter()
+        .map(|(name, count)| (name.clone(), *count))
+        .collect();
+    signers.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
+
+    let chosen = signer
+        .map(str::to_owned)
+        .or_else(|| signers.first().map(|(name, _)| name.clone()));
+    if signer.is_none() && signers.len() > 1 {
+        review.push(format!(
+            "several publishers appear in this diff ({}); the draft attributes it to `{}` \
+             because it signed the most files. Re-run with --signer to choose another.",
+            signers
+                .iter()
+                .map(|(name, count)| format!("{name} ×{count}"))
+                .collect::<Vec<_>>()
+                .join(", "),
+            chosen.clone().unwrap_or_default()
+        ));
+    }
+    (signers, chosen)
+}
+
+/// What the attributed services call themselves, lower-cased.
+///
+/// EA's anti-cheat registers its event source under its service's
+/// description, `EA Javelin Anticheat`, which shares no token with anything
+/// else it installs.
+fn service_descriptions(services: &[&ServiceChange]) -> BTreeSet<String> {
+    services
+        .iter()
+        .filter_map(|change| change.after.as_ref())
+        .flat_map(|record| [&record.description, &record.display_name])
+        .map(|text| text.trim().to_ascii_lowercase())
+        .filter(|text| !text.is_empty())
+        .collect()
+}
+
+/// Point out drivers named after one title: a run of digits in the file name
+/// that also names one of the anti-cheat's own keys.
+///
+/// ACE installs `ACE-CORE1<id>.sys` and `ACE-CORE2<id>.sys` per title, the id
+/// zero-padded, beside a key `…\Tencent\<id>`. A draft can only list the names
+/// it saw; another title installs its own pair under its own id. The catalog
+/// lists drivers by exact name (`docs/04`), so covering every title needs a
+/// pattern the schema does not have, and that is a decision, not a draft's.
+fn note_per_title_drivers<'a>(
+    footprint: &Diff,
+    attribution: &Attribution,
+    drivers: impl Iterator<Item = &'a String>,
+    review: &mut Vec<String>,
+) {
+    // The numeric components of the keys this anti-cheat owns, without
+    // leading zeros, with the key that carries each.
+    let mut ids: BTreeMap<String, String> = BTreeMap::new();
+    for change in footprint
+        .registry
+        .iter()
+        .filter(|change| change.kind == ChangeKind::Added)
+        .filter(|change| attribution.claims_key(&change.key.to_ascii_lowercase()))
+    {
+        for component in change.key.split('\\') {
+            if component.len() >= 4 && component.bytes().all(|byte| byte.is_ascii_digit()) {
+                ids.entry(component.trim_start_matches('0').to_owned())
+                    .or_insert_with(|| change.key.clone());
+            }
+        }
+    }
+    let mut per_title: BTreeMap<String, (Vec<&str>, String)> = BTreeMap::new();
+    for name in drivers {
+        let stem = name
+            .rsplit_once('.')
+            .map_or(name.as_str(), |(stem, _)| stem);
+        let digits: String = stem
+            .chars()
+            .rev()
+            .take_while(char::is_ascii_digit)
+            .collect::<Vec<_>>()
+            .into_iter()
+            .rev()
+            .collect();
+        // The id may sit after a digit of the name's own, `CORE1` before it: try
+        // every suffix of the trailing run, longest first.
+        let matched = (0..digits.len()).find_map(|start| {
+            let candidate = digits[start..].trim_start_matches('0');
+            (candidate.len() >= 4)
+                .then(|| ids.get_key_value(candidate))
+                .flatten()
+        });
+        if let Some((id, key)) = matched {
+            let entry = per_title
+                .entry(id.clone())
+                .or_insert_with(|| (Vec::new(), key.clone()));
+            entry.0.push(name.as_str());
+        }
+    }
+    for (id, (names, key)) in per_title {
+        review.push(format!(
+            "{} carr{} the id `{id}`, which also names `{key}`: per-title drivers. Another \
+             title installs its own under its own id, and the catalog lists drivers by exact \
+             name, so an entry covering every title needs a pattern the schema does not have \
+             (docs/04) — a maintainer's decision, not a draft's.",
+            names
+                .iter()
+                .map(|name| format!("`{name}`"))
+                .collect::<Vec<_>>()
+                .join(" and "),
+            if names.len() == 1 { "ies" } else { "y" },
+        ));
+    }
 }
 
 /// Name every driver found only in the registry, kept or not.
@@ -2417,6 +2528,64 @@ mod tests {
             "{:?}",
             generated.review
         );
+    }
+
+    #[test]
+    fn an_event_source_named_as_its_service_describes_itself_is_kept() {
+        // EA registers `Application\EA Javelin Anticheat`, its service's own
+        // description, which shares no token with anything else it installs.
+        let mut diff = ea_like();
+        for change in &mut diff.services {
+            if change.name == "EAAntiCheatService"
+                && let Some(record) = change.after.as_mut()
+            {
+                record.description = "EA Javelin Anticheat".to_owned();
+            }
+        }
+        let only = ["eaanticheat".to_owned()];
+
+        let generated = draft_scoped(&diff, None, Some("Electronic Arts, Inc."), &only);
+
+        assert_eq!(generated.entry.event_sources, ["EA Javelin Anticheat"]);
+        assert!(
+            generated
+                .review
+                .iter()
+                .all(|note| !note.contains("EA Javelin Anticheat")),
+            "{:?}",
+            generated.review
+        );
+    }
+
+    #[test]
+    fn drivers_named_after_a_titles_id_are_pointed_out() {
+        let mut diff = signed(
+            crate::diff::tests::diff_with_added_files(&[
+                r"C:\Program Files\AntiCheatExpert\ACE-BASE.sys",
+                r"C:\Program Files\AntiCheatExpert\ACE-CORE106095005.sys",
+                r"C:\Program Files\AntiCheatExpert\ACE-CORE206095005.sys",
+            ]),
+            "ACEVILLE PTE LTD",
+        );
+        diff.registry = crate::diff::tests::diff_with_added_registry_keys(&[(
+            r"HKCU\SOFTWARE\AntiCheatExpert\{5FCF1253-B4BF-4F83-A7C7-86C124F2DF16}\Tencent\6095005",
+            "64",
+        )])
+        .registry;
+
+        let generated = draft(&diff, None, Some("ACEVILLE PTE LTD"));
+
+        let note = generated
+            .review
+            .iter()
+            .find(|note| note.contains("per-title drivers"))
+            .expect("the per-title pair is pointed out");
+        assert!(
+            note.contains("`ACE-CORE106095005.sys` and `ACE-CORE206095005.sys`"),
+            "{note}"
+        );
+        assert!(note.contains("`6095005`"), "{note}");
+        assert!(!note.contains("ACE-BASE"), "{note}");
     }
 
     #[test]
