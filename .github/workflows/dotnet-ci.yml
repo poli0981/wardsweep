@@ -53,7 +53,10 @@ jobs:
         run: dotnet format WardSweep.sln --verify-no-changes --severity warn --no-restore
 
       - name: Test
-        run: dotnet test WardSweep.sln -c Release --no-build
+        # Microsoft.Testing.Platform, as global.json selects: xunit v3 test
+        # projects are executables, and the .NET 10 SDK no longer runs them
+        # through VSTest.
+        run: dotnet test --solution WardSweep.sln -c Release --no-build
 
   arch-tests:
     # Its own check on purpose. docs/09-UI-SPEC.md states that the UI process
@@ -73,9 +76,9 @@ jobs:
       - run: dotnet restore WardSweep.sln --locked-mode
 
       - name: No destructive code path in the UI
-        # A filter that matches nothing exits non-zero with "No test matches",
-        # so this also fails if the tests are ever renamed out of the category.
-        run: dotnet test WardSweep.sln -c Release --filter "Category=Architecture"
+        # A run in which no test matches exits 8 ("zero tests ran"), so this
+        # also fails if the tests are ever renamed out of the category.
+        run: dotnet test --solution WardSweep.sln -c Release --filter-trait "Category=Architecture"
 
   vulnerable-packages:
     name: vulnerable packages

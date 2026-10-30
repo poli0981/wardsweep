@@ -472,7 +472,7 @@ cargo bench --bench scan_corpus && python .github/scripts/check_bench_budget.py
 dotnet restore WardSweep.sln --locked-mode
 dotnet build WardSweep.sln -c Release --no-restore
 dotnet format WardSweep.sln --verify-no-changes --severity warn --no-restore
-dotnet test WardSweep.sln -c Release --no-build
+dotnet test --solution WardSweep.sln -c Release --no-build
 dotnet tool restore && dotnet xstyler --passive --recursive --directory ui
 ```
 
