@@ -279,6 +279,15 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
   SDK floor of 10.0.403. The new compiler's lints asked for assertions that
   print what they found and for `as_chunks` over `chunks_exact(2)`; nothing
   else changed. criterion stays below 0.8, re-checked against 0.8.2.
+- **The interface's tests run on xunit v3** (4.0.2), whose v2 line has ended.
+  A v3 test project is an executable that brings Microsoft.Testing.Platform,
+  and the .NET 10 SDK no longer runs one through VSTest, so `global.json`
+  selects the platform for `dotnet test` and CI calls it as
+  `dotnet test --solution`. The architecture job filters with
+  `--filter-trait "Category=Architecture"`; a run in which nothing matches
+  exits 8, so renaming the tests out of the category still fails the job, as
+  it did under VSTest. The VSTest packages stay for IDEs that predate the
+  platform.
 
 ### Fixed
 - `README.md` and `COPYING.md` pointed at a `COPYING` file that does not exist;
