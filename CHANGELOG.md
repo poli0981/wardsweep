@@ -200,6 +200,28 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
   and points out drivers named after one title's id — ACE's
   `ACE-CORE{1,2}<id>.sys` beside `…\Tencent\<id>` — since naming them by
   pattern is a schema decision. The three pinned drafts are regenerated.
+- **The detection engine's audit**, `core/src/scan/engine.rs`, the first
+  feature work the 2026-10-30 spike deferral allowed. It matches every catalog
+  anti-cheat against a read-only machine view and reports findings, what the
+  deny-list protects, what it disbelieved and what it could not read, as
+  `docs/05` specifies:
+  - services through SCM and the `Services` key, so a driver written past SCM
+    is found, and a stale SCM entry whose queries fail with "file not found"
+    is disbelieved rather than reported;
+  - drivers by the image name of every driver key, so a registration whose
+    image is not on disk is still found;
+  - `HKLM\SOFTWARE` keys in both WOW64 views as two artifacts — docs/12's
+    `wow64_both_views_produce_distinct_artifacts` — and other keys once;
+  - paths expanded with this machine's values, once per game library;
+  - classification by a file's own signature, and of anything else by
+    whether the entry's files confirmed the publisher. A verification error
+    is never `suspicious`.
+
+  A test builds a machine from the committed EA AntiCheat install diff and
+  finds it with the committed EA draft, read by the real parser. Catalog
+  templates now expand with a caller's values (`expand_with`) as well as for
+  validation. Not yet: the Win32 reader behind the view, games, and the
+  ownership graph, which waits for S2.
 - Generated third-party notices, checked by CI. `licenses/rust.md` comes from
   `cargo about` over `Cargo.lock` and `licenses/dotnet.md` from the interface's
   `packages.lock.json` and the restored packages, with Velopack included

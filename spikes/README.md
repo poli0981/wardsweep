@@ -76,5 +76,5 @@ are recorded here so the gaps are visible rather than discovered.
 | `refcount_counts_games_on_other_volumes` | Not started |
 | `uninstalled_game_does_not_contribute_to_refcount` | Not started |
 | `plan_rejected_if_it_removes_a_referenced_anticheat` | Not started — needs the plan builder |
-| `wow64_both_views_produce_distinct_artifacts` | Not started — needs the registry walker |
+| `wow64_both_views_produce_distinct_artifacts` | Done, `core/src/scan/engine.rs`, against the audit's machine view; the Win32 registry reader that feeds it comes next |
 | `pending_file_rename_appends_never_overwrites` | Not started — `exec/` code, and v0.1 ships no removal code |
