@@ -8,8 +8,9 @@
 # fixed list of file-suffix settings, and Rust is not on the list. It also globs
 # `sonar.text.inclusions`, though, so `**/*.rs` is added there and SonarCloud's
 # Rust analyser takes the files by their suffix. SonarSource does not document
-# that route for Rust, so the last step fails the job if the analysis
-# properties name no `.rs` file: Rust cannot drop out without the run going red.
+# that route for Rust, so the last step fails the job unless the scanner's own
+# log shows the Rust analyser ran: Rust cannot drop out without the run going
+# red.
 #
 # Informational. A SonarCloud outage or a quality-gate opinion never changes
 # the colour of Rust CI, .NET CI or CodeQL; the verdict reaches a pull request
@@ -206,31 +207,27 @@ jobs:
         run: dotnet test --solution WardSweep.sln -c Release --no-build --coverage --coverage-output-format cobertura --results-directory TestResults
 
       - name: End analysis
+        # The log is kept: the next step reads it.
+        shell: pwsh
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: dotnet sonarscanner end "/d:sonar.token=$env:SONAR_TOKEN"
+        run: |
+          dotnet sonarscanner end "/d:sonar.token=$env:SONAR_TOKEN" | Tee-Object -FilePath sonar-end.log
+          if ($LASTEXITCODE -ne 0) { throw "SonarScanner end failed with exit code $LASTEXITCODE." }
 
       - name: Rust stayed in the analysis
-        # See the header: nothing else would notice Rust dropping out.
+        # See the header: nothing else would notice Rust dropping out. The
+        # scanner hands the engine its input directly and writes no properties
+        # file to read, so the evidence is the engine's own log: SonarCloud's
+        # Rust analyser ran, and on files of this repository.
         shell: pwsh
         run: |
-          # A file name, so the `**/*.rs` in the inclusions line cannot match.
-          $hits = @(Get-ChildItem .sonarqube -Recurse -File -Include *.properties, *.txt -ErrorAction SilentlyContinue |
-            Select-String -Pattern '[\\/][\w-]+\.rs\b')
-          if ($hits.Count -eq 0) {
-            # What the scanner did take, so the failure can be read without
-            # re-running: the files it wrote, the extensions they list, and the
-            # inclusions it recorded.
-            Get-ChildItem .sonarqube -Recurse -File -Include *.properties, *.txt, *.xml -ErrorAction SilentlyContinue |
-              ForEach-Object { Write-Host "  $($_.FullName.Substring((Get-Location).Path.Length + 1)) ($($_.Length) bytes)" }
-            Get-ChildItem .sonarqube -Recurse -File -Include *.properties -ErrorAction SilentlyContinue |
-              Select-String -Pattern '\.([A-Za-z0-9]{1,10})(?:,|\\|$)' -AllMatches |
-              ForEach-Object { $_.Matches } | ForEach-Object { $_.Groups[1].Value.ToLowerInvariant() } |
-              Group-Object | Sort-Object Count -Descending | Select-Object -First 15 |
-              ForEach-Object { Write-Host "  .$($_.Name): $($_.Count)" }
-            Get-ChildItem .sonarqube -Recurse -File -Include *.xml -ErrorAction SilentlyContinue |
-              Select-String -Pattern 'text\.inclusions|scanAll' | ForEach-Object { Write-Host "  $($_.Line.Trim())" }
-            Write-Host "::error::No .rs file reached the SonarCloud analysis: SonarScanner for .NET no longer takes Rust in through sonar.text.inclusions."
+          $log = Get-Content sonar-end.log
+          $analyser = @($log | Select-String -Pattern 'Sensor Rust Enterprise \[rustenterprise\] \(done\)')
+          $rustProfile = @($log | Select-String -Pattern 'Quality profile for rust')
+          if ($analyser.Count -eq 0 -or $rustProfile.Count -eq 0) {
+            $log | Select-String -Pattern 'languages detected|files indexed|Sensor .*\[rust' | ForEach-Object { Write-Host "  $($_.Line.Trim())" }
+            Write-Host "::error::SonarCloud's Rust analyser did not run: SonarScanner for .NET no longer takes Rust in through sonar.text.inclusions."
             exit 1
           }
-          Write-Host "$($hits.Count) Rust source line(s) in the analysis properties."
+          $log | Select-String -Pattern 'languages detected|files indexed|Sensor Rust' | ForEach-Object { Write-Host "  $($_.Line.Trim())" }

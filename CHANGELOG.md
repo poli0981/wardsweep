@@ -528,8 +528,8 @@ maintainer decision with rationale before it changes.
   run under `cargo llvm-cov` in a job that holds no secret, the interface's
   under Microsoft.Testing.Platform's coverage extension. SonarScanner for .NET,
   the only scanner that analyses C#, does not take Rust in by itself, so the
-  workflow adds `**/*.rs` to `sonar.text.inclusions` and fails if no `.rs` file
-  reached the analysis. It replaces Automatic Analysis, which saw no C# and no
+  workflow adds `**/*.rs` to `sonar.text.inclusions` and fails unless the
+  scanner's log shows the Rust analyser ran. It replaces Automatic Analysis, which saw no C# and no
   coverage. Informational: the quality gate reaches a pull request as the
   SonarCloud app's own check. Every action in the file is pinned to a commit,
   GitHub's own included.

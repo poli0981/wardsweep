@@ -161,8 +161,9 @@ public in any useful sense.
 SonarCloud needs a word on Rust. SonarScanner for .NET is the only scanner that
 analyses C#, and it does not take Rust in by itself; the workflow adds `**/*.rs`
 to `sonar.text.inclusions`, which the scanner's file discovery does read, and a
-final step fails the job if no `.rs` file reached the analysis. Automatic
-Analysis has to be off in the SonarCloud project for any CI analysis to run.
+final step fails the job unless the scanner's log shows SonarCloud's Rust
+analyser ran. Automatic Analysis has to be off in the SonarCloud project for
+any CI analysis to run.
 
 `catalog-verify` includes a check that no catalog entry resolves to a
 deny-listed path. A catalog that would be refused at runtime must fail CI, not
