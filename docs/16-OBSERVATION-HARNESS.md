@@ -47,7 +47,7 @@ human review, never a finished entry — see "Review before submitting" below.
 |---|---|
 | Services | Full `QueryServiceConfigW` + `QueryServiceConfig2W` for every service and driver |
 | Registry | `HKLM\SOFTWARE` (both WOW64 views), `HKLM\SYSTEM\CurrentControlSet\Services`, `Run` keys, uninstall keys, `HKCU\SOFTWARE`; values, and keys left standing with none |
-| Filesystem | Path, size, SHA-256, mtime, Authenticode signer for `%ProgramFiles*%`, `%ProgramData%`, `%LOCALAPPDATA%`, `%APPDATA%` and `System32\drivers`. A launcher library is covered only under one of those: a Steam library on another volume, where both 2026-10 titles live, is not walked, and a game's own copy of its anti-cheat is listed by hand |
+| Filesystem | Path, size, SHA-256, mtime, Authenticode signer for `%ProgramFiles*%`, `%ProgramData%`, `%LOCALAPPDATA%`, `%APPDATA%` and `System32\drivers`, and for every game library Steam or the Epic Games Launcher names in its own manifests — `steamapps\common` of each Steam library, the folder holding each Epic game — on whatever volume it is. Libraries come from the manifests only, never from enumerating volumes (G3). A library a manifest names and the machine lacks, and a manifest that cannot be read, are recorded as `access_denied`. EA app, Ubisoft, Battle.net and Riot libraries are not read yet |
 | Scheduled tasks | Full XML export of every task |
 | Firewall | Every rule via `INetFwPolicy2` |
 | Event log sources | Registered sources under `EventLog\Application` |
@@ -77,7 +77,9 @@ bound by the disk rather than the processor: one build measured both ends of
 that range on the same day, and at the slow end the disk sat at about 135 MB/s
 with a queue 28 deep while the harness used a fifth of one core. The earlier
 estimate of 40–120 MB was optimistic for a machine with games and toolchains
-installed.
+installed. With the game libraries walked as well (2026-10-30, unelevated):
+770 000 files, 113 000 of them in a Steam library on `D:` and 400 in an Epic
+one, 241 MB, and four minutes twenty.
 
 It also needs memory: the walk holds every record before serialising, and
 resident set was observed at **around 550 MB** part-way through a capture on
@@ -501,6 +503,17 @@ owner — EA's names Windows' generic `EventCreate.exe` as its message file.
 When an entry's key absorbs keys below it, it takes their WOW64 views too: EA
 writes `EA\AC` through the 64-bit view and `EA\AC\Installs\fc26` through the
 32-bit one, and an entry claiming only the first would miss the second.
+
+**Nothing inside a game library is attributed to an anti-cheat.** A game's
+files are the game's footprint, its own copy of the anti-cheat included — FC
+26 carries EA's installer, Wuthering Waves a byte copy of every ACE binary — and
+an anti-cheat entry that claimed them would remove them with the anti-cheat
+while the game still needed them. `suggest` sets them aside before attributing
+anything: every file below a library the diff says was walked, and below any
+`steamapps\common`, wherever it is. The review notes say how many there were,
+how many the publisher signed, and which title folders. Without the rule, one
+signed file in `D:\SteamLibrary\steamapps\common` made `steamlibrary` and
+`steamapps` identifiers and claimed every game in the library.
 
 ## Review before submitting
 

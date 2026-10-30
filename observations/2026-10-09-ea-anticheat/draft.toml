@@ -13,6 +13,9 @@
 #       1 file(s)  Valve Corp.
 #
 # Before submitting:
+#   - 8 file(s) inside game libraries were left out: a game's own files, its
+#     copy of the anti-cheat included, are the game's footprint, and an
+#     anti-cheat entry must not claim them. Title folders: `Borderless Gaming`.
 #   - attribution was limited with --only to what mentions `eaanticheat` or
 #     `ea\ac` or `javelin`. Everything else this publisher signed was left out
 #     on purpose; check that nothing of the anti-cheat's was among it.
@@ -29,7 +32,7 @@
 #   - a driver was observed but not at boot start. Vanguard has been seen
 #     configured either way, so confirm the start type rather than assuming this
 #     one generalises.
-#   - 1171 added file(s) could not be attributed to this publisher and were left
+#   - 1169 added file(s) could not be attributed to this publisher and were left
 #     out. That is ordinary machine churn between the two snapshots; check the
 #     diff if the footprint looks short.
 #   - 204 added registry key(s) could not be attributed to this anti-cheat and

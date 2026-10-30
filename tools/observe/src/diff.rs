@@ -322,6 +322,17 @@ pub struct Diff {
     /// A diff that cannot notice that is a diff that invents evidence.
     #[serde(default)]
     pub filesystem_policy_changed: bool,
+    /// The game libraries both snapshots walked, from the launchers'
+    /// manifests (`wardsweep_core::scan::libraries`).
+    ///
+    /// Recorded so a diff can say whether a library on another volume was
+    /// looked at — no list of file changes can, since a library where nothing
+    /// changed and a library nobody walked both contribute nothing to it.
+    /// `suggest` also reads it: a game's files are the game's footprint, never
+    /// the anti-cheat's. Empty for a diff of snapshots taken before libraries
+    /// were walked.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub libraries: Vec<wardsweep_core::scan::libraries::Library>,
     /// Signer common names seen among the surviving file changes, with counts.
     ///
     /// The clustering `docs/16` asks for, precomputed: everything an installer
@@ -478,6 +489,15 @@ pub fn compare(
     // mean anything.
     let filesystem_policy_changed = before.filesystem_policy != after.filesystem_policy;
     let registry_policy_changed = before.registry_policy != after.registry_policy;
+    let libraries = wardsweep_core::scan::libraries::common(
+        [&before.filesystem_policy, &after.filesystem_policy]
+            .into_iter()
+            .map(|policy| {
+                policy
+                    .as_ref()
+                    .map_or(&[][..], |policy| &policy.libraries[..])
+            }),
+    );
 
     let registry = if coverage.covers(crate::model::Domain::Registry) {
         compare_registry(&before.registry, &after.registry, &policy, &mut refiltered)
@@ -505,6 +525,7 @@ pub fn compare(
         files,
         suppressed_files,
         filesystem_policy_changed,
+        libraries,
         registry,
         registry_policy_changed,
         signers,
@@ -613,6 +634,7 @@ pub fn reversed(diff: &Diff) -> Diff {
             .collect(),
         registry_policy_changed: diff.registry_policy_changed,
         filesystem_policy_changed: diff.filesystem_policy_changed,
+        libraries: diff.libraries.clone(),
         signers,
         refiltered: diff.refiltered,
         intersection_of: diff.intersection_of.clone(),
@@ -1729,6 +1751,7 @@ pub(crate) mod tests {
                 excluded: vec![excluded.to_owned()],
                 hashed_extensions: vec!["sys".to_owned()],
                 max_hash_bytes: 1,
+                libraries: Vec::new(),
             })
         };
 
@@ -1742,6 +1765,50 @@ pub(crate) mod tests {
         let diff = compare(&before, &after, &NoiseFilter::permissive()).unwrap();
 
         assert!(diff.filesystem_policy_changed);
+    }
+
+    #[test]
+    fn a_diff_names_only_the_libraries_both_snapshots_walked() {
+        use crate::model::FilesystemPolicy;
+        use wardsweep_core::scan::libraries::{Launcher, Library};
+
+        let steam = |path: &str| Library {
+            launcher: Launcher::Steam,
+            path: path.to_owned(),
+        };
+        let policy = |libraries: Vec<Library>| {
+            Some(FilesystemPolicy {
+                roots: vec!["C:\\Program Files".to_owned()],
+                excluded: Vec::new(),
+                hashed_extensions: vec!["sys".to_owned()],
+                max_hash_bytes: 1,
+                libraries,
+            })
+        };
+
+        let mut before = snapshot(vec![]);
+        let mut after = snapshot(vec![]);
+        before.coverage.captured.push(Domain::Filesystem);
+        after.coverage.captured.push(Domain::Filesystem);
+        before.filesystem_policy = policy(vec![steam("D:\\SteamLibrary"), steam("E:\\Old")]);
+        after.filesystem_policy = policy(vec![steam("D:\\SteamLibrary")]);
+
+        let diff = compare(&before, &after, &NoiseFilter::permissive()).unwrap();
+
+        assert_eq!(diff.libraries, [steam("D:\\SteamLibrary")]);
+        // A library one side walked and the other did not moves files in and
+        // out of the snapshot; the existing flag says so.
+        assert!(diff.filesystem_policy_changed);
+
+        // And a diff that walked none says nothing, so older diffs are unchanged.
+        let none = compare(
+            &snapshot(vec![]),
+            &snapshot(vec![]),
+            &NoiseFilter::permissive(),
+        )
+        .unwrap();
+        assert_eq!(none.libraries, Vec::new());
+        assert!(!serde_json::to_string(&none).unwrap().contains("libraries"));
     }
 
     #[test]
