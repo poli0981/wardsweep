@@ -143,7 +143,7 @@ public in any useful sense.
 | Workflow | Job | Runner | Gates |
 |---|---|---|---|
 | Rust CI | `lint` | ubuntu | `cargo fmt --check`, clippy pedantic `-D warnings`. Building with `cfg(windows)` off is also what proves no Win32 dependency has reached the portable crates. |
-| Rust CI | `test-windows` | windows | clippy pedantic again — the linux job lints no Win32 code path at all — plus unit, sandbox and golden tests |
+| Rust CI | `test-windows` | windows | clippy pedantic again — the linux job lints no Win32 code path at all — plus unit, sandbox and golden tests, and the scanner's tests against the runner's own machine (`core/tests/win_machine.rs`, `cli/tests/scan.rs`) |
 | Rust CI | `deny` | ubuntu | advisories, bans, licences, sources |
 | Rust CI | `bench` | windows | `scan_corpus`, gated on the hard-fail budgets in [`10`](10-PERF-BUDGET.md). Push only. |
 | .NET CI | `build-test` | windows | restore `--locked-mode`, build, `dotnet format`, test |
@@ -156,7 +156,7 @@ public in any useful sense.
 | CodeQL | `analyze actions` | ubuntu | The workflows themselves: injection into scripts, over-broad tokens. |
 | Dependency audit | `rust`, `dotnet` | ubuntu, windows | Weekly, on a schedule: `cargo deny check advisories` and the transitive vulnerable-package gate, so an advisory published in a quiet week is not waiting for the next unrelated change. |
 | SonarCloud | `rust-coverage` | windows | The Windows test suite under `cargo llvm-cov`, as an LCOV report. Holds no secret. |
-| SonarCloud | `analysis` | windows | One analysis of C#, Rust, the workflows and the scripts, with coverage for both languages. Informational: its quality gate reaches a pull request through the SonarCloud app's own check and never changes another workflow's colour. Fails if the Rust sources drop out of the analysis. |
+| SonarCloud | `analysis` | windows | One analysis of C#, Rust, the workflows and the scripts, with coverage for both languages. Informational: its quality gate reaches a pull request through the SonarCloud app's own check and never changes another workflow's colour. The gate asks 80% coverage of new code, which Win32 code reaches only through the tests that run against the runner. Fails if the Rust sources drop out of the analysis. |
 
 SonarCloud needs a word on Rust. SonarScanner for .NET is the only scanner that
 analyses C#, and it does not take Rust in by itself; the workflow adds `**/*.rs`

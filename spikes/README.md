@@ -69,12 +69,12 @@ are recorded here so the gaps are visible rather than discovered.
 | `denylist_blocks_unc_and_device_path_forms` | Done |
 | `denylist_cannot_be_widened_by_catalog_entry` | Done |
 | `catalog_naming_protected_path_fails_verification` | Done, `core/src/catalog/validate.rs` |
-| `denylist_blocks_after_junction_resolution` | **Partial.** The rule is tested (an unresolved or reparse-traversing path is refused). Creating a real junction and resolving it needs `GetFinalPathNameByHandleW`, which arrives with the scanner. |
+| `denylist_blocks_after_junction_resolution` | **Partial.** The rule is tested (an unresolved or reparse-traversing path is refused), and the scanner's view describes a real junction without following it (`core/tests/win_machine.rs`). Resolving one with `GetFinalPathNameByHandleW` belongs to the stage that deletes, which v0.1 does not ship. |
 | `shared_ac_blocked_when_any_referencing_game_remains` | Not started — needs the ownership graph |
 | `shared_ac_eligible_only_when_all_referencing_games_removed` | Not started — needs the ownership graph |
 | `refcount_counts_games_in_other_user_profiles` | Not started |
 | `refcount_counts_games_on_other_volumes` | Not started |
 | `uninstalled_game_does_not_contribute_to_refcount` | Not started |
 | `plan_rejected_if_it_removes_a_referenced_anticheat` | Not started — needs the plan builder |
-| `wow64_both_views_produce_distinct_artifacts` | Done, `core/src/scan/engine.rs`, against the audit's machine view; the Win32 registry reader that feeds it comes next |
+| `wow64_both_views_produce_distinct_artifacts` | Done, `core/src/scan/engine.rs`, against the audit's machine view; the Win32 reader that feeds it, `core/src/scan/win.rs`, opens each view as asked (`core/tests/win_machine.rs`) |
 | `pending_file_rename_appends_never_overwrites` | Not started — `exec/` code, and v0.1 ships no removal code |
