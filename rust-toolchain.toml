@@ -1,8 +1,8 @@
 # Pinned rather than "stable" because docs/14-DISTRIBUTION-TRUST.md relies on
 # reproducible builds: an unsigned binary's only trust story is that anyone can
-# rebuild it and get the same hash. CI uses dtolnay/rust-toolchain@stable, which
-# honours this file.
+# rebuild it and get the same hash. Every CI job installs it with `rustup show`,
+# which reads this file, so the version lives here and nowhere else.
 [toolchain]
-channel = "1.94.1"
+channel = "1.99.1"
 components = ["rustfmt", "clippy"]
 profile = "minimal"

@@ -113,7 +113,7 @@ jobs:
       - name: Install cargo-about
         # Pinned: a different version may lay the same licences out
         # differently, and the check compares bytes.
-        run: cargo install cargo-about --locked --version 0.9.2 --features cli
+        run: cargo install cargo-about --locked --version 0.9.3 --features cli
 
       - run: cargo fetch --locked
 

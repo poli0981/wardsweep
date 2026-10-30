@@ -14,16 +14,16 @@
   <ItemGroup Label="UI">
     <PackageVersion Include="WPF-UI" Version="4.3.0" />
     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.14" />
     <PackageVersion Include="Serilog" Version="4.4.0" />
-    <PackageVersion Include="Serilog.Extensions.Hosting" Version="9.0.0" />
+    <PackageVersion Include="Serilog.Extensions.Hosting" Version="10.0.0" />
     <PackageVersion Include="Serilog.Sinks.File" Version="7.0.0" />
   </ItemGroup>
 
   <ItemGroup Label="Testing">
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.1" />
   </ItemGroup>
 
   <ItemGroup Label="Analysers">
@@ -32,7 +32,7 @@
       Meziantou.Analyzer alongside TreatWarningsAsErrors.
     -->
     <GlobalPackageReference Include="Roslynator.Analyzers" Version="5.0.1" />
-    <GlobalPackageReference Include="Meziantou.Analyzer" Version="3.0.294" />
+    <GlobalPackageReference Include="Meziantou.Analyzer" Version="3.0.317" />
   </ItemGroup>
 
 </Project>

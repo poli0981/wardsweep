@@ -585,7 +585,10 @@ mod tests {
         assert!(asset.not_hashed.is_none());
 
         assert_eq!(captured.policy.max_hash_bytes, MAX_HASH_BYTES);
-        assert!(!captured.policy.excluded.is_empty());
+        assert!(
+            !captured.policy.excluded.is_empty(),
+            "the policy excluded nothing"
+        );
     }
 
     #[test]
@@ -695,7 +698,7 @@ mod tests {
         let missing = temporary.path().join("does-not-exist-9f3a");
         let captured = walk(std::slice::from_ref(&missing), no_signer);
 
-        assert!(captured.files.is_empty());
+        assert!(captured.files.is_empty(), "{:?}", captured.files);
         assert_eq!(captured.access_denied.len(), 1);
         assert_eq!(captured.access_denied[0].domain, Domain::Filesystem);
     }

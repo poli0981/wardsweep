@@ -272,6 +272,13 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
   only the values that changed into a diff. `diff` refuses two snapshots of
   different formats, since every one of those changes would read as a change on
   the machine, and `refilter` brings an older diff to the current format.
+- **Rust 1.99.1** (from 1.94.1), with `rust-version` raised to match, and the
+  October refresh: thirteen lock-only crate updates, cargo-about 0.9.3 for the
+  notices, Microsoft.Extensions.Hosting 10.0.14, Microsoft.NET.Test.Sdk
+  18.11.0, xunit.runner.visualstudio 4.0.1, Meziantou.Analyzer 3.0.317 and an
+  SDK floor of 10.0.403. The new compiler's lints asked for assertions that
+  print what they found and for `as_chunks` over `chunks_exact(2)`; nothing
+  else changed. criterion stays below 0.8, re-checked against 0.8.2.
 
 ### Fixed
 - `README.md` and `COPYING.md` pointed at a `COPYING` file that does not exist;

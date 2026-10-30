@@ -641,7 +641,7 @@ mod tests {
              paths = [{{ path = \"C:\\\\Windows\\\\System32\\\\drivers\", class = \"install\" }}]\n"
         );
         let catalog = catalog_from(&body);
-        assert!(!check_denylist(&catalog).is_empty());
+        assert_ne!(check_denylist(&catalog), Vec::new());
     }
 
     #[test]
@@ -753,7 +753,7 @@ mod tests {
         // ...but a service it did not declare is not.
         let body = body.replace("Services\\\\ExampleAC", "Services\\\\Tcpip");
         let catalog = catalog_from(&body);
-        assert!(!check_denylist(&catalog).is_empty());
+        assert_ne!(check_denylist(&catalog), Vec::new());
     }
 
     #[test]
@@ -764,9 +764,9 @@ mod tests {
              shared = false\nrisk = \"low\"\n"
         );
         let catalog = catalog_from(&body);
-        assert!(audit_shared(&catalog, true).len() == 1);
+        assert_eq!(audit_shared(&catalog, true).len(), 1);
         // Without --require-evidence the same catalog is merely unaudited.
-        assert!(audit_shared(&catalog, false).is_empty());
+        assert_eq!(audit_shared(&catalog, false), Vec::new());
     }
 
     #[test]

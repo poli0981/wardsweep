@@ -31,7 +31,9 @@ updates:
       # Pinned below 0.8 on purpose: 0.8 depends on `alloca`, which needs a C
       # toolchain for the target being built, and that ends cross-linting the
       # workspace for Linux from Windows — the documented way to reproduce the
-      # ubuntu lint job locally. See core/benches/scan_corpus.rs.
+      # ubuntu lint job locally. See core/benches/scan_corpus.rs. Re-checked
+      # against 0.8.2 on 2026-10-30: `alloca` 0.4 is still a non-optional
+      # dependency for Windows and Unix, and still builds C with `cc`.
       - dependency-name: criterion
         versions: ['>= 0.8']
 

@@ -9,7 +9,7 @@ exclude = ["spikes"]
 [workspace.package]
 version = "0.0.1"
 edition = "2024"
-rust-version = "1.94"
+rust-version = "1.99"
 license = "GPL-3.0-or-later"
 repository = "https://github.com/poli0981/WardSweep"
 publish = false
@@ -19,17 +19,17 @@ wardsweep-core = { path = "core", version = "0.0.1" }
 
 aho-corasick = "1.1.5"
 anyhow = "1.0.104"
-clap = { version = "4.6.6", features = ["derive"] }
+clap = { version = "4.6.7", features = ["derive"] }
 ed25519-dalek = "3.0.0"
 getrandom = "0.4.3"
 hex = "0.4.3"
-rayon = "1.11.1"
+rayon = "1.12.0"
 serde = { version = "1.0.229", features = ["derive"] }
-serde_json = "1.0.151"
-sha2 = "0.11.0"
-tempfile = "3.24.0"
-thiserror = "2.0.20"
-toml = "1.1.4"
+serde_json = "1.0.154"
+sha2 = "0.11.1"
+tempfile = "3.27.0"
+thiserror = "2.0.21"
+toml = "1.1.8"
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 
