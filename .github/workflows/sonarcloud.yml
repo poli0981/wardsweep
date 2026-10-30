@@ -1,0 +1,233 @@
+# SonarCloud.
+#
+# Inline rather than a caller stub — see the note in rust-ci.yml.
+#
+# One analysis covers both languages. SonarScanner for .NET is the only scanner
+# that analyses C#, and it has to build the solution between `begin` and `end`.
+# It does not pick Rust up by itself: its multi-language discovery reads a
+# fixed list of file-suffix settings, and Rust is not on the list. It also globs
+# `sonar.text.inclusions`, though, so `**/*.rs` is added there and SonarCloud's
+# Rust analyser takes the files by their suffix. SonarSource does not document
+# that route for Rust, so the last step fails the job unless the scanner's own
+# log shows the Rust analyser ran: Rust cannot drop out without the run going
+# red.
+#
+# Informational. A SonarCloud outage or a quality-gate opinion never changes
+# the colour of Rust CI, .NET CI or CodeQL; the verdict reaches a pull request
+# through the SonarCloud GitHub App's own check.
+#
+# The Rust tests run instrumented in a job that holds no secret, and hand the
+# analysis job an LCOV report. The analysis job still builds and tests the WPF
+# solution, because the scanner has to watch the build, with every package
+# restored from the lock files.
+#
+# Prerequisites: the repository secret SONAR_TOKEN, and Automatic Analysis
+# switched off for the project in SonarCloud (Administration → Analysis
+# Method); with it on, the scanner refuses to run. Dependabot and fork pull
+# requests get no secrets and skip the analysis with a notice.
+#
+# NOTE: explicit `permissions:` required. Every action here is pinned to a
+# commit SHA, GitHub's own included, because this file hands a job a token.
+name: SonarCloud
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sonarcloud-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  CARGO_TERM_COLOR: always
+  DOTNET_NOLOGO: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  token:
+    # Pull requests from forks and from Dependabot get no repository secrets.
+    # Checking for the token skips those runs without trusting actor or
+    # repository names from the event.
+    name: Check for SONAR_TOKEN
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    outputs:
+      available: ${{ steps.check.outputs.available }}
+    steps:
+      - name: Check for SONAR_TOKEN
+        id: check
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          if [ -n "$SONAR_TOKEN" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::SONAR_TOKEN is not available to this run (Dependabot or fork pull request); the analysis is skipped."
+          fi
+
+  rust-coverage:
+    # The same tests as rust-ci.yml's Windows job, instrumented. Windows,
+    # because every Win32 code path is behind cfg(windows) and would otherwise
+    # count as never run. No secret is available here.
+    name: Rust coverage (windows)
+    needs: token
+    if: needs.token.outputs.available == 'true'
+    runs-on: windows-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install the pinned toolchain
+        run: |
+          rustup show
+          rustup component add llvm-tools
+
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+
+      - name: Install cargo-llvm-cov
+        # Pinned, like cargo-about in rust-ci.yml.
+        run: cargo install cargo-llvm-cov --locked --version 0.9.1
+
+      - name: Test with coverage
+        # Paths are rewritten relative to the repository, so the report
+        # resolves wherever the analysis job checks the code out.
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force coverage | Out-Null
+          cargo llvm-cov --locked --workspace --all-features --lcov --output-path coverage/rust.lcov
+          if ($LASTEXITCODE -ne 0) { throw "cargo llvm-cov failed with exit code $LASTEXITCODE." }
+          $root = (Get-Location).Path.TrimEnd('\') + '\'
+          $lines = Get-Content coverage/rust.lcov | ForEach-Object {
+            if ($_.StartsWith('SF:')) { 'SF:' + $_.Substring(3).Replace($root, '').Replace('\', '/') } else { $_ }
+          }
+          if (-not ($lines | Where-Object { $_ -like 'SF:core/src/*' })) { throw "The LCOV report names no file under core/src." }
+          Set-Content coverage/rust.lcov -Value $lines -Encoding utf8NoBOM
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rust-coverage
+          path: coverage/rust.lcov
+          retention-days: 1
+          if-no-files-found: error
+
+  analysis:
+    name: SonarCloud
+    needs: [token, rust-coverage]
+    if: needs.token.outputs.available == 'true'
+    # WPF only builds on Windows, and the scanner has to watch the build.
+    runs-on: windows-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # full history: SonarCloud reads blame to tell new code from old
+          persist-credentials: false
+
+      - name: Install the pinned toolchain
+        # SonarCloud's Rust analyser needs cargo on PATH.
+        run: rustup show
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+
+      - name: Cache SonarCloud analysers and runtime
+        # Outside the workspace: the scanner analyses every .json and .yml
+        # file under the repository root.
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.sonar/cache
+          key: sonar-${{ runner.os }}-${{ hashFiles('.config/dotnet-tools.json') }}
+          restore-keys: sonar-${{ runner.os }}-
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: rust-coverage
+          path: coverage
+
+      - name: Restore
+        run: |
+          dotnet restore WardSweep.sln --locked-mode
+          dotnet tool restore
+
+      # The version drives SonarCloud's "previous version" new-code period.
+      # Roslyn rules already fail the build in .NET CI, so their findings are
+      # not imported a second time. Throwaway spike code, observation evidence
+      # and generated notices are not this project's code.
+      - name: Begin analysis
+        shell: pwsh
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          $version = "$(dotnet msbuild ui/WardSweep.UI/WardSweep.UI.csproj -getProperty:Version | Select-Object -Last 1)".Trim()
+          if ($LASTEXITCODE -ne 0 -or $version -notmatch '^\d+\.\d+\.\d+$') { throw "Unexpected project version '$version'." }
+          # SonarCloud's default text inclusions, plus the Rust sources.
+          $textInclusions = '**/*.sh,**/*.bash,**/*.zsh,**/*.ksh,**/*.ps1,**/*.properties,**/*.conf,**/*.pem,**/*.config,.env,.aws/config,**/*.rs'
+          $scannerArgs = @(
+            'begin', '/k:poli0981_wardsweep', '/o:poli0981', "/v:$version",
+            '/d:sonar.host.url=https://sonarcloud.io', "/d:sonar.token=$env:SONAR_TOKEN",
+            # The repository root, stated rather than inferred: the scanner
+            # otherwise derives it from the MSBuild projects, which are all
+            # under ui/, and the Rust is not.
+            "/d:sonar.projectBaseDir=$((Get-Location).Path)",
+            "/d:sonar.text.inclusions=$textInclusions",
+            '/d:sonar.rust.lcov.reportPaths=coverage/rust.lcov',
+            '/d:sonar.cs.cobertura.reportsPaths=TestResults/**/*.cobertura.xml',
+            '/d:sonar.cs.roslyn.ignoreIssues=true',
+            '/d:sonar.exclusions=spikes/**,observations/**,licenses/**,coverage/**,TestResults/**,target/**,target-*/**,**/bin/**,**/obj/**',
+            '/d:sonar.coverage.exclusions=**/tests/**,**/benches/**,**/*.xaml.cs,.github/**',
+            '/d:sonar.cpd.exclusions=**/tests/**,**/*.resx'
+          )
+          dotnet sonarscanner @scannerArgs
+          if ($LASTEXITCODE -ne 0) { throw "SonarScanner begin failed with exit code $LASTEXITCODE." }
+
+      - name: Build
+        # Real source paths in the PDBs rather than the deterministic /_/ ones,
+        # so coverage maps onto files. .NET CI is the warnings-as-errors build.
+        run: dotnet build WardSweep.sln -c Release --no-restore --no-incremental -p:ContinuousIntegrationBuild=false
+
+      - name: Test with coverage
+        # Microsoft.Testing.Platform's own coverage extension: the test project
+        # references it, and `dotnet test` runs on the platform (global.json).
+        run: dotnet test --solution WardSweep.sln -c Release --no-build --coverage --coverage-output-format cobertura --results-directory TestResults
+
+      - name: End analysis
+        # The log is kept: the next step reads it.
+        shell: pwsh
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          dotnet sonarscanner end "/d:sonar.token=$env:SONAR_TOKEN" | Tee-Object -FilePath sonar-end.log
+          if ($LASTEXITCODE -ne 0) { throw "SonarScanner end failed with exit code $LASTEXITCODE." }
+
+      - name: Rust stayed in the analysis
+        # See the header: nothing else would notice Rust dropping out. The
+        # scanner hands the engine its input directly and writes no properties
+        # file to read, so the evidence is the engine's own log: SonarCloud's
+        # Rust analyser ran, and on files of this repository.
+        shell: pwsh
+        run: |
+          $log = Get-Content sonar-end.log
+          $analyser = @($log | Select-String -Pattern 'Sensor Rust Enterprise \[rustenterprise\] \(done\)')
+          $rustProfile = @($log | Select-String -Pattern 'Quality profile for rust')
+          if ($analyser.Count -eq 0 -or $rustProfile.Count -eq 0) {
+            $log | Select-String -Pattern 'languages detected|files indexed|Sensor .*\[rust' | ForEach-Object { Write-Host "  $($_.Line.Trim())" }
+            Write-Host "::error::SonarCloud's Rust analyser did not run: SonarScanner for .NET no longer takes Rust in through sonar.text.inclusions."
+            exit 1
+          }
+          $log | Select-String -Pattern 'languages detected|files indexed|Sensor Rust' | ForEach-Object { Write-Host "  $($_.Line.Trim())" }

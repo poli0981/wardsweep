@@ -155,6 +155,15 @@ public in any useful sense.
 | CodeQL | `analyze rust` | windows | Rust `security-extended`, no build. Windows because every Win32 call and every `unsafe` block is behind `cfg(windows)`, which a Linux extraction would never see. |
 | CodeQL | `analyze actions` | ubuntu | The workflows themselves: injection into scripts, over-broad tokens. |
 | Dependency audit | `rust`, `dotnet` | ubuntu, windows | Weekly, on a schedule: `cargo deny check advisories` and the transitive vulnerable-package gate, so an advisory published in a quiet week is not waiting for the next unrelated change. |
+| SonarCloud | `rust-coverage` | windows | The Windows test suite under `cargo llvm-cov`, as an LCOV report. Holds no secret. |
+| SonarCloud | `analysis` | windows | One analysis of C#, Rust, the workflows and the scripts, with coverage for both languages. Informational: its quality gate reaches a pull request through the SonarCloud app's own check and never changes another workflow's colour. Fails if the Rust sources drop out of the analysis. |
+
+SonarCloud needs a word on Rust. SonarScanner for .NET is the only scanner that
+analyses C#, and it does not take Rust in by itself; the workflow adds `**/*.rs`
+to `sonar.text.inclusions`, which the scanner's file discovery does read, and a
+final step fails the job unless the scanner's log shows SonarCloud's Rust
+analyser ran. Automatic Analysis has to be off in the SonarCloud project for
+any CI analysis to run.
 
 `catalog-verify` includes a check that no catalog entry resolves to a
 deny-listed path. A catalog that would be refused at runtime must fail CI, not
