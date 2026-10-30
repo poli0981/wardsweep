@@ -1,0 +1,22 @@
+# Contexts in which `observe review` does not list an identifier-shaped name.
+#
+# One lower-cased fragment per line; a digit run, hash or GUID inside a string
+# containing any of these is not reported. Each line says why it is harmless.
+# Read by `review.rs` with `include_str!`, so the list is data and can change
+# without touching a matcher. Machine-key names, hex-encoded identity and
+# anything `redact` would still remove are reported whatever the context.
+
+# Windows' component store and installer cache name folders after hashes of
+# their contents, not of anybody.
+\windows\winsxs\
+\windows\installer\
+\installer\products\
+\installer\userdata\
+\installer\upgradecodes\
+
+# COM registrations: a CLSID names a class, the same on every machine.
+\classes\clsid\
+\classes\interface\
+\classes\typelib\
+\classes\appid\
+\wow6432node\clsid\

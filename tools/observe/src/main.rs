@@ -27,6 +27,7 @@ mod intersect;
 mod model;
 mod policy;
 mod redact;
+mod review;
 mod suggest;
 
 use std::path::{Path, PathBuf};
@@ -184,6 +185,20 @@ enum Command {
         #[arg(long = "also-id", value_name = "TEXT")]
         also_ids: Vec<String>,
     },
+
+    /// List what in a diff looks like an identifier, before it is committed.
+    ///
+    /// The review `docs/16` asks for before a diff goes into the repository:
+    /// identity `redact` would still remove, identity inside hex-encoded
+    /// values, machine-key file names, identifier-shaped names in paths and
+    /// keys, and paths on the before side of modified values. It changes
+    /// nothing. Mask what is personal with `redact --also-id` and run it
+    /// again; it exits 1 while anything is listed.
+    Review {
+        /// The diff to review.
+        #[arg(long = "in", value_name = "PATH")]
+        input: PathBuf,
+    },
 }
 
 fn main() -> ExitCode {
@@ -230,7 +245,60 @@ fn run(command: &Command) -> Result<u8> {
             also_names,
             also_ids,
         } => run_redact(input, output, also_names, also_ids),
+        Command::Review { input } => run_review(input),
     }
+}
+
+fn run_review(input: &PathBuf) -> Result<u8> {
+    let source =
+        std::fs::read_to_string(input).with_context(|| format!("reading {}", input.display()))?;
+    let document: serde_json::Value =
+        serde_json::from_str(&source).with_context(|| format!("parsing {}", input.display()))?;
+    let findings = review::review(&document);
+
+    if findings.is_empty() {
+        println!(
+            "{}: nothing identifier-shaped was found. Read the file anyway before it is \
+             committed (docs/16).",
+            input.display()
+        );
+        return Ok(exit::SUCCESS);
+    }
+
+    let places: usize = findings.values().map(std::collections::BTreeMap::len).sum();
+    println!(
+        "{}: {places} place(s) to look at, in {} kind(s). Mask what is personal with \
+         `redact --also-id`, then review again.",
+        input.display(),
+        findings.len()
+    );
+    for (kind, found) in &findings {
+        println!();
+        println!("{kind} — {}", kind.explanation());
+        for (place, finding) in found {
+            println!("  ×{:<4} {place}", finding.count);
+            // A shape found many times in one folder is listed by its folder,
+            // with a few of the values; a value found on its own is the place.
+            if !(finding.values.len() == 1 && finding.values.contains(place)) {
+                let shown: Vec<&str> = finding.values.iter().take(3).map(String::as_str).collect();
+                let more = if finding.values.len() > shown.len() {
+                    ", …"
+                } else {
+                    ""
+                };
+                println!(
+                    "         {} distinct: {}{more}",
+                    finding.values.len(),
+                    shown.join(", ")
+                );
+            }
+            println!("         at {}", finding.at);
+            println!("         {}", finding.context);
+        }
+    }
+    // Non-zero, like `redact` with a residue: a script cannot commit the
+    // result by accident.
+    Ok(exit::NOTHING)
 }
 
 fn run_refilter(input: &PathBuf, output: &PathBuf) -> Result<u8> {

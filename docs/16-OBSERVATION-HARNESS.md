@@ -643,3 +643,47 @@ remained.
   ASCII and as UTF-16. A name found there is replaced by its placeholder in the
   same encoding, on the same token boundaries as text, and what is left is
   counted with the rest. The storage table itself is no longer walked.
+
+A fifth came from the first run of `review` (below) over the committed diffs,
+on 2026-10-30. The rule above had decoded a record's values and not the value
+changes of a modified key, which a diff writes as `binary:<hex>`. So the
+ACE install diff still carried the machine's name inside a DHCP option cache,
+and a machine SID that a notification store and the search indexer write as
+text inside binaries.
+
+- **`binary:` value changes are decoded like any other hex.**
+- **SIDs are replaced inside hex as well as in text**, in the encoding they
+  were found in, and identity-store SIDs (`S-1-5-99-…`) like machine ones.
+- **The DHCP client's option cache and gateway record are refused under G3**:
+  the client identifier it sends is the adapter's MAC.
+
+## Reviewing a diff before it is committed
+
+`redact` removes what it can name. `review` lists what still looks like an
+identifier, so the reading the checklist asks for starts from a list rather
+than from a 6 MB file:
+
+```powershell
+wardsweep observe review --in install.json
+```
+
+It reports, by kind:
+
+- identity `redact` would still remove;
+- identity inside hex-encoded values, `binary:` value changes included;
+- `CryptoAPI` machine-key file names;
+- long digit and hex runs, and per-user GUIDs, in paths and keys — grouped by
+  the folder or key holding them, since a cache names hundreds of files after
+  hashes and they are one thing to judge;
+- paths on the before side of a modified value in a per-user key or a history
+  slot (`UFH`, MRU and recent-items lists), grouped by key: a slot that
+  rotates names whatever else ran on the machine.
+
+It changes nothing. Mask what is personal with `redact --also-id`, and run it
+again; it exits 1 while anything is listed. Contexts known to be harmless — a
+component store's hash names, COM registrations — are data in
+`tools/observe/src/review-benign.txt`.
+
+Its first run over the seven committed diffs, after the fifth fix above, left
+between 3 and 74 places a diff — build numbers, cache hashes, Store
+registrations — each of which a person reads once.

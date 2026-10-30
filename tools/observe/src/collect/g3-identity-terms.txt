@@ -61,5 +61,11 @@ systemuuid
 dhcpv6duid
 # Network signatures record the default gateway's MAC address.
 defaultgatewaymac
+# The DHCP client's cached options under Services\Tcpip\Parameters\Interfaces:
+# the client identifier it sends is the adapter's MAC address, and the host
+# name rides along. A committed diff carried it, as hex, until 2026-10-30.
+dhcpinterfaceoptions
+# The DHCP client's record of its gateway: the gateway's address and its MAC.
+dhcpgatewayhardware
 # A volume GUID path in value data: \\?\Volume{...}\.
 volume{

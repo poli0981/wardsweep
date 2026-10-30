@@ -133,6 +133,21 @@ const CONTEXT_CHARS: usize = 24;
 pub const USER_PLACEHOLDER: &str = "%USER%";
 /// Placeholder for a machine-local account identifier.
 pub const SID_PLACEHOLDER: &str = "S-1-5-21-%REDACTED%";
+/// Placeholder for an identity-store SID, the per-machine kind Windows keeps
+/// for cloud and Hello sign-ins.
+pub const IDENTITY_SID_PLACEHOLDER: &str = "S-1-5-99-%REDACTED%";
+
+/// The SID domains that name an account on one machine, each with what it
+/// becomes. `S-1-5-99-` keyed the identity-store cache #52 removed, and a
+/// `ProfileList` entry under the same SID outlived it.
+const IDENTIFYING_SIDS: &[(&str, &str)] = &[
+    ("S-1-5-21-", SID_PLACEHOLDER),
+    ("S-1-5-99-", IDENTITY_SID_PLACEHOLDER),
+];
+
+/// How a registry binary is written in a diff's value changes: its type, a
+/// colon, and its bytes as hex.
+const BINARY_PREFIX: &str = "binary:";
 /// Placeholder for a computer name.
 pub const HOST_PLACEHOLDER: &str = "%COMPUTER%";
 /// Placeholder for an e-mail address.
@@ -288,7 +303,8 @@ fn record_occurrences(text: &str, name: &str, residual: &mut Residual) {
     }
     // Inside a value written as hex, on any boundary: what the rewrite left
     // because it was glued to something is exactly what this must report.
-    if let Some(bytes) = decode_hex(text) {
+    let hex = text.strip_prefix(BINARY_PREFIX).unwrap_or(text);
+    if let Some(bytes) = decode_hex(hex) {
         for wide in [false, true] {
             for _ in find_encoded(&bytes, name, wide, false) {
                 residual.count += 1;
@@ -494,9 +510,9 @@ pub fn redact_text_with(text: &str, names: &[(String, &'static str)]) -> (String
         result = replaced;
         applied.push(USER_PLACEHOLDER.to_owned());
     }
-    if let Some(replaced) = replace_sids(&result) {
+    if let Some((replaced, placeholders)) = replace_sids(&result) {
         result = replaced;
-        applied.push(SID_PLACEHOLDER.to_owned());
+        applied.extend(placeholders.into_iter().map(str::to_owned));
     }
     if let Some(replaced) = replace_unc_hosts(&result) {
         result = replaced;
@@ -511,8 +527,14 @@ pub fn redact_text_with(text: &str, names: &[(String, &'static str)]) -> (String
             applied.push((*placeholder).to_owned());
         }
     }
-    if let Some((replaced, placeholders)) = replace_in_hex(&result, names) {
-        result = replaced;
+    // A value change writes a binary as `binary:<hex>`, and only the hex is the
+    // value. Before 2026-10-30 such strings were never decoded at all, and a
+    // committed diff carried a host name and a SID in them.
+    let (prefix, hex) = result
+        .strip_prefix(BINARY_PREFIX)
+        .map_or(("", result.as_str()), |rest| (BINARY_PREFIX, rest));
+    if let Some((replaced, placeholders)) = replace_in_hex(hex, names) {
+        result = format!("{prefix}{replaced}");
         applied.extend(placeholders);
     }
 
@@ -527,12 +549,19 @@ pub fn redact_text_with(text: &str, names: &[(String, &'static str)]) -> (String
 /// carried 72 of them in one diff. Each is replaced by its placeholder in the
 /// same encoding, on the same token boundaries as text, so the value keeps its
 /// shape and says where a name was.
+///
+/// Machine SIDs are replaced the same way, whether or not any name is known: a
+/// notification store and the search indexer's crawl list carried one as text
+/// inside a binary, which the text rule never saw.
 fn replace_in_hex(text: &str, names: &[(String, &'static str)]) -> Option<(String, Vec<String>)> {
-    if names.is_empty() {
-        return None;
-    }
     let mut bytes = decode_hex(text)?;
     let mut applied = Vec::new();
+    for wide in [false, true] {
+        if let Some((rebuilt, placeholders)) = replace_sids_in_bytes(&bytes, wide) {
+            bytes = rebuilt;
+            applied.extend(placeholders.into_iter().map(str::to_owned));
+        }
+    }
     for (name, placeholder) in names {
         for wide in [false, true] {
             let starts = find_encoded(&bytes, name, wide, true);
@@ -563,7 +592,7 @@ fn replace_in_hex(text: &str, names: &[(String, &'static str)]) -> Option<(Strin
 /// The bytes a string of hex digits spells, when it is one: an even number of
 /// digits and nothing else. An ordinary word made of the letters a to f decodes
 /// too, harmlessly — a name has to be found inside it before anything changes.
-fn decode_hex(text: &str) -> Option<Vec<u8>> {
+pub(crate) fn decode_hex(text: &str) -> Option<Vec<u8>> {
     if text.len() < 2
         || !text.len().is_multiple_of(2)
         || !text.bytes().all(|byte| byte.is_ascii_hexdigit())
@@ -790,15 +819,28 @@ fn replace_user_profiles(text: &str) -> Option<String> {
     hit.then_some(result)
 }
 
-/// `S-1-5-21-a-b-c-1001` becomes `S-1-5-21-%REDACTED%`.
+/// `S-1-5-21-a-b-c-1001` becomes `S-1-5-21-%REDACTED%`, and an identity-store
+/// `S-1-5-99-…` likewise, with the placeholders used.
 ///
-/// Only the `S-1-5-21-` domain: the well-known SIDs (`S-1-5-18` for SYSTEM,
-/// `S-1-5-32-544` for Administrators) identify nobody and appear in every
-/// snapshot's pipe and service records, where replacing them would destroy
-/// information for no gain.
-fn replace_sids(text: &str) -> Option<String> {
-    const PREFIX: &str = "S-1-5-21-";
-    if !text.contains(PREFIX) {
+/// Only the domains in [`IDENTIFYING_SIDS`]: the well-known SIDs (`S-1-5-18`
+/// for SYSTEM, `S-1-5-32-544` for Administrators) and the service SIDs, which
+/// hash a service's name, identify nobody and appear in every snapshot's pipe
+/// and service records, where replacing them would destroy information for no
+/// gain.
+fn replace_sids(text: &str) -> Option<(String, Vec<&'static str>)> {
+    let mut result = text.to_owned();
+    let mut used = Vec::new();
+    for (prefix, placeholder) in IDENTIFYING_SIDS {
+        if let Some(replaced) = replace_sid_domain(&result, prefix, placeholder) {
+            result = replaced;
+            used.push(*placeholder);
+        }
+    }
+    (!used.is_empty()).then_some((result, used))
+}
+
+fn replace_sid_domain(text: &str, prefix: &str, placeholder: &str) -> Option<String> {
+    if !text.contains(prefix) {
         return None;
     }
 
@@ -806,20 +848,20 @@ fn replace_sids(text: &str) -> Option<String> {
     let mut cursor = 0usize;
     let mut hit = false;
 
-    while let Some(found) = text[cursor..].find(PREFIX) {
+    while let Some(found) = text[cursor..].find(prefix) {
         let start = cursor + found;
         result.push_str(&text[cursor..start]);
 
-        let rest = &text[start + PREFIX.len()..];
+        let rest = &text[start + prefix.len()..];
 
         // Already redacted. Without this the placeholder's own prefix matches
         // on a second pass and the suffix is appended twice — and a redacted
         // file is exactly what gets redacted again by someone unsure whether
         // it was.
-        let suffix = &SID_PLACEHOLDER[PREFIX.len()..];
+        let suffix = &placeholder[prefix.len()..];
         if rest.starts_with(suffix) {
-            result.push_str(SID_PLACEHOLDER);
-            cursor = start + SID_PLACEHOLDER.len();
+            result.push_str(placeholder);
+            cursor = start + placeholder.len();
             continue;
         }
 
@@ -828,13 +870,65 @@ fn replace_sids(text: &str) -> Option<String> {
             .find(|c: char| !c.is_ascii_digit() && c != '-')
             .unwrap_or(rest.len());
 
-        result.push_str(SID_PLACEHOLDER);
+        result.push_str(placeholder);
         hit = true;
-        cursor = start + PREFIX.len() + taken;
+        cursor = start + prefix.len() + taken;
     }
 
     result.push_str(&text[cursor..]);
     hit.then_some(result)
+}
+
+/// [`replace_sids`] over the text a binary holds, in one encoding.
+///
+/// A SID inside a binary is written as text, as UTF-8 or UTF-16LE, and is
+/// replaced in the encoding it was found in.
+fn replace_sids_in_bytes(bytes: &[u8], wide: bool) -> Option<(Vec<u8>, Vec<&'static str>)> {
+    let unit = if wide { 2 } else { 1 };
+    let mut current = bytes.to_vec();
+    let mut used = Vec::new();
+    for (prefix, placeholder) in IDENTIFYING_SIDS {
+        let pattern = encode(prefix, wide);
+        let done = encode(&placeholder[prefix.len()..], wide);
+        let replacement = encode(placeholder, wide);
+        let mut rebuilt = Vec::with_capacity(current.len());
+        let mut copied = 0;
+        let mut at = 0;
+        let mut hit = false;
+        while at + pattern.len() <= current.len() {
+            if current[at..at + pattern.len()] != pattern[..] {
+                at += 1;
+                continue;
+            }
+            let after = at + pattern.len();
+            if current[after..].starts_with(&done) {
+                at = after + done.len();
+                continue;
+            }
+            let mut end = after;
+            while end + unit <= current.len()
+                && (current[end].is_ascii_digit() || current[end] == b'-')
+                && (!wide || current[end + 1] == 0)
+            {
+                end += unit;
+            }
+            if end == after {
+                at += 1;
+                continue;
+            }
+            rebuilt.extend_from_slice(&current[copied..at]);
+            rebuilt.extend_from_slice(&replacement);
+            copied = end;
+            at = end;
+            hit = true;
+        }
+        if hit {
+            rebuilt.extend_from_slice(&current[copied..]);
+            current = rebuilt;
+            used.push(*placeholder);
+        }
+    }
+    (!used.is_empty()).then_some((current, used))
 }
 
 /// `\\MACHINE\share` becomes `\\%COMPUTER%\share`.
@@ -1040,6 +1134,86 @@ mod tests {
         record_occurrences(&out, "anon", &mut residual);
         assert_eq!(residual.count, 1, "{:?}", residual.contexts);
         assert!(residual.contexts[0].contains("binary value"));
+    }
+
+    #[test]
+    fn an_identity_store_sid_is_masked_like_a_machine_one() {
+        let (out, hits) = redact_text(
+            "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList\\S-1-5-99-11-22-33-44-55",
+        );
+        assert_eq!(
+            out,
+            "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList\\S-1-5-99-%REDACTED%"
+        );
+        assert_eq!(hits, vec![IDENTITY_SID_PLACEHOLDER]);
+
+        // A service SID hashes the service's name and is the same everywhere.
+        let service = "S-1-5-80-956008885-3418522649-1831038044-1853292631-2271478464";
+        assert_eq!(redact_text(service).0, service);
+    }
+
+    #[test]
+    fn a_sid_inside_a_binary_value_is_masked_in_its_own_encoding() {
+        // The search indexer's crawl list, as a value change writes it: the
+        // type, a colon, and UTF-16 text naming a user's SID.
+        let text = "defaultroot://{S-1-5-21-111-222-333-1001}/";
+        let mut bytes: Vec<u8> = text.encode_utf16().flat_map(u16::to_le_bytes).collect();
+        // And a notification store's ASCII copy beside it.
+        bytes.extend_from_slice(b"\0OneDrive!S-1-5-21-111-222-333-1001!x\0");
+        let value = format!("{BINARY_PREFIX}{}", encode_hex(&bytes, true));
+
+        let (out, hits) = redact_text(&value);
+
+        let hex = out
+            .strip_prefix(BINARY_PREFIX)
+            .expect("still a binary value");
+        assert!(
+            hex.bytes().all(|byte| !byte.is_ascii_lowercase()),
+            "case kept"
+        );
+        let decoded = decode_hex(hex).expect("still hex");
+        let narrow = String::from_utf8_lossy(&decoded);
+        assert!(
+            narrow.contains("OneDrive!S-1-5-21-%REDACTED%!x"),
+            "{narrow}"
+        );
+        let wide = String::from_utf16_lossy(
+            &decoded
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .map(|pair| u16::from_le_bytes(*pair))
+                .collect::<Vec<_>>(),
+        );
+        assert!(
+            wide.starts_with("defaultroot://{S-1-5-21-%REDACTED%}/"),
+            "{wide}"
+        );
+        assert_eq!(hits, vec![SID_PLACEHOLDER, SID_PLACEHOLDER]);
+
+        // A second pass changes nothing.
+        assert_eq!(redact_text(&out), (out.clone(), Vec::new()));
+    }
+
+    #[test]
+    fn a_name_inside_a_binary_value_change_is_replaced_too() {
+        // A DHCP option cache carried the host name this way: inside a value
+        // change, behind the `binary:` its type is written as.
+        let mut bytes = vec![0x0c, 0x00, 0x00, 0x00];
+        bytes.extend_from_slice(b"DESKTOP-EXAMPLE\0");
+        let value = format!("{BINARY_PREFIX}{}", encode_hex(&bytes, false));
+        let names = vec![("DESKTOP-EXAMPLE".to_owned(), HOST_PLACEHOLDER)];
+
+        let (out, hits) = redact_text_with(&value, &names);
+
+        let decoded = decode_hex(out.strip_prefix(BINARY_PREFIX).unwrap()).unwrap();
+        assert!(String::from_utf8_lossy(&decoded).contains("%COMPUTER%"));
+        assert_eq!(hits, vec![HOST_PLACEHOLDER]);
+
+        // The residue audit reads behind the prefix as well.
+        let mut residual = Residual::default();
+        record_occurrences(&value, "desktop-example", &mut residual);
+        assert_eq!(residual.count, 1, "{:?}", residual.contexts);
     }
 
     #[test]
