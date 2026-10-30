@@ -509,6 +509,11 @@ maintainer decision with rationale before it changes.
 - `vpk` and XamlStyler are pinned in `.config/dotnet-tools.json` instead of
   installed as whatever was newest. `deny.toml` bans the HTTP and TLS crates
   its own comment called a review event.
+- **Cargo builds with the lock file in CI.** `cargo clippy`, `cargo test`,
+  `cargo bench` and the catalog tool's `cargo build` now pass `--locked`, so a
+  stale `Cargo.lock` fails the run instead of being resolved afresh on the
+  runner, as `--locked-mode` already did for NuGet. SonarCloud's first
+  analysis flagged the catalog gate's build (`githubactions:S8549`).
 
 ### Handover
 - `docs/PROGRESS.md` records what is true now, what is deliberately absent,

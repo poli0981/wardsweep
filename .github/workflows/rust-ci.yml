@@ -8,6 +8,12 @@
 # NOTE: `permissions:` are declared explicitly — standing rule across the
 # portfolio, and they are not reliably inherited.
 #
+# Every cargo command that resolves dependencies passes `--locked`, so a stale
+# Cargo.lock fails the run instead of being resolved afresh on the runner —
+# the rule `--locked-mode` already enforces for NuGet in dotnet-ci.yml, and
+# for the same reason: docs/14-DISTRIBUTION-TRUST.md wants builds that
+# reproduce, which makes the lock file authoritative.
+#
 # Every checkout sets `persist-credentials: false`: nothing here pushes, and a
 # token left in .git/config is readable by every later step. Third-party actions
 # are pinned to commit SHAs, which Dependabot keeps current; GitHub's own are
@@ -59,7 +65,7 @@ jobs:
 
       - run: cargo fmt --all --check
 
-      - run: cargo clippy --all-targets --all-features -- -D warnings -W clippy::pedantic
+      - run: cargo clippy --locked --all-targets --all-features -- -D warnings -W clippy::pedantic
 
   test-windows:
     # Sandbox tests create services and load registry hives, so they need a
@@ -77,9 +83,9 @@ jobs:
 
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
 
-      - run: cargo clippy --all-targets --all-features -- -D warnings -W clippy::pedantic
+      - run: cargo clippy --locked --all-targets --all-features -- -D warnings -W clippy::pedantic
 
-      - run: cargo test --all-features --workspace
+      - run: cargo test --locked --all-features --workspace
 
   deny:
     name: cargo-deny
@@ -134,7 +140,7 @@ jobs:
 
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
 
-      - run: cargo bench --bench scan_corpus
+      - run: cargo bench --locked --bench scan_corpus
 
       - name: Enforce the docs/10 hard-fail budgets
         shell: bash
