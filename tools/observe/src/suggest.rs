@@ -866,18 +866,9 @@ fn note_per_title_drivers<'a>(
         }
     }
     let mut per_title: BTreeMap<String, (Vec<&str>, String)> = BTreeMap::new();
+    let mut unmatched = Vec::new();
     for name in drivers {
-        let stem = name
-            .rsplit_once('.')
-            .map_or(name.as_str(), |(stem, _)| stem);
-        let digits: String = stem
-            .chars()
-            .rev()
-            .take_while(char::is_ascii_digit)
-            .collect::<Vec<_>>()
-            .into_iter()
-            .rev()
-            .collect();
+        let digits = trailing_digits(stem_of(name));
         // The id may sit after a digit of the name's own, `CORE1` before it: try
         // every suffix of the trailing run, longest first.
         let matched = (0..digits.len()).find_map(|start| {
@@ -891,6 +882,8 @@ fn note_per_title_drivers<'a>(
                 .entry(id.clone())
                 .or_insert_with(|| (Vec::new(), key.clone()));
             entry.0.push(name.as_str());
+        } else {
+            unmatched.push(name.as_str());
         }
     }
     for (id, (names, key)) in per_title {
@@ -907,6 +900,69 @@ fn note_per_title_drivers<'a>(
             if names.len() == 1 { "ies" } else { "y" },
         ));
     }
+    note_per_title_pairs(&unmatched, review);
+}
+
+/// Point out drivers named after a title's id that no key in the footprint
+/// carries: names that differ only in the digit after a shared stem, and end
+/// in the same run of digits.
+///
+/// ACE 29.6 keeps no `…\Tencent\<id>` key. It registers its two core drivers
+/// as services instead, `ACE-CORE1024303` and `ACE-CORE2024303`, and the pair
+/// is the only place the id `24303` is written. One name ending in a long
+/// number is just a name, so it takes two.
+fn note_per_title_pairs(names: &[&str], review: &mut Vec<String>) {
+    let mut by_id: BTreeMap<(String, String), Vec<&str>> = BTreeMap::new();
+    for &name in names {
+        let stem = stem_of(name);
+        let digits = trailing_digits(stem);
+        let Some(after_first) = digits.get(1..) else {
+            continue;
+        };
+        let id = after_first.trim_start_matches('0');
+        let prefix = &stem[..stem.len() - digits.len()];
+        if id.len() >= 4 && !prefix.is_empty() {
+            by_id
+                .entry((prefix.to_ascii_lowercase(), id.to_owned()))
+                .or_default()
+                .push(name);
+        }
+    }
+    for ((_, id), names) in by_id {
+        if names.len() < 2 {
+            continue;
+        }
+        let stem = stem_of(names[0]);
+        let prefix = &stem[..stem.len() - trailing_digits(stem).len()];
+        review.push(format!(
+            "{} differ only in the digit after `{prefix}` and end in the same id, `{id}`, which \
+             no key in this footprint carries: per-title drivers. Another title installs its own \
+             under its own id, and the catalog lists drivers by exact name, so an entry covering \
+             every title needs a pattern the schema does not have (docs/04) — a maintainer's \
+             decision, not a draft's.",
+            names
+                .iter()
+                .map(|name| format!("`{name}`"))
+                .collect::<Vec<_>>()
+                .join(" and "),
+        ));
+    }
+}
+
+/// A file name without its extension.
+fn stem_of(name: &str) -> &str {
+    name.rsplit_once('.').map_or(name, |(stem, _)| stem)
+}
+
+/// The run of ASCII digits a name ends in, which may be empty.
+fn trailing_digits(stem: &str) -> &str {
+    let start = stem
+        .char_indices()
+        .rev()
+        .take_while(|(_, character)| character.is_ascii_digit())
+        .last()
+        .map_or(stem.len(), |(index, _)| index);
+    &stem[start..]
 }
 
 /// Name every driver found only in the registry, kept or not.
@@ -2586,6 +2642,64 @@ mod tests {
         );
         assert!(note.contains("`6095005`"), "{note}");
         assert!(!note.contains("ACE-BASE"), "{note}");
+        // Pointed out once: the key carries this id, so the pair rule is not
+        // asked about the same two names.
+        assert_eq!(
+            generated
+                .review
+                .iter()
+                .filter(|note| note.contains("per-title drivers"))
+                .count(),
+            1,
+            "{:?}",
+            generated.review
+        );
+    }
+
+    #[test]
+    fn drivers_named_after_an_id_no_key_carries_are_pointed_out_as_a_pair() {
+        // ACE 29.6, installed by Arknights: Endfield on 2026-10-31, wrote no
+        // `Tencent\<id>` key; its two core drivers carry the id alone.
+        let generated = draft(
+            &signed(
+                crate::diff::tests::diff_with_added_files(&[
+                    r"C:\Program Files\AntiCheatExpert\ACE-BASE.sys",
+                    r"C:\Program Files\AntiCheatExpert\ACE-CORE1024303.sys",
+                    r"C:\Program Files\AntiCheatExpert\ACE-CORE2024303.sys",
+                    r"C:\Program Files\AntiCheatExpert\ACE-CORE99.sys",
+                    r"C:\Program Files\AntiCheatExpert\Other20261031.sys",
+                ]),
+                "ACEVILLE PTE LTD",
+            ),
+            None,
+            Some("ACEVILLE PTE LTD"),
+        );
+
+        let notes: Vec<&String> = generated
+            .review
+            .iter()
+            .filter(|note| note.contains("per-title drivers"))
+            .collect();
+        assert_eq!(notes.len(), 1, "{notes:?}");
+        let note = notes[0];
+        assert!(
+            note.contains("`ACE-CORE1024303.sys` and `ACE-CORE2024303.sys`"),
+            "{note}"
+        );
+        assert!(note.contains("after `ACE-CORE`"), "{note}");
+        assert!(note.contains("`24303`"), "{note}");
+        // A short run, and a long one with no partner, are only names.
+        assert!(!note.contains("ACE-CORE99"), "{note}");
+        assert!(!note.contains("Other20261031"), "{note}");
+    }
+
+    #[test]
+    fn the_trailing_digits_of_a_name_are_its_last_run() {
+        assert_eq!(trailing_digits("ACE-CORE1024303"), "1024303");
+        assert_eq!(trailing_digits("ACE-BASE"), "");
+        assert_eq!(trailing_digits("1234"), "1234");
+        assert_eq!(stem_of("ACE-CORE1024303.sys"), "ACE-CORE1024303");
+        assert_eq!(stem_of("vgk"), "vgk");
     }
 
     #[test]

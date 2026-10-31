@@ -402,6 +402,24 @@ Windows' licensing state, which keeps the product key in plain text: on this
 machine the edition's published generic key, on one activated by a retail or
 OEM key the key itself.
 
+The 2026-10-31 cycle's windows lasted four to thirteen minutes each, and
+still reached identity no rule named. The walk now leaves it out:
+- Credential Manager's saved credentials, one file each, named after a hash of
+  what it unlocks;
+- the identity cache Windows keeps for the accounts signed in to it;
+- Google Drive for desktop's folder, named after the account's identifier;
+- the packaged Claude app's data folder, which holds what the unpackaged app's
+  did, plus a list of the worktrees its sessions opened.
+
+The registry walk leaves out a game SDK's identifier for the installation,
+under `HKCU\SOFTWARE\Gryphline\sdk_data`.
+
+The same game kept its account's identifier, its character's and a session's in
+its settings key. Unity writes each name with `_h` and a hash of the name after
+it, as in `PLDK_cachedUserId_h447948701`, and the hash hid the ending
+`redact`'s rule looks for. `redact` now reads a name without that hash. It also
+masks values whose names end in `RoleId` or `_uid`.
+
 Some identifiers belong to no store a rule can name: an account number in a
 game's own file name, a launcher's folder named after a hash. Finding those is
 the review's job, and `redact --also-id <TEXT>` masks each one as `%ID%`
@@ -502,13 +520,17 @@ review notes otherwise. A source's key says little about its owner — EA's
 names Windows' generic `EventCreate.exe` as its message file — but EA's source
 is called `EA Javelin Anticheat`, the description of `EAAntiCheatService`.
 
-**Drivers named after one title are pointed out.** ACE installs
-`ACE-CORE1<id>.sys` and `ACE-CORE2<id>.sys` for each title, the id zero-padded,
-beside a key `…\Tencent\<id>`. When a driver's name ends in a number that also
-names one of the anti-cheat's keys, the review notes say so: a draft lists the
-names it saw, another title installs its own pair, and the catalog lists
-drivers by exact name. Covering every title needs a pattern the schema does not
-have, which is a maintainer's decision.
+**Drivers named after one title are pointed out.** ACE installs a pair of
+core drivers for each title: `ACE-CORE1` or `ACE-CORE2`, a `0`, then the
+title's id — `ACE-CORE106095005.sys` for Wuthering Waves, `ACE-CORE1024303.sys`
+for Arknights: Endfield. ACE 28 also writes the id as a key, `…\Tencent\<id>`.
+ACE 29.6 writes no such key, and registers the pair as services. When a
+driver's name ends in a number that also names one of the anti-cheat's keys,
+or two names differ only in the digit after a shared stem and end in the same
+number, the review notes say so: a draft lists the names it saw, another title
+installs its own pair, and the catalog lists drivers by exact name. Covering
+every title needs a pattern the schema does not have, which is a maintainer's
+decision.
 
 When an entry's key absorbs keys below it, it takes their WOW64 views too: EA
 writes `EA\AC` through the 64-bit view and `EA\AC\Installs\fc26` through the

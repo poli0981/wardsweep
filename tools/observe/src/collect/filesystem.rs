@@ -121,8 +121,18 @@ pub const EXCLUDED_FRAGMENTS: &[&str] = &[
     // records, named after the account's identifier, and the token cache.
     "\\appdata\\local\\microsoft\\oneauth\\",
     "\\appdata\\local\\microsoft\\tokenbroker\\",
+    // Credential Manager's saved credentials, one encrypted file each, named
+    // after a hash of what it unlocks; and the identity cache Windows keeps
+    // for the accounts signed in to it.
+    "\\appdata\\local\\microsoft\\credentials\\",
+    "\\appdata\\roaming\\microsoft\\credentials\\",
+    "\\appdata\\local\\microsoft\\identitycache\\",
     // OneDrive, for the reason the registry walk leaves out its key.
     "\\appdata\\local\\microsoft\\onedrive\\",
+    // Google Drive for desktop: the signed-in account's settings and file
+    // metadata in a folder named after the account's identifier, beside a
+    // browser profile of its own.
+    "\\google\\drivefs\\",
     // The Steam client's data for the signed-in account, in a folder named
     // after the account's identifier; its caches, whose statistics files carry
     // the same identifier and whose library cache holds every game the account
@@ -140,6 +150,9 @@ pub const EXCLUDED_FRAGMENTS: &[&str] = &[
     "\\appdata\\local\\claude\\",
     "\\programdata\\claude\\",
     "\\appdata\\local\\claude-cli-nodejs\\",
+    // The same app installed as a package keeps all of that in a folder of
+    // its own, with a list of the worktrees its sessions opened.
+    "\\appdata\\local\\claude-data\\",
     // Visual Studio Code's user state: the local history of every file edited,
     // chat sessions, and per-workspace storage named after each workspace.
     "\\appdata\\roaming\\code\\user\\",
@@ -514,6 +527,35 @@ mod tests {
             "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Some Game\\game.exe",
             "C:\\Program Files (x86)\\Steam\\steam.exe",
             "C:\\Users\\x\\AppData\\Local\\Origin\\Origin.exe",
+        ] {
+            assert!(
+                !is_excluded(Path::new(path)),
+                "{path} is footprint and must be walked"
+            );
+        }
+    }
+
+    #[test]
+    fn the_identity_the_2026_10_31_windows_caught_is_excluded_and_the_programs_are_not() {
+        // Found in the 2026-10-31 AntiCheatExpert cycle, whose windows lasted
+        // minutes: saved credentials, the identity cache, a Google account's
+        // identifier as a folder name, and the packaged Claude app's sessions.
+        for path in [
+            "C:\\Users\\x\\AppData\\Local\\Microsoft\\Credentials\\0123456789ABCDEF0123456789ABCDEF",
+            "C:\\Users\\x\\AppData\\Roaming\\Microsoft\\Credentials\\0123456789ABCDEF0123456789ABCDEF",
+            "C:\\Users\\x\\AppData\\Local\\Microsoft\\IdentityCache\\1\\UD\\x",
+            "C:\\Users\\x\\AppData\\Local\\Google\\DriveFS\\123456789012345678901\\account_settings",
+            "C:\\Users\\x\\AppData\\Local\\Google\\DriveFS\\Logs\\drive_fs.txt",
+            "C:\\Users\\x\\AppData\\Local\\Claude-Data\\claude_x\\claude-code-sessions\\a\\b.json",
+            "C:\\Users\\x\\AppData\\Local\\Claude-Data\\claude_x\\git-worktrees.json",
+        ] {
+            assert!(is_excluded(Path::new(path)), "{path} must not be walked");
+        }
+        // The programs themselves are footprint like any other.
+        for path in [
+            "C:\\Program Files\\Google\\Drive File Stream\\1.0.0.0\\GoogleDriveFS.exe",
+            "C:\\Users\\x\\AppData\\Local\\Google\\Update\\GoogleUpdate.exe",
+            "C:\\Users\\x\\AppData\\Local\\Microsoft\\WindowsApps\\x.exe",
         ] {
             assert!(
                 !is_excluded(Path::new(path)),
