@@ -54,6 +54,21 @@ whatever the catalog lists. The first `wardsweep scan` of a machine with ACE
 installed, on 2026-10-30, called ACE's driver `suspicious` until this rule
 existed.
 
+**An unelevated audit can end with nothing confirmed.** On 2026-10-31,
+Arknights: Endfield installed ACE 29.6, and an audit of that install with the
+committed drafts found 17 artifacts. Every one was `probable`, and none was
+`confirmed`. Three things block confirmation:
+- ACE 29.6's service admits only SYSTEM and Administrators, so the unelevated
+  audit cannot read its configuration. The service is reported unreadable,
+  never absent, and its key is still found.
+- Its drivers carry the attestation signature.
+- The images of its per-title core drivers are absent while no game runs.
+
+The executable that does name the vendor sits in ACE's own folder.
+Confirmation would have to come from a signature check there, and the
+filesystem walk that would do it is not built
+(`observations/2026-10-31-anticheatexpert/notes.md`).
+
 ## Aho–Corasick single pass
 
 All path fragments and registry value patterns across all catalog entries are

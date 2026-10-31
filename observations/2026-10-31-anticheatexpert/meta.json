@@ -1,0 +1,213 @@
+{
+  "observation_id": "2026-10-31-anticheatexpert",
+  "date": "2026-10-31",
+  "kind": "install-uninstall-and-intersection",
+  "note": "Third observation of ACE. Stella Sora ran on an installed ACE 28.6 and changed nothing of it; ACE's own uninstaller removed 28.6 and left nothing of its own; Arknights: Endfield then installed ACE 29.6 on a machine without ACE. That footprint, intersected with the 2026-10-10 Wuthering Waves footprint, is the first shared footprint computed from real data.",
+  "anticheat": {
+    "display": "AntiCheatExpert",
+    "vendor_cn": "ACEVILLE PTE LTD",
+    "version_removed": "28.6.2606.970",
+    "version_installed": "29.6.2608.998",
+    "version_note": "From the uninstall entry's DisplayVersion. The 2026-10-10 observation saw 28.6.2606.970 installed by Wuthering Waves, August's 28.0.2604.938.",
+    "driver_signer": "Microsoft Windows Hardware Compatibility Publisher",
+    "driver_signer_note": "Attestation-signed, as before. ACE-Service64.exe and Uninstaller.exe carry ACEVILLE PTE LTD."
+  },
+  "referencing_games": {
+    "carrying_an_ace_payload": [
+      {
+        "title": "Wuthering Waves",
+        "launcher": "steam",
+        "steam_appid": 3513350,
+        "path": "D:/SteamLibrary/steamapps/common/Wuthering Waves",
+        "ace_setup_version": "28.5.2606.276",
+        "ace_title_id": "6095005",
+        "pld_dat": "110,494 bytes, written 2026-10-10 03:27:10Z, six seconds after the install the 2026-10-10 observation recorded"
+      },
+      {
+        "title": "NTE: Neverness to Everness",
+        "launcher": "steam",
+        "steam_appid": 4508340,
+        "path": "D:/SteamLibrary/steamapps/common/Neverness to Everness",
+        "ace_setup_version": "18.4.2501.194",
+        "pld_dat": null,
+        "note": "Ran on an installed ACE 28.6 on 2026-10-10 and changed nothing of it."
+      },
+      {
+        "title": "Stella Sora",
+        "launcher": "steam",
+        "steam_appid": 4813850,
+        "path": "D:/SteamLibrary/steamapps/common/Stella Sora",
+        "ace_setup_version": "18.4.2501.194",
+        "pld_dat": null,
+        "note": "Its payload shares ACE-Setup64.exe, ACE-Service64.exe and ACE-BASE.sys with NTE's byte for byte. Ran past login on an installed ACE 28.6 in this cycle and changed nothing of it."
+      },
+      {
+        "title": "Arknights: Endfield",
+        "launcher": "steam",
+        "steam_appid": 4732690,
+        "path": "D:/SteamLibrary/steamapps/common/Arknights Endfield",
+        "ace_setup_version": "29.6.2608.292",
+        "ace_title_id": "24303",
+        "pld_dat": "7,209 bytes, written 2026-10-31 11:20:15Z, three seconds after the last of its installs",
+        "note": "Installed ACE 29.6 in this cycle."
+      }
+    ],
+    "refcount_at_observation": "four titles carry ACE; two have installed it here (Wuthering Waves, Arknights: Endfield)",
+    "vendor_record": "The uninstall entry names the installing title's ACE-Setup64.exe as its icon. pld.dat in a title's own ACE folder marks the titles that installed ACE; the per-title id is in the core drivers' names."
+  },
+  "machine": {
+    "os": "Windows 11 Pro 10.0.29648",
+    "note": "One boot (started 2026-10-31 08:34:33Z), four snapshots between 11:04 and 11:33Z, elevated. Steam, the EA app and the usual background applications were running."
+  },
+  "harness": {
+    "version": "0.0.1",
+    "collector": "wardsweep-observe-snapshot.exe, pinned for the cycle, built from c3e1532, SHA-256 prefix 455b80349571402a",
+    "domains_captured": [
+      "services",
+      "filesystem",
+      "registry"
+    ],
+    "domains_not_captured": [
+      "scheduled_tasks",
+      "firewall",
+      "event_sources",
+      "environment"
+    ],
+    "diff_format": 2,
+    "snapshot_format": 2,
+    "filesystem_roots_note": "The walk covers Program Files, ProgramData, the profile's AppData, System32/drivers and the Steam library on D: the launcher names.",
+    "note": "Diffed, redacted, intersected and drafted by the build with this cycle's harness fixes. rebooted_between is false for both committed diffs."
+  },
+  "snapshots": {
+    "00-ace-installed": "2026-10-31T11:04:14Z; ACE 28.6 installed by Wuthering Waves, stopped; no game running",
+    "01-after-stella-sora": "2026-10-31T11:12:13Z; after Stella Sora's first launch, played past login, closed; diff 00->01 holds nothing of ACE's and is kept locally",
+    "02-after-ace-uninstall": "2026-10-31T11:16:30Z; after ACE's own Uninstaller.exe; the after side of residue.json and the before side of install.json",
+    "03-after-endfield": "2026-10-31T11:29:14Z; after Arknights: Endfield's first launch, played past login, closed",
+    "storage": "%LOCALAPPDATA%/WardSweep/observations/2026-10-30-ace/ - raw snapshots are NOT committed"
+  },
+  "second_title": {
+    "title": "Stella Sora",
+    "diff": "00->01, not committed",
+    "result": "Nothing of ACE's changed: no service, file, key or empty key; every installed file kept its hash and write time; no SCM install event; no pld.dat.",
+    "not_committed_because": "Nothing in it is ACE's, and it carries the game's settings key, whose value names begin with the player's account number."
+  },
+  "uninstall": {
+    "ran": "C:/Program Files/AntiCheatExpert/Uninstaller.exe, a byte copy of Wuthering Waves' ACE-Setup64.exe",
+    "by": "the maintainer, with no game running",
+    "scm_events": "none: the System log has no Service Control Manager event between 11:15:16Z and 11:16:30Z. On 2026-10-10 the uninstaller logged 7045 for both services first.",
+    "removed": {
+      "services": [
+        "AntiCheatExpert Protection",
+        "ACE-BASE"
+      ],
+      "registry_keys": [
+        "HKLM/SYSTEM/CurrentControlSet/Services/ACE-BASE with Final (both WOW64 views)",
+        "HKLM/SYSTEM/CurrentControlSet/Services/AntiCheatExpert Protection with Security (both WOW64 views)",
+        "HKLM/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall/AntiCheatExpert (64-bit view)",
+        "HKCU/SOFTWARE/appdatalow/AntiCheatExpert/{4324E6D9-BA90-499E-9B3A-A7DAB216C94E}/Tencent (both WOW64 views)",
+        "HKCU/SOFTWARE/appdatalow/AntiCheatExpert/{F63EEEBB-2033-42E2-818E-2126FDEB47C4}/Tencent/6095005 (both WOW64 views)"
+      ],
+      "empty_keys": [
+        "HKCU/SOFTWARE/appdatalow/AntiCheatExpert/CrashDumps",
+        "HKCU/SOFTWARE/appdatalow/AntiCheatExpert/{5FCF1253-B4BF-4F83-A7C7-86C124F2DF16}",
+        "HKCU/SOFTWARE/appdatalow/software"
+      ],
+      "files": "all seven: five under C:/Program Files/AntiCheatExpert, ace-drc.dat, and System32/drivers/ACE-BASE.sys; both directories too"
+    },
+    "left_behind": {
+      "by_the_anticheat": [],
+      "note": "Nothing, for the third time. HKCU/SOFTWARE/appdatalow is left standing and empty, as on 2026-10-10, where it was shown to predate ACE's install."
+    }
+  },
+  "install": {
+    "trigger": "Arknights: Endfield's first launch. SCM install events: AntiCheatExpert Protection at 11:20:09.997Z by the signed-in account, ACE-CORE1024303 at 11:20:10.086Z and ACE-CORE2024303 at 11:20:10.173Z by SYSTEM, ACE-ADVT at 11:20:12.931Z by the signed-in account. The core drivers' display names carried the id 24303 at install.",
+    "installed": {
+      "services": {
+        "AntiCheatExpert Protection": "win32_own_process | interactive_process, demand, \"C:/Program Files/AntiCheatExpert/ACE-Service64.exe\" -autorun",
+        "ACE-ADVT": "kernel_driver, demand, \\??\\C:/WINDOWS/system32/drivers/ACE-ADVT.sys",
+        "ACE-CORE1024303": "kernel_driver, demand, \\??\\C:/Program Files/AntiCheatExpert/ACE-CORE1024303.sys, image absent with the game closed",
+        "ACE-CORE2024303": "kernel_driver, demand, \\??\\C:/Program Files/AntiCheatExpert/ACE-CORE2024303.sys, image absent with the game closed"
+      },
+      "registry_keys": [
+        "HKLM/SYSTEM/CurrentControlSet/Services/AntiCheatExpert Protection with Security (both WOW64 views)",
+        "HKLM/SYSTEM/CurrentControlSet/Services/ACE-ADVT (both WOW64 views)",
+        "HKLM/SYSTEM/CurrentControlSet/Services/ACE-CORE1024303 (both WOW64 views)",
+        "HKLM/SYSTEM/CurrentControlSet/Services/ACE-CORE2024303 (both WOW64 views)",
+        "HKLM/SOFTWARE/Microsoft/Windows/CurrentVersion/Uninstall/AntiCheatExpert (64-bit view)",
+        "HKCU/SOFTWARE/appdatalow/AntiCheatExpert/{D15B7548-72D6-4BF4-93E7-98A44949A3BC}/Tencent (both WOW64 views)"
+      ],
+      "empty_keys": [
+        "HKCU/SOFTWARE/appdatalow/AntiCheatExpert/CrashDumps",
+        "HKCU/SOFTWARE/appdatalow/AntiCheatExpert/{F39D31EB-2022-4991-BF7E-699B9D823901}",
+        "HKCU/SOFTWARE/appdatalow/software"
+      ],
+      "files": [
+        "C:/Program Files/AntiCheatExpert/ACE-BASE.sys",
+        "C:/Program Files/AntiCheatExpert/ACE-Service64.exe",
+        "C:/Program Files/AntiCheatExpert/Uninstaller.exe",
+        "C:/ProgramData/AntiCheatExpert/ace-drc.dat",
+        "C:/WINDOWS/System32/drivers/ACE-ADVT.sys"
+      ],
+      "in_the_game_folder": "AntiCheatExpert/pld.dat, 7,209 bytes, unsigned",
+      "copies_note": "ACE-BASE.sys, ACE-Service64.exe and Uninstaller.exe are byte copies of Endfield's payload, the last of its ACE-Setup64.exe. ACE-ADVT.sys and ace-drc.dat match no file in any of the four titles' payloads."
+    },
+    "versus_28_6": "28.6 registered ACE-BASE in System32/drivers and kept its core drivers as unregistered files; 29.6 registers ACE-ADVT and the core pair, keeps ACE-BASE.sys unregistered in Program Files, writes no Tencent/<id> key and no ACE-BASE/Final, and gives its service a descriptor that admits only SYSTEM and Administrators where 28.6's let anyone start, stop or delete it.",
+    "runtime_state": "With the game closed: ACE-ADVT and both core drivers stopped, the core images absent, and AntiCheatExpert Protection refusing an unelevated query."
+  },
+  "shared": {
+    "file": "shared.json",
+    "command": "intersect --diff observations/2026-10-10-anticheatexpert/install.json --diff install.json",
+    "ace_part": "The service AntiCheatExpert Protection and its key (both views), the uninstall entry (64-bit view), ACE-BASE.sys, ACE-Service64.exe and Uninstaller.exe in C:/Program Files/AntiCheatExpert, ace-drc.dat, and the empty CrashDumps and appdatalow/software keys. No kernel driver service is in both.",
+    "churn": "33 files and 37 keys both windows changed: Steam's logs, browser beacons, Windows notification and update state.",
+    "coverage_gap": "AntiCheatExpert Protection/Security is in Endfield's footprint but was unreadable on 2026-10-10, so the intersection cannot show it.",
+    "suggest_on_it": "service AntiCheatExpert Protection, driver ACE-BASE.sys, both folders, the uninstall entry and the service key"
+  },
+  "privacy": {
+    "harness_fixes_prompted": [
+      "Credential Manager's saved credentials and Windows' identity cache",
+      "Google Drive for desktop's folder, named after the account's identifier",
+      "the packaged Claude app's data folder",
+      "a game SDK's per-install identifier, HKCU/SOFTWARE/Gryphline/sdk_data",
+      "the account's, character's and a session's identifiers in Endfield's settings key, under Unity's hashed value names"
+    ],
+    "removed_by_policy": {
+      "install": {
+        "registry_records": 2,
+        "file_records": 92518
+      },
+      "residue": {
+        "registry_records": 0,
+        "file_records": 92518
+      }
+    },
+    "redacted": {
+      "install": {
+        "account_names": 276,
+        "machine_sids": 6,
+        "identifiers": 22
+      },
+      "residue": {
+        "account_names": 31,
+        "machine_sids": 7,
+        "identifiers": 3
+      },
+      "identifiers_supplied_with_also_id": 1,
+      "also_id_note": "An application folder named after a developer account."
+    },
+    "review_left_as_read": "Unix timestamps in Endfield's crash-report names; content hashes in shader caches, Endfield's resource store and a driver package; Windows Spotlight's cache ids in unreadable keys; ACE's per-user GUIDs, which August's diff already held; a container layer's GUID."
+  },
+  "draft": {
+    "file": "draft.toml",
+    "derived_from": "install.json",
+    "command": "suggest --signer \"ACEVILLE PTE LTD\"",
+    "status": "hypothesis, not an entry; id and display are placeholders; the core pair is named by this title's id",
+    "attribution_note": "ACE-ADVT is left out: nothing in the diff ties it to the publisher. It was installed three seconds after AntiCheatExpert Protection by the same account, and August saw it beside ACE 28.0. The 182 files in Endfield's own folder are the game's."
+  },
+  "still_to_do": [
+    "Launch Wuthering Waves on the installed ACE 29.6: whether a second title that engages ACE adds its own core pair, replaces the install, or leaves it alone.",
+    "Run 29.6's own uninstaller and take its residue.",
+    "Launch Stella Sora on a machine without ACE: whether a title carrying 18.4 installs ACE at all.",
+    "Per-title names now cover services as well as driver files: a schema decision for the maintainer (docs/04).",
+    "signtool verify /v /pa output for every binary, in the PR that adds the catalog entry."
+  ]
+}

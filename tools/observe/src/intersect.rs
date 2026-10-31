@@ -601,4 +601,45 @@ mod tests {
         );
         assert_eq!(unknown.emptied_directories, None);
     }
+
+    /// The first intersection of real footprints: ACE as Wuthering Waves
+    /// installed it on 2026-10-10, and as Arknights: Endfield did on 2026-10-31.
+    const ACE_SHARED: &str =
+        include_str!("../../../observations/2026-10-31-anticheatexpert/shared.json");
+
+    #[test]
+    fn the_committed_shared_ace_footprint_is_the_intersection_of_its_two_committed_footprints() {
+        // A committed intersection nobody can rebuild is an assertion, not
+        // evidence: a change to the matching or the policy that alters it
+        // fails here, where it has to be explained.
+        let footprints = [
+            include_str!("../../../observations/2026-10-10-anticheatexpert/install.json"),
+            include_str!("../../../observations/2026-10-31-anticheatexpert/install.json"),
+        ]
+        .map(|text| serde_json::from_str::<Diff>(text).expect("a committed footprint parses"));
+
+        let shared = intersect(footprints.to_vec()).expect("the footprints intersect");
+
+        let committed: serde_json::Value =
+            serde_json::from_str(ACE_SHARED).expect("the committed intersection parses");
+        assert_eq!(
+            serde_json::to_value(&shared).expect("the intersection serialises"),
+            committed
+        );
+        // What it is evidence of: the service and the folder every observed
+        // install had, and no kernel driver service, since the drivers changed
+        // between the two versions.
+        let services: Vec<&str> = shared
+            .services
+            .iter()
+            .map(|change| change.name.as_str())
+            .collect();
+        assert_eq!(services, ["AntiCheatExpert Protection"]);
+        assert!(
+            shared
+                .files
+                .iter()
+                .any(|change| change.path == r"C:\Program Files\AntiCheatExpert\ACE-Service64.exe")
+        );
+    }
 }

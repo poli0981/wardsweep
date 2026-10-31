@@ -277,6 +277,22 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
   own, no empty key or directory included. Before removing the two services it
   installed them again, so an SCM install event alone overstates ACE installs. `docs/16` and the snapshot model now say which roots are walked: a
   launcher library on another volume is not.
+- `observations/2026-10-31-anticheatexpert/`: ACE under two more titles, and
+  its first shared footprint. The cycle had three steps:
+  - Stella Sora, which carries ACE 18.4 as NTE does, ran on the installed ACE
+    28.6 and changed nothing of it.
+  - ACE's own uninstaller removed 28.6 and left nothing of its own, a third
+    time. This time it logged no SCM events.
+  - Arknights: Endfield installed ACE 29.6 on a machine without ACE.
+
+  29.6 registers `ACE-ADVT`, plus a core pair as services named after the
+  title's id. The core images are absent while the game is closed, and the
+  service refuses an unelevated query. `shared.json` is the first intersection
+  of real footprints, this one with Wuthering Waves'. The service, the folders
+  and the uninstall entry are shared, and no kernel driver is, since the two
+  versions register different ones. Tests pin the draft and the intersection
+  to the committed diffs. `docs/05` records that an unelevated audit of this
+  install can confirm nothing.
 - `docs/05` §"Not SCM alone": a driver whose key was written without SCM is
   invisible to `EnumServicesStatusExW`: a complete key until the next boot, an
   incomplete one for good. So detection reads the `Services` key as well,

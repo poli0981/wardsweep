@@ -1,0 +1,4382 @@
+{
+  "format_version": 2,
+  "snapshot_format_version": 2,
+  "before_taken_utc": "2026-10-31T11:12:13.453Z",
+  "after_taken_utc": "2026-10-31T11:16:30.579Z",
+  "rebooted_between": false,
+  "emptied_directories": [],
+  "emptied_keys": [
+    {
+      "key": "HKCU\\SOFTWARE\\appdatalow",
+      "view": "32"
+    },
+    {
+      "key": "HKCU\\SOFTWARE\\appdatalow",
+      "view": "64"
+    }
+  ],
+  "formerly_empty_directories": [],
+  "formerly_empty_keys": [
+    {
+      "key": "HKCU\\SOFTWARE\\appdatalow\\AntiCheatExpert\\CrashDumps",
+      "view": "32"
+    },
+    {
+      "key": "HKCU\\SOFTWARE\\appdatalow\\AntiCheatExpert\\CrashDumps",
+      "view": "64"
+    },
+    {
+      "key": "HKCU\\SOFTWARE\\appdatalow\\AntiCheatExpert\\{5FCF1253-B4BF-4F83-A7C7-86C124F2DF16}",
+      "view": "32"
+    },
+    {
+      "key": "HKCU\\SOFTWARE\\appdatalow\\AntiCheatExpert\\{5FCF1253-B4BF-4F83-A7C7-86C124F2DF16}",
+      "view": "64"
+    },
+    {
+      "key": "HKCU\\SOFTWARE\\appdatalow\\software",
+      "view": "32"
+    },
+    {
+      "key": "HKCU\\SOFTWARE\\appdatalow\\software",
+      "view": "64"
+    }
+  ],
+  "coverage": {
+    "captured": [
+      "services",
+      "filesystem",
+      "registry"
+    ],
+    "not_captured": [
+      "scheduled_tasks",
+      "firewall",
+      "event_sources",
+      "environment"
+    ],
+    "access_denied": [
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\DevDiv\\Installation :: DriveSerialNumber [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\DevDiv\\Installation :: DriveSerialNumber [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\DevDiv\\Installation :: MachineGuid [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\DevDiv\\Installation :: MachineGuid [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\DeveloperTools\\HardwareCache :: HardDriveSerialNumber [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\DeveloperTools\\HardwareCache :: HardDriveSerialNumber [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\DeveloperTools\\HardwareCache :: MachineGuid [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\DeveloperTools\\HardwareCache :: MachineGuid [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows Media\\WMSDK\\General :: ComputerName [view 32]",
+        "reason": "refused: personal identity"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows Media\\WMSDK\\General :: ComputerName [view 64]",
+        "reason": "refused: personal identity"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows Media\\WMSDK\\General :: VolumeSerialNumber [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows Media\\WMSDK\\General :: VolumeSerialNumber [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService :: LastContext [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService :: LastContext [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\10120268570420524660 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\10120268570420524660 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\10157984818634704979 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\10157984818634704979 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\10297838556664280798 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\10297838556664280798 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\10303970720532582497 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\10303970720532582497 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\10859116634547247836 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\10859116634547247836 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\10889162891948041063 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\10889162891948041063 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\11160385243561148598 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\11160385243561148598 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\11242659731537639256 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\11242659731537639256 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\11242659731537639259 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\11242659731537639259 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\11420394712430214874 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\11420394712430214874 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\11943956542099001593 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\11943956542099001593 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\11981672790313181912 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\11981672790313181912 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\12728969110356673896 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\12728969110356673896 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\1355105558750988509 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\1355105558750988509 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\14169926214830371153 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\14169926214830371153 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\15129677801460420616 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\15129677801460420616 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\15573058690584824613 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\15573058690584824613 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\16784818665028430733 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\16784818665028430733 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\16855605505016129116 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\16855605505016129116 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\17285453423671212847 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\17285453423671212847 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\17379167334684915835 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\17379167334684915835 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\17416883582899096154 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\17416883582899096154 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\17760795462156456772 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\17760795462156456772 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\17940445412567882873 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\17940445412567882873 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\17978161660782063192 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\17978161660782063192 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\18136624213659663389 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\18136624213659663389 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\18322073540039423810 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\18322073540039423810 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\1916383636633955547 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\1916383636633955547 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\2072889666551063110 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\2072889666551063110 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\2260478792045084133 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\2260478792045084133 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\2450846996897724231 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\2450846996897724231 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\2477661714516922585 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\2477661714516922585 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\3001223544185709304 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\3001223544185709304 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\3038939792399889623 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\3038939792399889623 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\4070485571684232443 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\4070485571684232443 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\436607544212839232 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\436607544212839232 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\4427782537377492849 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\4427782537377492849 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\4978608375473838129 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\4978608375473838129 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\54979416741298295 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\54979416741298295 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\6103336960182610121 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\6103336960182610121 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\616257494624265333 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\616257494624265333 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\6233953745116679616 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\6233953745116679616 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\653973742838445652 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\653973742838445652 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\6701125436502984564 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\6701125436502984564 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\6755535454575868149 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\6755535454575868149 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\6866868998749889846 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\6866868998749889846 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\7875156258888656508 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\7875156258888656508 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\7912872507102836827 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\7912872507102836827 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\793827480868021471 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\793827480868021471 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\831543729082201790 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\831543729082201790 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\8436434336771623546 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\8436434336771623546 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\8474150584985803865 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\8474150584985803865 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\8818062464243164483 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\8818062464243164483 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\8997712414654590584 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\8997712414654590584 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\9035428662868770903 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\9035428662868770903 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\92695664955478614 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\92695664955478614 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\9379340542126131521 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\9379340542126131521 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\9558990492537557622 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\9558990492537557622 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\9596706740751737941 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\9596706740751737941 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\9607132249985596105 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\9607132249985596105 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\9736560478781313760 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\9736560478781313760 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\9774276726995494079 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\9774276726995494079 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\9940618620009098559 :: RequestUri [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Cache\\9940618620009098559 :: RequestUri [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Providers\\CTAC :: Attributes [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Providers\\CTAC :: Attributes [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Valve\\Steam :: AutoLoginUser [view 32]",
+        "reason": "refused: personal identity"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Valve\\Steam :: AutoLoginUser [view 64]",
+        "reason": "refused: personal identity"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Valve\\Steam\\ActiveProcess :: ActiveUser [view 32]",
+        "reason": "refused: personal identity"
+      },
+      {
+        "domain": "registry",
+        "item": "HKCU\\SOFTWARE\\Valve\\Steam\\ActiveProcess :: ActiveUser [view 64]",
+        "reason": "refused: personal identity"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\EAPSIMMethods\\18\\FastReauthContext [view 32]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\EAPSIMMethods\\18\\FastReauthContext [view 64]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\EAPSIMMethods\\23\\FastReauthContext [view 32]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\EAPSIMMethods\\23\\FastReauthContext [view 64]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\EAPSIMMethods\\50\\FastReauthContext [view 32]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\EAPSIMMethods\\50\\FastReauthContext [view 64]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\Wbem\\WDM :: C:\\WINDOWS\\System32\\drivers\\mssmbios.sys[MofResource] [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\Wbem\\WDM\\DREDGE :: C:\\WINDOWS\\System32\\drivers\\mssmbios.sys[MofResource] [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\WcmSvc\\wifinetworkmanager\\SharedProfiles [view 64]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\Windows Defender\\Exclusions [view 64]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\Windows Defender\\Windows Defender Exploit Guard\\ASR\\ASROnlyExclusions [view 64]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\Windows Defender\\Windows Defender Exploit Guard\\ASR\\ASROnlyPerRuleExclusions [view 64]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\Windows Defender\\Windows Defender Exploit Guard\\Controlled Folder Access\\AllowedApplications [view 64]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion :: RegisteredOwner [view 32]",
+        "reason": "refused: personal identity"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion :: RegisteredOwner [view 64]",
+        "reason": "refused: personal identity"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\SPP\\Clients :: {09F7EDC5-294E-4180-AF6A-FB0E6A0E9513} [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Update\\TargetingInfo\\DynamicInstalled\\{0b798fd0-a83c-53d1-84ed-f8ab5a006984}_amd64 :: Source [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Update\\TargetingInfo\\DynamicInstalled\\{16a6af80-1efe-5445-9999-134a639093f6}_amd64 :: Source [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Update\\TargetingInfo\\DynamicInstalled\\{1b9750d3-b723-5d57-b168-91f9ff48a22b}_amd64 :: Source [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Update\\TargetingInfo\\DynamicInstalled\\{21ee3552-c5f7-5c10-b2af-1036109cd7c4}_amd64 :: Source [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Update\\TargetingInfo\\DynamicInstalled\\{33b401c2-d232-5ef4-a240-2a7bbcdeb439}_amd64 :: Source [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Update\\TargetingInfo\\DynamicInstalled\\{345c8ace-168a-5c76-805b-8ac55d8484f3}_amd64 :: Source [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Update\\TargetingInfo\\DynamicInstalled\\{3d0f730f-bd11-55d7-bf61-5a35d4a55ee7}_amd64 :: Source [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Update\\TargetingInfo\\DynamicInstalled\\{3d14deec-942f-5a14-959c-6a99be394546}_amd64 :: Source [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Update\\TargetingInfo\\DynamicInstalled\\{49e361f7-fddf-52e5-aafc-8f9a021347aa}_amd64 :: Source [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Update\\TargetingInfo\\DynamicInstalled\\{85901b68-3535-52e2-8bc2-e0bcf902a095}_amd64 :: Source [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Update\\TargetingInfo\\DynamicInstalled\\{9c733b46-a3a3-5121-b212-6ddbc2923f23}_amd64 :: Source [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Update\\TargetingInfo\\DynamicInstalled\\{e3df2f87-3b36-5808-ae6c-ef3838be6f34}_amd64 :: Source [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Virtualization :: MaximumMacAddress [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Virtualization :: MinimumMacAddress [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Virtualization\\Worker :: CurrentMacAddress [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\AppModel\\CloudExtensions [view 32]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\AppModel\\CloudExtensions [view 64]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\AppModel\\StateRepository\\Cache\\PackageFamily\\Data\\31 :: Publisher [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\AppModel\\StateRepository\\Cache\\PackageFamily\\Data\\82 :: Publisher [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\AppModel\\StateRepository\\Cache\\PackageFamily\\Data\\84 :: Publisher [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Appx\\PackageVolumes\\2 :: Name [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Bluetooth\\Gatt [view 64]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Bluetooth\\LooselyCoupledDevices [view 64]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\OOBE\\SystemProtected [view 64]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\SecondaryAuthFactor [view 64]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Setup\\PnpLockdownFiles\\%SystemRoot%/System32/drivers/mssmbios.sys :: Owners [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Setup\\PnpLockdownFiles\\%SystemRoot%/System32/drivers/mssmbios.sys :: Owners [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Setup\\PnpLockdownFiles\\%SystemRoot%/System32/drivers/mssmbios.sys :: Source [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Setup\\PnpLockdownFiles\\%SystemRoot%/System32/drivers/mssmbios.sys :: Source [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\WTDS\\Components [view 64]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\WwanSvc\\DMProfiles [view 64]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\WwanSvc\\Profiles [view 64]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Microsoft\\WwanSvc\\Security [view 64]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Advanced Threat Protection\\Task [view 32]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Advanced Threat Protection\\Task [view 64]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Policy Manager [view 32]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Policy Manager [view 64]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\ADOVMPPackage\\Final [view 32]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\ADOVMPPackage\\Final [view 64]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\DeviceAssociationService\\State\\Store\\Bluetooth#Bluetooth50:ee:32:8d:26:dd-08:ff:44:21:bb:10\\Properties [view 32]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\DeviceAssociationService\\State\\Store\\Bluetooth#Bluetooth50:ee:32:8d:26:dd-08:ff:44:21:bb:10\\Properties [view 64]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\DeviceAssociationService\\State\\Store\\Bluetooth#Bluetooth50:ee:32:8d:26:dd-10:b5:88:7a:64:45\\Properties [view 32]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\DeviceAssociationService\\State\\Store\\Bluetooth#Bluetooth50:ee:32:8d:26:dd-10:b5:88:7a:64:45\\Properties [view 64]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\DeviceAssociationService\\State\\Store\\Bluetooth#Bluetooth50:ee:32:8d:26:dd-90:b6:85:0f:68:cd\\Properties [view 32]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\DeviceAssociationService\\State\\Store\\Bluetooth#Bluetooth50:ee:32:8d:26:dd-90:b6:85:0f:68:cd\\Properties [view 64]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\DeviceAssociationService\\State\\Store\\BluetoothLE#BluetoothLE50:ee:32:8d:26:dd-40:8e:2c:2c:a5:98\\Properties [view 32]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\DeviceAssociationService\\State\\Store\\BluetoothLE#BluetoothLE50:ee:32:8d:26:dd-40:8e:2c:2c:a5:98\\Properties [view 64]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\DeviceAssociationService\\State\\Store\\BluetoothLE#BluetoothLE50:ee:32:8d:26:dd-da:fb:30:62:42:c7\\Properties [view 32]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\DeviceAssociationService\\State\\Store\\BluetoothLE#BluetoothLE50:ee:32:8d:26:dd-da:fb:30:62:42:c7\\Properties [view 64]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\ExecutionContext\\Parameters\\Reserved\\ExecutionContextProfiles\\Balanced [view 32]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\ExecutionContext\\Parameters\\Reserved\\ExecutionContextProfiles\\Balanced [view 64]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\NDIS\\Parameters\\Reserved [view 32]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\NDIS\\Parameters\\Reserved [view 64]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\PolicyAgent\\Parameters\\Cache [view 32]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\PolicyAgent\\Parameters\\Cache [view 64]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip6\\Parameters :: Dhcpv6DUID [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip6\\Parameters :: Dhcpv6DUID [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters :: Hostname [view 32]",
+        "reason": "refused: personal identity"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters :: Hostname [view 64]",
+        "reason": "refused: personal identity"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters :: NV Hostname [view 32]",
+        "reason": "refused: personal identity"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters :: NV Hostname [view 64]",
+        "reason": "refused: personal identity"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces\\{f6471695-66cc-494f-bc8b-8c7657ac0e90} :: DhcpGatewayHardware [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces\\{f6471695-66cc-494f-bc8b-8c7657ac0e90} :: DhcpGatewayHardware [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces\\{f6471695-66cc-494f-bc8b-8c7657ac0e90} :: DhcpGatewayHardwareCount [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces\\{f6471695-66cc-494f-bc8b-8c7657ac0e90} :: DhcpGatewayHardwareCount [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces\\{f6471695-66cc-494f-bc8b-8c7657ac0e90} :: DhcpInterfaceOptions [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces\\{f6471695-66cc-494f-bc8b-8c7657ac0e90} :: DhcpInterfaceOptions [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}Activate (Enter) [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}Activate (Enter) [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}Activate (Leave) [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}Activate (Leave) [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}ActivateLoop (Enter) [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}ActivateLoop (Enter) [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}ActivateLoop (Leave) [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}ActivateLoop (Leave) [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}AdjustBitmap (Enter) [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}AdjustBitmap (Enter) [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}AdjustBitmap (Leave) [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}AdjustBitmap (Leave) [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}ComputeIgnorableProduct (Enter) [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}ComputeIgnorableProduct (Enter) [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}ComputeIgnorableProduct (Leave) [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}ComputeIgnorableProduct (Leave) [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}DeleteProcess (Enter) [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}DeleteProcess (Enter) [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}DeleteProcess (Leave) [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}DeleteProcess (Leave) [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}DiscoverSnapshots (Enter) [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}DiscoverSnapshots (Enter) [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}DiscoverSnapshots (Leave) [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}DiscoverSnapshots (Leave) [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}EndCommit (Enter) [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}EndCommit (Enter) [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}EndCommit (Leave) [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}EndCommit (Leave) [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}PreExposure (Enter) [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}PreExposure (Enter) [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}PreExposure (Leave) [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}PreExposure (Leave) [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}PrepareForSnapshot (Enter) [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}PrepareForSnapshot (Enter) [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}PrepareForSnapshot (Leave) [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}PrepareForSnapshot (Leave) [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}SetIgnorable (Enter) [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}SetIgnorable (Enter) [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}SetIgnorable (Leave) [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}SetIgnorable (Leave) [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}ValidateDiffAreaFiles (Enter) [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}ValidateDiffAreaFiles (Enter) [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}ValidateDiffAreaFiles (Leave) [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\VSS\\Diag\\VolSnap :: Volume{9683d2bb-d80b-46df-b032-e89760a6b1ce}ValidateDiffAreaFiles (Leave) [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\WbioSrvc\\Service Providers\\Bootstrap\\Virtual Sensors\\{0527b250-7514-4321-8b68-41c65f956998} :: SerialNumber [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\WbioSrvc\\Service Providers\\Bootstrap\\Virtual Sensors\\{0527b250-7514-4321-8b68-41c65f956998} :: SerialNumber [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\WbioSrvc\\Service Providers\\Voice\\Virtual Sensors\\{F25AB4A2-593A-4A89-B9FF-8144BEA81E15} :: SerialNumber [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\WbioSrvc\\Service Providers\\Voice\\Virtual Sensors\\{F25AB4A2-593A-4A89-B9FF-8144BEA81E15} :: SerialNumber [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\mpssvc\\Parameters\\AppCs [view 32]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\mpssvc\\Parameters\\AppCs [view 64]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\mpssvc\\Parameters\\PortKeywords\\DHCP [view 32]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\mpssvc\\Parameters\\PortKeywords\\DHCP [view 64]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\mpssvc\\Parameters\\PortKeywords\\IPTLSIn [view 32]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\mpssvc\\Parameters\\PortKeywords\\IPTLSIn [view 64]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\mpssvc\\Parameters\\PortKeywords\\IPTLSOut [view 32]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\mpssvc\\Parameters\\PortKeywords\\IPTLSOut [view 64]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\mpssvc\\Parameters\\PortKeywords\\RPC-EPMap [view 32]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\mpssvc\\Parameters\\PortKeywords\\RPC-EPMap [view 64]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\mpssvc\\Parameters\\PortKeywords\\Teredo [view 32]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\mpssvc\\Parameters\\PortKeywords\\Teredo [view 64]",
+        "reason": "RegOpenKeyExW returned 5"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\mssmbios :: DisplayName [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\mssmbios :: DisplayName [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\mssmbios :: ImagePath [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\mssmbios :: ImagePath [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\mssmbios :: Owners [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\mssmbios :: Owners [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\mssmbios\\Data :: SMBiosData [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\mssmbios\\Data :: SMBiosData [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\vmsmp\\parameters\\NicList\\C08CB7B8-9B3C-408E-8E30-5E16A3AEB445 :: CurrentMacAddress [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\vmsmp\\parameters\\NicList\\C08CB7B8-9B3C-408E-8E30-5E16A3AEB445 :: CurrentMacAddress [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\vmsmp\\parameters\\NicList\\C08CB7B8-9B3C-408E-8E30-5E16A3AEB445 :: PermanentMacAddress [view 32]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "registry",
+        "item": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\vmsmp\\parameters\\NicList\\C08CB7B8-9B3C-408E-8E30-5E16A3AEB445 :: PermanentMacAddress [view 64]",
+        "reason": "refused by Safety Gate G3 (hardware identity)"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files (x86)\\Common Files\\Oracle\\Java\\java8path",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files (x86)\\WinFsp\\bin",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files\\Electronic Arts\\EA Desktop\\EA Desktop",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files\\Java\\latest\\jre-1.8",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files\\Microsoft Office\\root\\Client\\AppvIsvSubsystems32.dll",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files\\Microsoft Office\\root\\Client\\AppvIsvSubsystems64.dll",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files\\Microsoft Office\\root\\Client\\C2R32.dll",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files\\Microsoft Office\\root\\Client\\C2R64.dll",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files\\Microsoft Office\\root\\Office16\\AppvIsvSubsystems32.dll",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files\\Microsoft Office\\root\\Office16\\AppvIsvSubsystems64.dll",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files\\Microsoft Office\\root\\Office16\\C2R32.dll",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files\\Microsoft Office\\root\\Office16\\C2R64.dll",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files\\Microsoft Office\\root\\vfs\\ProgramFilesCommonX64\\Microsoft Shared\\Office16\\AppvIsvSubsystems32.dll",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files\\Microsoft Office\\root\\vfs\\ProgramFilesCommonX64\\Microsoft Shared\\Office16\\AppvIsvSubsystems64.dll",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files\\Microsoft Office\\root\\vfs\\ProgramFilesCommonX64\\Microsoft Shared\\Office16\\C2R32.dll",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files\\Microsoft Office\\root\\vfs\\ProgramFilesCommonX64\\Microsoft Shared\\Office16\\C2R64.dll",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files\\Microsoft Office\\root\\vfs\\ProgramFilesX86\\Microsoft Office\\Office16\\AppvIsvSubsystems32.dll",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files\\Microsoft Office\\root\\vfs\\ProgramFilesX86\\Microsoft Office\\Office16\\AppvIsvSubsystems64.dll",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files\\Microsoft Office\\root\\vfs\\ProgramFilesX86\\Microsoft Office\\Office16\\C2R32.dll",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files\\Microsoft Office\\root\\vfs\\ProgramFilesX86\\Microsoft Office\\Office16\\C2R64.dll",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files\\NVIDIA Corporation\\NVIDIA App\\CEF\\plugins\\NVIDIA Overlay\\MessageBusRouter.dll",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files\\NVIDIA Corporation\\NvContainer\\plugins\\AIUser\\NVIDIA App",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files\\NVIDIA Corporation\\NvContainer\\plugins\\LocalSystem\\NvCpl",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files\\NVIDIA Corporation\\NvContainer\\plugins\\LocalSystem\\NvMessageBusBroadcast.dll",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files\\NVIDIA Corporation\\NvContainer\\plugins\\LocalSystem\\NvTelemetry",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files\\NVIDIA Corporation\\NvContainer\\plugins\\LocalSystem\\ShadowPlay",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files\\NVIDIA Corporation\\NvContainer\\plugins\\LocalSystem\\Watchdog",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files\\NVIDIA Corporation\\NvContainer\\plugins\\LocalSystem\\messagebus.conf",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files\\NVIDIA Corporation\\NvContainer\\plugins\\Session\\NVIDIA App",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files\\NVIDIA Corporation\\NvContainer\\plugins\\Session\\NvCpl",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files\\NVIDIA Corporation\\NvContainer\\plugins\\User\\NVIDIA App",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files\\NVIDIA Corporation\\NvContainer\\plugins\\User\\NvBackend",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files\\NVIDIA Corporation\\NvTelemetry\\plugin\\NvLocalizedConfig",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files\\Windows Defender Advanced Threat Protection\\Classification\\Configuration",
+        "reason": "Access is denied. (os error 5)"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files\\WindowsApps\\39EA002F.FF1DF_1.2.1.0_x64__n746a19ndrrjg",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files\\WindowsApps\\39EA002F.FF2DF_1.2.1.0_x64__n746a19ndrrjg",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files\\WindowsApps\\39EA002F.FF3DF_1.2.1.0_x64__n746a19ndrrjg",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files\\WindowsApps\\39EA002F.FF4DF_1.2.2.0_x64__n746a19ndrrjg",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files\\WindowsApps\\39EA002F.FF5DF_1.2.3.0_x64__n746a19ndrrjg",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files\\WindowsApps\\39EA002F.FF6DF_1.2.2.0_x64__n746a19ndrrjg",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files\\WindowsApps\\BeepJapan.inKONBINI_1.0.209.0_x64__h2va14as5wpxj",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files\\WindowsApps\\FlywayGames.AscendtoZERO_1.2.1.0_x64__sey8peye7nc36",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Program Files\\WindowsApps\\Microsoft.MicrosoftJewel_1.1.8131.0_x64__8wekyb3d8bbwe",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\ProgramData\\Application Data",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\ProgramData\\Desktop",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\ProgramData\\Documents",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\ProgramData\\Microsoft\\Windows Defender Advanced Threat Protection\\Cache",
+        "reason": "Access is denied. (os error 5)"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\ProgramData\\Microsoft\\Windows Defender Advanced Threat Protection\\Cyber",
+        "reason": "Access is denied. (os error 5)"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\ProgramData\\Microsoft\\Windows Defender Advanced Threat Protection\\DLP",
+        "reason": "Access is denied. (os error 5)"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\ProgramData\\Microsoft\\Windows Defender Advanced Threat Protection\\DataCollection",
+        "reason": "Access is denied. (os error 5)"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\ProgramData\\Microsoft\\Windows Defender Advanced Threat Protection\\DataScan\\Classification",
+        "reason": "Access is denied. (os error 5)"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\ProgramData\\Microsoft\\Windows Defender Advanced Threat Protection\\Downloads",
+        "reason": "Access is denied. (os error 5)"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\ProgramData\\Microsoft\\Windows Defender Advanced Threat Protection\\ImageCache",
+        "reason": "Access is denied. (os error 5)"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\ProgramData\\Microsoft\\Windows Defender Advanced Threat Protection\\Platform",
+        "reason": "Access is denied. (os error 5)"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\ProgramData\\Microsoft\\Windows Defender Advanced Threat Protection\\SenseCM",
+        "reason": "Access is denied. (os error 5)"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\ProgramData\\Microsoft\\Windows Defender Advanced Threat Protection\\SenseNDR",
+        "reason": "Access is denied. (os error 5)"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\ProgramData\\Microsoft\\Windows Defender Advanced Threat Protection\\Task",
+        "reason": "Access is denied. (os error 5)"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\ProgramData\\Microsoft\\Windows Defender Advanced Threat Protection\\Temp\\PSScriptOutputs",
+        "reason": "Access is denied. (os error 5)"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\ProgramData\\Microsoft\\Windows\\CapabilityAccessManager",
+        "reason": "Access is denied. (os error 5)"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\ProgramData\\Microsoft\\Windows\\Containers\\Layers\\2dd500a8-3660-4f53-9409-dc7c70676250\\Files\\ProgramData\\Microsoft\\Windows Defender Advanced Threat Protection\\Task",
+        "reason": "Access is denied. (os error 5)"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\ProgramData\\Microsoft\\Windows\\Containers\\Layers\\2dd500a8-3660-4f53-9409-dc7c70676250\\Files\\ProgramData\\Microsoft\\Windows\\CapabilityAccessManager",
+        "reason": "Access is denied. (os error 5)"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\ProgramData\\Microsoft\\Windows\\Containers\\Layers\\2dd500a8-3660-4f53-9409-dc7c70676250\\Files\\Windows\\System32\\LogFiles\\WMI\\RtBackup",
+        "reason": "Access is denied. (os error 5)"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\ProgramData\\Microsoft\\Windows\\Containers\\Layers\\2dd500a8-3660-4f53-9409-dc7c70676250\\Files\\Windows\\System32\\WebThreatDefSvc",
+        "reason": "Access is denied. (os error 5)"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\ProgramData\\Microsoft\\Windows\\Containers\\Layers\\2dd500a8-3660-4f53-9409-dc7c70676250\\Hives\\DEFAULTUSER_BASE",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\ProgramData\\Microsoft\\Windows\\Containers\\Layers\\2dd500a8-3660-4f53-9409-dc7c70676250\\Hives\\SAM_BASE",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\ProgramData\\Microsoft\\Windows\\Containers\\Layers\\2dd500a8-3660-4f53-9409-dc7c70676250\\Hives\\SECURITY_BASE",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\ProgramData\\Microsoft\\Windows\\Containers\\Layers\\2dd500a8-3660-4f53-9409-dc7c70676250\\Hives\\SOFTWARE_BASE",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\ProgramData\\Microsoft\\Windows\\Containers\\Layers\\2dd500a8-3660-4f53-9409-dc7c70676250\\Hives\\SYSTEM_BASE",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\ProgramData\\Microsoft\\Windows\\SystemData",
+        "reason": "Access is denied. (os error 5)"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\ProgramData\\Start Menu",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\ProgramData\\Templates",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\ProgramData\\Windows Master Store\\ServiceData",
+        "reason": "Access is denied. (os error 5)"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Users\\%USER%\\AppData\\Local\\Application Data",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Users\\%USER%\\AppData\\Local\\History",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Users\\%USER%\\AppData\\Local\\Microsoft\\WinGet\\Links\\ffmpeg.exe",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Users\\%USER%\\AppData\\Local\\Microsoft\\WinGet\\Links\\ffplay.exe",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Users\\%USER%\\AppData\\Local\\Microsoft\\WinGet\\Links\\ffprobe.exe",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Users\\%USER%\\AppData\\Local\\Microsoft\\Windows\\Temporary Internet Files",
+        "reason": "reparse point, not traversed"
+      },
+      {
+        "domain": "filesystem",
+        "item": "C:\\Users\\%USER%\\AppData\\Local\\Temporary Internet Files",
+        "reason": "reparse point, not traversed"
+      }
+    ]
+  },
+  "services": [
+    {
+      "name": "ACE-BASE",
+      "kind": "removed",
+      "is_driver": true,
+      "is_boot_start": false,
+      "before": {
+        "name": "ACE-BASE",
+        "display_name": "ACE-BASE",
+        "service_type": "kernel_driver",
+        "start_type": "demand",
+        "error_control": "normal",
+        "binary_path": "\\??\\C:\\WINDOWS\\system32\\drivers\\ACE-BASE.sys",
+        "load_order_group": "",
+        "start_name": "",
+        "dependencies": [],
+        "description": "",
+        "delayed_auto_start": false
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "name": "AntiCheatExpert Protection",
+      "kind": "removed",
+      "is_driver": false,
+      "is_boot_start": false,
+      "before": {
+        "name": "AntiCheatExpert Protection",
+        "display_name": "AntiCheatExpert Protection",
+        "service_type": "win32_own_process|interactive_process",
+        "start_type": "demand",
+        "error_control": "normal",
+        "binary_path": "\"C:\\Program Files\\AntiCheatExpert\\ACE-Service64.exe\"  -autorun",
+        "load_order_group": "",
+        "start_name": "LocalSystem",
+        "dependencies": [],
+        "description": "AntiCheatExpert Protection",
+        "delayed_auto_start": false
+      },
+      "after": null,
+      "fields": []
+    }
+  ],
+  "suppressed": [],
+  "files": [
+    {
+      "path": "C:\\Program Files\\AntiCheatExpert\\ACE-BASE.sys",
+      "kind": "removed",
+      "signer": "Microsoft Windows Hardware Compatibility Publisher",
+      "is_driver_image": true,
+      "before": {
+        "path": "C:\\Program Files\\AntiCheatExpert\\ACE-BASE.sys",
+        "size": 4125432,
+        "modified_utc": "2026-10-12T14:10:32.383Z",
+        "sha256": "5a88dbe617bc8f1a8b87d9b9f1221cafe24fbc26bcf87cb93db1afb3351040da",
+        "signer": "Microsoft Windows Hardware Compatibility Publisher"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\Program Files\\AntiCheatExpert\\ACE-CORE106095005.sys",
+      "kind": "removed",
+      "signer": "Microsoft Windows Hardware Compatibility Publisher",
+      "is_driver_image": true,
+      "before": {
+        "path": "C:\\Program Files\\AntiCheatExpert\\ACE-CORE106095005.sys",
+        "size": 3923120,
+        "modified_utc": "2026-10-12T14:10:32.390Z",
+        "sha256": "f69dc4842c5a44004c00e46ac6b151fb7b1d83ff04e5a0244dcea0b201da23c8",
+        "signer": "Microsoft Windows Hardware Compatibility Publisher"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\Program Files\\AntiCheatExpert\\ACE-CORE206095005.sys",
+      "kind": "removed",
+      "signer": "Microsoft Windows Hardware Compatibility Publisher",
+      "is_driver_image": true,
+      "before": {
+        "path": "C:\\Program Files\\AntiCheatExpert\\ACE-CORE206095005.sys",
+        "size": 3272880,
+        "modified_utc": "2026-10-12T14:10:32.394Z",
+        "sha256": "3713e6cc2807aa67b72e180281b5ad08ab63cbd63a3045de29e1eee3afed7d19",
+        "signer": "Microsoft Windows Hardware Compatibility Publisher"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\Program Files\\AntiCheatExpert\\ACE-Service64.exe",
+      "kind": "removed",
+      "signer": "ACEVILLE PTE LTD",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\Program Files\\AntiCheatExpert\\ACE-Service64.exe",
+        "size": 3251080,
+        "modified_utc": "2026-10-09T18:06:52.721Z",
+        "sha256": "17c90b6ec22ce851743949bdd0a98f0f25b01b2c30c2c46ba4494c3f3801c3c7",
+        "signer": "ACEVILLE PTE LTD"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\Program Files\\AntiCheatExpert\\Uninstaller.exe",
+      "kind": "removed",
+      "signer": "ACEVILLE PTE LTD",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\Program Files\\AntiCheatExpert\\Uninstaller.exe",
+        "size": 899984,
+        "modified_utc": "2026-10-09T18:06:52.721Z",
+        "sha256": "6b1289bc31abf5a57c9df8789c88fcca82aa7071f5f4a2fb1dcbe4daebdd8c6d",
+        "signer": "ACEVILLE PTE LTD"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\Program Files\\Proton\\VPN\\v5.1.9\\ServiceData\\Logs\\service-logs.txt",
+      "kind": "modified",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\Program Files\\Proton\\VPN\\v5.1.9\\ServiceData\\Logs\\service-logs.txt",
+        "size": 205085,
+        "modified_utc": "2026-10-31T11:12:24.037Z"
+      },
+      "after": {
+        "path": "C:\\Program Files\\Proton\\VPN\\v5.1.9\\ServiceData\\Logs\\service-logs.txt",
+        "size": 209405,
+        "modified_utc": "2026-10-31T11:16:36.946Z"
+      },
+      "fields": [
+        {
+          "field": "size",
+          "before": "205085",
+          "after": "209405"
+        },
+        {
+          "field": "modified_utc",
+          "before": "2026-10-31T11:12:24.037Z",
+          "after": "2026-10-31T11:16:36.946Z"
+        }
+      ]
+    },
+    {
+      "path": "C:\\ProgramData\\AntiCheatExpert\\ace-drc.dat",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\ProgramData\\AntiCheatExpert\\ace-drc.dat",
+        "size": 1804428,
+        "modified_utc": "2026-10-12T14:10:34.619Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\ProgramData\\EA Desktop\\Logs\\EABackgroundServiceVerbose.log",
+      "kind": "modified",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\ProgramData\\EA Desktop\\Logs\\EABackgroundServiceVerbose.log",
+        "size": 10574698,
+        "modified_utc": "2026-10-31T11:12:14.697Z"
+      },
+      "after": {
+        "path": "C:\\ProgramData\\EA Desktop\\Logs\\EABackgroundServiceVerbose.log",
+        "size": 10581502,
+        "modified_utc": "2026-10-31T11:16:31.775Z"
+      },
+      "fields": [
+        {
+          "field": "size",
+          "before": "10574698",
+          "after": "10581502"
+        },
+        {
+          "field": "modified_utc",
+          "before": "2026-10-31T11:12:14.697Z",
+          "after": "2026-10-31T11:16:31.775Z"
+        }
+      ]
+    },
+    {
+      "path": "C:\\ProgramData\\Microsoft\\Windows Defender\\Scans\\mpenginedb.db-wal",
+      "kind": "modified",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\ProgramData\\Microsoft\\Windows Defender\\Scans\\mpenginedb.db-wal",
+        "size": 1635672,
+        "modified_utc": "2026-10-31T11:08:31.383Z"
+      },
+      "after": {
+        "path": "C:\\ProgramData\\Microsoft\\Windows Defender\\Scans\\mpenginedb.db-wal",
+        "size": 1652152,
+        "modified_utc": "2026-10-31T11:16:16.363Z"
+      },
+      "fields": [
+        {
+          "field": "size",
+          "before": "1635672",
+          "after": "1652152"
+        },
+        {
+          "field": "modified_utc",
+          "before": "2026-10-31T11:08:31.383Z",
+          "after": "2026-10-31T11:16:16.363Z"
+        }
+      ]
+    },
+    {
+      "path": "C:\\ProgramData\\NVIDIA Corporation\\NVIDIA App\\UXD\\Log.nvcontainer.exe.log",
+      "kind": "modified",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\ProgramData\\NVIDIA Corporation\\NVIDIA App\\UXD\\Log.nvcontainer.exe.log",
+        "size": 68389,
+        "modified_utc": "2026-10-31T11:12:11.202Z"
+      },
+      "after": {
+        "path": "C:\\ProgramData\\NVIDIA Corporation\\NVIDIA App\\UXD\\Log.nvcontainer.exe.log",
+        "size": 95173,
+        "modified_utc": "2026-10-31T11:16:14.766Z"
+      },
+      "fields": [
+        {
+          "field": "size",
+          "before": "68389",
+          "after": "95173"
+        },
+        {
+          "field": "modified_utc",
+          "before": "2026-10-31T11:12:11.202Z",
+          "after": "2026-10-31T11:16:14.766Z"
+        }
+      ]
+    },
+    {
+      "path": "C:\\ProgramData\\Whesvc\\pool_tags_summary\\pool_tags_summary_2026-10-30_14_44_13_273.json",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\ProgramData\\Whesvc\\pool_tags_summary\\pool_tags_summary_2026-10-30_14_44_13_273.json",
+        "size": 6997,
+        "modified_utc": "2026-10-30T14:44:13.272Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\ProgramData\\Whesvc\\pool_tags_summary\\pool_tags_summary_2026-10-31_11_12_40_775.json",
+      "kind": "added",
+      "is_driver_image": false,
+      "before": null,
+      "after": {
+        "path": "C:\\ProgramData\\Whesvc\\pool_tags_summary\\pool_tags_summary_2026-10-31_11_12_40_775.json",
+        "size": 6623,
+        "modified_utc": "2026-10-31T11:12:40.774Z"
+      },
+      "fields": []
+    },
+    {
+      "path": "C:\\Users\\%USER%\\AppData\\Local\\Electronic Arts\\EA Desktop\\Logs\\EADesktopVerbose.log",
+      "kind": "modified",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\Users\\%USER%\\AppData\\Local\\Electronic Arts\\EA Desktop\\Logs\\EADesktopVerbose.log",
+        "size": 10960453,
+        "modified_utc": "2026-10-31T11:12:14.697Z"
+      },
+      "after": {
+        "path": "C:\\Users\\%USER%\\AppData\\Local\\Electronic Arts\\EA Desktop\\Logs\\EADesktopVerbose.log",
+        "size": 10968873,
+        "modified_utc": "2026-10-31T11:16:31.775Z"
+      },
+      "fields": [
+        {
+          "field": "size",
+          "before": "10960453",
+          "after": "10968873"
+        },
+        {
+          "field": "modified_utc",
+          "before": "2026-10-31T11:12:14.697Z",
+          "after": "2026-10-31T11:16:31.775Z"
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\%USER%\\AppData\\Local\\%ID%\\EBWebView\\EBWebView\\Default\\settings_diagnostic.log",
+      "kind": "modified",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\Users\\%USER%\\AppData\\Local\\%ID%\\EBWebView\\EBWebView\\Default\\settings_diagnostic.log",
+        "size": 522249,
+        "modified_utc": "2026-10-31T11:12:21.472Z"
+      },
+      "after": {
+        "path": "C:\\Users\\%USER%\\AppData\\Local\\%ID%\\EBWebView\\EBWebView\\Default\\settings_diagnostic.log",
+        "size": 522941,
+        "modified_utc": "2026-10-31T11:16:36.592Z"
+      },
+      "fields": [
+        {
+          "field": "size",
+          "before": "522249",
+          "after": "522941"
+        },
+        {
+          "field": "modified_utc",
+          "before": "2026-10-31T11:12:21.472Z",
+          "after": "2026-10-31T11:16:36.592Z"
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\%USER%\\AppData\\Local\\Microsoft\\Windows\\Explorer\\iconcache_48.db",
+      "kind": "modified",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\Users\\%USER%\\AppData\\Local\\Microsoft\\Windows\\Explorer\\iconcache_48.db",
+        "size": 24,
+        "modified_utc": "2026-10-31T10:53:21.129Z"
+      },
+      "after": {
+        "path": "C:\\Users\\%USER%\\AppData\\Local\\Microsoft\\Windows\\Explorer\\iconcache_48.db",
+        "size": 1048576,
+        "modified_utc": "2026-10-31T11:16:04.317Z"
+      },
+      "fields": [
+        {
+          "field": "size",
+          "before": "24",
+          "after": "1048576"
+        },
+        {
+          "field": "modified_utc",
+          "before": "2026-10-31T10:53:21.129Z",
+          "after": "2026-10-31T11:16:04.317Z"
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\%USER%\\AppData\\Local\\Microsoft\\Windows\\Explorer\\thumbcache_1280.db",
+      "kind": "modified",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\Users\\%USER%\\AppData\\Local\\Microsoft\\Windows\\Explorer\\thumbcache_1280.db",
+        "size": 24,
+        "modified_utc": "2026-10-31T11:03:38.834Z"
+      },
+      "after": {
+        "path": "C:\\Users\\%USER%\\AppData\\Local\\Microsoft\\Windows\\Explorer\\thumbcache_1280.db",
+        "size": 1048576,
+        "modified_utc": "2026-10-31T11:16:04.536Z"
+      },
+      "fields": [
+        {
+          "field": "size",
+          "before": "24",
+          "after": "1048576"
+        },
+        {
+          "field": "modified_utc",
+          "before": "2026-10-31T11:03:38.834Z",
+          "after": "2026-10-31T11:16:04.536Z"
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\%USER%\\AppData\\Local\\Microsoft\\Windows\\Explorer\\thumbcache_48.db",
+      "kind": "modified",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\Users\\%USER%\\AppData\\Local\\Microsoft\\Windows\\Explorer\\thumbcache_48.db",
+        "size": 24,
+        "modified_utc": "2026-10-31T11:03:38.833Z"
+      },
+      "after": {
+        "path": "C:\\Users\\%USER%\\AppData\\Local\\Microsoft\\Windows\\Explorer\\thumbcache_48.db",
+        "size": 1048576,
+        "modified_utc": "2026-10-31T11:16:04.337Z"
+      },
+      "fields": [
+        {
+          "field": "size",
+          "before": "24",
+          "after": "1048576"
+        },
+        {
+          "field": "modified_utc",
+          "before": "2026-10-31T11:03:38.833Z",
+          "after": "2026-10-31T11:16:04.337Z"
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\%USER%\\AppData\\Local\\NVIDIA Corporation\\NVIDIA App\\CxNative_LocalUser.log",
+      "kind": "modified",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\Users\\%USER%\\AppData\\Local\\NVIDIA Corporation\\NVIDIA App\\CxNative_LocalUser.log",
+        "size": 343209,
+        "modified_utc": "2026-10-31T11:12:08.863Z"
+      },
+      "after": {
+        "path": "C:\\Users\\%USER%\\AppData\\Local\\NVIDIA Corporation\\NVIDIA App\\CxNative_LocalUser.log",
+        "size": 344425,
+        "modified_utc": "2026-10-31T11:16:08.901Z"
+      },
+      "fields": [
+        {
+          "field": "size",
+          "before": "343209",
+          "after": "344425"
+        },
+        {
+          "field": "modified_utc",
+          "before": "2026-10-31T11:12:08.863Z",
+          "after": "2026-10-31T11:16:08.901Z"
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\%USER%\\AppData\\Local\\NVIDIA Corporation\\NVIDIA App\\NvBackend\\backend.log",
+      "kind": "modified",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\Users\\%USER%\\AppData\\Local\\NVIDIA Corporation\\NVIDIA App\\NvBackend\\backend.log",
+        "size": 2060948,
+        "modified_utc": "2026-10-31T11:12:18.749Z"
+      },
+      "after": {
+        "path": "C:\\Users\\%USER%\\AppData\\Local\\NVIDIA Corporation\\NVIDIA App\\NvBackend\\backend.log",
+        "size": 2062074,
+        "modified_utc": "2026-10-31T11:16:19.194Z"
+      },
+      "fields": [
+        {
+          "field": "size",
+          "before": "2060948",
+          "after": "2062074"
+        },
+        {
+          "field": "modified_utc",
+          "before": "2026-10-31T11:12:18.749Z",
+          "after": "2026-10-31T11:16:19.194Z"
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\%USER%\\AppData\\Roaming\\Signal\\logs\\app.log",
+      "kind": "modified",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\Users\\%USER%\\AppData\\Roaming\\Signal\\logs\\app.log",
+        "size": 193665,
+        "modified_utc": "2026-10-31T11:12:08.490Z"
+      },
+      "after": {
+        "path": "C:\\Users\\%USER%\\AppData\\Roaming\\Signal\\logs\\app.log",
+        "size": 198017,
+        "modified_utc": "2026-10-31T11:16:10.600Z"
+      },
+      "fields": [
+        {
+          "field": "size",
+          "before": "193665",
+          "after": "198017"
+        },
+        {
+          "field": "modified_utc",
+          "before": "2026-10-31T11:12:08.490Z",
+          "after": "2026-10-31T11:16:10.600Z"
+        }
+      ]
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\ACE-BASE.sys",
+      "kind": "removed",
+      "signer": "Microsoft Windows Hardware Compatibility Publisher",
+      "is_driver_image": true,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\ACE-BASE.sys",
+        "size": 4125432,
+        "modified_utc": "2026-10-12T14:10:32.521Z",
+        "sha256": "5a88dbe617bc8f1a8b87d9b9f1221cafe24fbc26bcf87cb93db1afb3351040da",
+        "signer": "Microsoft Windows Hardware Compatibility Publisher"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsClient.etl.001",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsClient.etl.001",
+        "size": 8192,
+        "modified_utc": "2026-10-29T13:02:30.640Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsClient.etl.002",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsClient.etl.002",
+        "size": 8192,
+        "modified_utc": "2026-10-30T00:56:05.096Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsClient.etl.003",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsClient.etl.003",
+        "size": 8192,
+        "modified_utc": "2026-10-30T16:44:22.070Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsClient.etl.004",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsClient.etl.004",
+        "size": 8192,
+        "modified_utc": "2026-10-31T03:40:06.460Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsClient.etl.005",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsClient.etl.005",
+        "size": 8192,
+        "modified_utc": "2026-10-31T08:34:51.126Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsClient.etl.006",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsClient.etl.006",
+        "size": 8192,
+        "modified_utc": "2026-10-25T07:12:14.101Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsClient.etl.007",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsClient.etl.007",
+        "size": 8192,
+        "modified_utc": "2026-10-25T17:54:56.537Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsClient.etl.008",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsClient.etl.008",
+        "size": 8192,
+        "modified_utc": "2026-10-26T15:21:19.670Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsClient.etl.009",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsClient.etl.009",
+        "size": 8192,
+        "modified_utc": "2026-10-27T00:47:53.551Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsClient.etl.010",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsClient.etl.010",
+        "size": 8192,
+        "modified_utc": "2026-10-27T05:14:43.679Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsClient.etl.011",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsClient.etl.011",
+        "size": 8192,
+        "modified_utc": "2026-10-27T07:19:42.203Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsClient.etl.012",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsClient.etl.012",
+        "size": 8192,
+        "modified_utc": "2026-10-27T15:05:28.303Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsClient.etl.013",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsClient.etl.013",
+        "size": 8192,
+        "modified_utc": "2026-10-28T05:31:04.131Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsClient.etl.014",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsClient.etl.014",
+        "size": 8192,
+        "modified_utc": "2026-10-28T09:06:48.397Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsClient.etl.015",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsClient.etl.015",
+        "size": 8192,
+        "modified_utc": "2026-10-28T21:24:49.031Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsClient.etl.016",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsClient.etl.016",
+        "size": 8192,
+        "modified_utc": "2026-10-29T07:01:10.312Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsProxy.etl.001",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsProxy.etl.001",
+        "size": 8192,
+        "modified_utc": "2026-10-29T13:02:30.640Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsProxy.etl.002",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsProxy.etl.002",
+        "size": 8192,
+        "modified_utc": "2026-10-30T00:56:05.096Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsProxy.etl.003",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsProxy.etl.003",
+        "size": 8192,
+        "modified_utc": "2026-10-30T16:44:22.070Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsProxy.etl.004",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsProxy.etl.004",
+        "size": 8192,
+        "modified_utc": "2026-10-31T03:40:06.458Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsProxy.etl.005",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsProxy.etl.005",
+        "size": 8192,
+        "modified_utc": "2026-10-31T08:34:51.126Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsProxy.etl.006",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsProxy.etl.006",
+        "size": 8192,
+        "modified_utc": "2026-10-25T07:12:14.101Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsProxy.etl.007",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsProxy.etl.007",
+        "size": 8192,
+        "modified_utc": "2026-10-25T17:54:56.537Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsProxy.etl.008",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsProxy.etl.008",
+        "size": 8192,
+        "modified_utc": "2026-10-26T15:21:19.668Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsProxy.etl.009",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsProxy.etl.009",
+        "size": 8192,
+        "modified_utc": "2026-10-27T00:47:53.551Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsProxy.etl.010",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsProxy.etl.010",
+        "size": 8192,
+        "modified_utc": "2026-10-27T05:14:43.679Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsProxy.etl.011",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsProxy.etl.011",
+        "size": 8192,
+        "modified_utc": "2026-10-27T07:19:42.203Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsProxy.etl.012",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsProxy.etl.012",
+        "size": 8192,
+        "modified_utc": "2026-10-27T15:05:28.303Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsProxy.etl.013",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsProxy.etl.013",
+        "size": 8192,
+        "modified_utc": "2026-10-28T05:31:04.131Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsProxy.etl.014",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsProxy.etl.014",
+        "size": 8192,
+        "modified_utc": "2026-10-28T09:06:48.397Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsProxy.etl.015",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsProxy.etl.015",
+        "size": 8192,
+        "modified_utc": "2026-10-28T21:24:49.031Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsProxy.etl.016",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\iclsProxy.etl.016",
+        "size": 8192,
+        "modified_utc": "2026-10-29T07:01:10.312Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\PlatformLicenseManagerService.etl.001",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\PlatformLicenseManagerService.etl.001",
+        "size": 4096,
+        "modified_utc": "2026-10-29T13:02:30.609Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\PlatformLicenseManagerService.etl.002",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\PlatformLicenseManagerService.etl.002",
+        "size": 4096,
+        "modified_utc": "2026-10-30T00:56:05.060Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\PlatformLicenseManagerService.etl.003",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\PlatformLicenseManagerService.etl.003",
+        "size": 4096,
+        "modified_utc": "2026-10-30T16:44:22.054Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\PlatformLicenseManagerService.etl.004",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\PlatformLicenseManagerService.etl.004",
+        "size": 4096,
+        "modified_utc": "2026-10-31T03:40:06.436Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\PlatformLicenseManagerService.etl.005",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\PlatformLicenseManagerService.etl.005",
+        "size": 4096,
+        "modified_utc": "2026-10-31T08:34:51.126Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\PlatformLicenseManagerService.etl.006",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\PlatformLicenseManagerService.etl.006",
+        "size": 4096,
+        "modified_utc": "2026-10-25T07:12:14.085Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\PlatformLicenseManagerService.etl.007",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\PlatformLicenseManagerService.etl.007",
+        "size": 4096,
+        "modified_utc": "2026-10-25T17:54:56.490Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\PlatformLicenseManagerService.etl.008",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\PlatformLicenseManagerService.etl.008",
+        "size": 4096,
+        "modified_utc": "2026-10-26T15:21:19.642Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\PlatformLicenseManagerService.etl.009",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\PlatformLicenseManagerService.etl.009",
+        "size": 4096,
+        "modified_utc": "2026-10-27T00:47:53.535Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\PlatformLicenseManagerService.etl.010",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\PlatformLicenseManagerService.etl.010",
+        "size": 4096,
+        "modified_utc": "2026-10-27T05:14:43.663Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\PlatformLicenseManagerService.etl.011",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\PlatformLicenseManagerService.etl.011",
+        "size": 4096,
+        "modified_utc": "2026-10-27T07:19:42.203Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\PlatformLicenseManagerService.etl.012",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\PlatformLicenseManagerService.etl.012",
+        "size": 4096,
+        "modified_utc": "2026-10-27T15:05:28.287Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\PlatformLicenseManagerService.etl.013",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\PlatformLicenseManagerService.etl.013",
+        "size": 4096,
+        "modified_utc": "2026-10-28T05:31:04.115Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\PlatformLicenseManagerService.etl.014",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\PlatformLicenseManagerService.etl.014",
+        "size": 4096,
+        "modified_utc": "2026-10-28T09:06:48.382Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\PlatformLicenseManagerService.etl.015",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\PlatformLicenseManagerService.etl.015",
+        "size": 4096,
+        "modified_utc": "2026-10-28T21:24:49.015Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\PlatformLicenseManagerService.etl.016",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\Intel\\iCLSClient\\PlatformLicenseManagerService.etl.016",
+        "size": 4096,
+        "modified_utc": "2026-10-29T07:01:10.280Z"
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\LogFiles\\WMI\\Microsoft-Windows-Rdp-Graphics-RdpIdd-Trace.etl",
+      "kind": "removed",
+      "is_driver_image": false,
+      "before": {
+        "path": "C:\\WINDOWS\\System32\\drivers\\DriverData\\LogFiles\\WMI\\Microsoft-Windows-Rdp-Graphics-RdpIdd-Trace.etl",
+        "size": 65536,
+        "modified_utc": "2026-10-31T08:34:51.126Z"
+      },
+      "after": null,
+      "fields": []
+    }
+  ],
+  "suppressed_files": [],
+  "registry": [
+    {
+      "key": "HKCU\\SOFTWARE\\appdatalow\\AntiCheatExpert\\{4324E6D9-BA90-499E-9B3A-A7DAB216C94E}\\Tencent",
+      "view": "32",
+      "kind": "removed",
+      "before": {
+        "key": "HKCU\\SOFTWARE\\appdatalow\\AntiCheatExpert\\{4324E6D9-BA90-499E-9B3A-A7DAB216C94E}\\Tencent",
+        "view": "32",
+        "values": [
+          {
+            "name": "vbstatus1",
+            "kind": "dword",
+            "data": "100"
+          },
+          {
+            "name": "vbstatus2",
+            "kind": "dword",
+            "data": "0"
+          },
+          {
+            "name": "vbstatus3",
+            "kind": "dword",
+            "data": "1"
+          },
+          {
+            "name": "vbstatus4",
+            "kind": "dword",
+            "data": "0"
+          }
+        ]
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "key": "HKCU\\SOFTWARE\\appdatalow\\AntiCheatExpert\\{4324E6D9-BA90-499E-9B3A-A7DAB216C94E}\\Tencent",
+      "view": "64",
+      "kind": "removed",
+      "before": {
+        "key": "HKCU\\SOFTWARE\\appdatalow\\AntiCheatExpert\\{4324E6D9-BA90-499E-9B3A-A7DAB216C94E}\\Tencent",
+        "view": "64",
+        "values": [
+          {
+            "name": "vbstatus1",
+            "kind": "dword",
+            "data": "100"
+          },
+          {
+            "name": "vbstatus2",
+            "kind": "dword",
+            "data": "0"
+          },
+          {
+            "name": "vbstatus3",
+            "kind": "dword",
+            "data": "1"
+          },
+          {
+            "name": "vbstatus4",
+            "kind": "dword",
+            "data": "0"
+          }
+        ]
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "key": "HKCU\\SOFTWARE\\appdatalow\\AntiCheatExpert\\{F63EEEBB-2033-42E2-818E-2126FDEB47C4}\\Tencent\\6095005",
+      "view": "32",
+      "kind": "removed",
+      "before": {
+        "key": "HKCU\\SOFTWARE\\appdatalow\\AntiCheatExpert\\{F63EEEBB-2033-42E2-818E-2126FDEB47C4}\\Tencent\\6095005",
+        "view": "32",
+        "values": [
+          {
+            "name": "data",
+            "kind": "binary",
+            "data": "",
+            "oversized_bytes": 4125432
+          },
+          {
+            "name": "version",
+            "kind": "binary",
+            "data": "1c000000050000002e0a00004c430000"
+          }
+        ]
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "key": "HKCU\\SOFTWARE\\appdatalow\\AntiCheatExpert\\{F63EEEBB-2033-42E2-818E-2126FDEB47C4}\\Tencent\\6095005",
+      "view": "64",
+      "kind": "removed",
+      "before": {
+        "key": "HKCU\\SOFTWARE\\appdatalow\\AntiCheatExpert\\{F63EEEBB-2033-42E2-818E-2126FDEB47C4}\\Tencent\\6095005",
+        "view": "64",
+        "values": [
+          {
+            "name": "data",
+            "kind": "binary",
+            "data": "",
+            "oversized_bytes": 4125432
+          },
+          {
+            "name": "version",
+            "kind": "binary",
+            "data": "1c000000050000002e0a00004c430000"
+          }
+        ]
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "key": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Substrate",
+      "view": "32",
+      "kind": "modified",
+      "before": {
+        "key": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Substrate",
+        "view": "32",
+        "values": [
+          {
+            "name": "_LastUpdateTime",
+            "kind": "sz",
+            "data": "2026-10-31T09:18:40Z"
+          }
+        ]
+      },
+      "after": {
+        "key": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Substrate",
+        "view": "32",
+        "values": [
+          {
+            "name": "_LastUpdateTime",
+            "kind": "sz",
+            "data": "2026-10-31T11:16:03Z"
+          }
+        ]
+      },
+      "fields": [
+        {
+          "field": "_LastUpdateTime",
+          "before": "sz:2026-10-31T09:18:40Z",
+          "after": "sz:2026-10-31T11:16:03Z"
+        }
+      ]
+    },
+    {
+      "key": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Substrate",
+      "view": "64",
+      "kind": "modified",
+      "before": {
+        "key": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Substrate",
+        "view": "64",
+        "values": [
+          {
+            "name": "_LastUpdateTime",
+            "kind": "sz",
+            "data": "2026-10-31T09:18:40Z"
+          }
+        ]
+      },
+      "after": {
+        "key": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Substrate",
+        "view": "64",
+        "values": [
+          {
+            "name": "_LastUpdateTime",
+            "kind": "sz",
+            "data": "2026-10-31T11:16:03Z"
+          }
+        ]
+      },
+      "fields": [
+        {
+          "field": "_LastUpdateTime",
+          "before": "sz:2026-10-31T09:18:40Z",
+          "after": "sz:2026-10-31T11:16:03Z"
+        }
+      ]
+    },
+    {
+      "key": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Providers\\Display",
+      "view": "32",
+      "kind": "modified",
+      "before": {
+        "key": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Providers\\Display",
+        "view": "32",
+        "values": [
+          {
+            "name": "UpdateTime",
+            "kind": "sz",
+            "data": "2026-10-31T09:36:11Z"
+          }
+        ]
+      },
+      "after": {
+        "key": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Providers\\Display",
+        "view": "32",
+        "values": [
+          {
+            "name": "UpdateTime",
+            "kind": "sz",
+            "data": "2026-10-31T11:16:21Z"
+          }
+        ]
+      },
+      "fields": [
+        {
+          "field": "UpdateTime",
+          "before": "sz:2026-10-31T09:36:11Z",
+          "after": "sz:2026-10-31T11:16:21Z"
+        }
+      ]
+    },
+    {
+      "key": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Providers\\Display",
+      "view": "64",
+      "kind": "modified",
+      "before": {
+        "key": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Providers\\Display",
+        "view": "64",
+        "values": [
+          {
+            "name": "UpdateTime",
+            "kind": "sz",
+            "data": "2026-10-31T09:36:11Z"
+          }
+        ]
+      },
+      "after": {
+        "key": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\IrisService\\Providers\\Display",
+        "view": "64",
+        "values": [
+          {
+            "name": "UpdateTime",
+            "kind": "sz",
+            "data": "2026-10-31T11:16:21Z"
+          }
+        ]
+      },
+      "fields": [
+        {
+          "field": "UpdateTime",
+          "before": "sz:2026-10-31T09:36:11Z",
+          "after": "sz:2026-10-31T11:16:21Z"
+        }
+      ]
+    },
+    {
+      "key": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\RulesEngine\\BackgroundData",
+      "view": "32",
+      "kind": "modified",
+      "before": {
+        "key": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\RulesEngine\\BackgroundData",
+        "view": "32",
+        "values": [
+          {
+            "name": "State",
+            "kind": "sz",
+            "data": "{\n  \"RetrieveIrisContentSuccess\":true,\n  \"RetrieveIrisContentStatusCode\":200,\n  \"RetrieveIrisContentSuccessDate\":\"2026-10-31T08:38:27Z\",\n  \"RetrieveIrisContentLastAttemptDate\":\"2026-10-31T08:38:27Z\",\n  \"RetrieveIrisContentRetryCount\":0,\n  \"RetrieveIrisContentRetryDate\":\"2026-11-01T07:38:27Z\",\n  \"LastTriggerType\":0,\n  \"LastBackgroundTaskRunDate\":\"2026-10-31T08:38:27Z\"\n}"
+          },
+          {
+            "name": "UpdateTimer",
+            "kind": "sz",
+            "data": "2026-10-31T08:38:27Z"
+          }
+        ]
+      },
+      "after": {
+        "key": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\RulesEngine\\BackgroundData",
+        "view": "32",
+        "values": [
+          {
+            "name": "State",
+            "kind": "sz",
+            "data": "{\n  \"RetrieveIrisContentSuccess\":true,\n  \"RetrieveIrisContentStatusCode\":200,\n  \"RetrieveIrisContentSuccessDate\":\"2026-10-31T11:16:21Z\",\n  \"RetrieveIrisContentLastAttemptDate\":\"2026-10-31T11:16:21Z\",\n  \"RetrieveIrisContentRetryCount\":0,\n  \"RetrieveIrisContentRetryDate\":\"2026-11-01T10:16:21Z\",\n  \"LastTriggerType\":0,\n  \"LastBackgroundTaskRunDate\":\"2026-10-31T11:16:21Z\"\n}"
+          },
+          {
+            "name": "UpdateTimer",
+            "kind": "sz",
+            "data": "2026-10-31T11:16:21Z"
+          }
+        ]
+      },
+      "fields": [
+        {
+          "field": "State",
+          "before": "sz:{\n  \"RetrieveIrisContentSuccess\":true,\n  \"RetrieveIrisContentStatusCode\":200,\n  \"RetrieveIrisContentSuccessDate\":\"2026-10-31T08:38:27Z\",\n  \"RetrieveIrisContentLastAttemptDate\":\"2026-10-31T08:38:27Z\",\n  \"RetrieveIrisContentRetryCount\":0,\n  \"RetrieveIrisContentRetryDate\":\"2026-11-01T07:38:27Z\",\n  \"LastTriggerType\":0,\n  \"LastBackgroundTaskRunDate\":\"2026-10-31T08:38:27Z\"\n}",
+          "after": "sz:{\n  \"RetrieveIrisContentSuccess\":true,\n  \"RetrieveIrisContentStatusCode\":200,\n  \"RetrieveIrisContentSuccessDate\":\"2026-10-31T11:16:21Z\",\n  \"RetrieveIrisContentLastAttemptDate\":\"2026-10-31T11:16:21Z\",\n  \"RetrieveIrisContentRetryCount\":0,\n  \"RetrieveIrisContentRetryDate\":\"2026-11-01T10:16:21Z\",\n  \"LastTriggerType\":0,\n  \"LastBackgroundTaskRunDate\":\"2026-10-31T11:16:21Z\"\n}"
+        },
+        {
+          "field": "UpdateTimer",
+          "before": "sz:2026-10-31T08:38:27Z",
+          "after": "sz:2026-10-31T11:16:21Z"
+        }
+      ]
+    },
+    {
+      "key": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\RulesEngine\\BackgroundData",
+      "view": "64",
+      "kind": "modified",
+      "before": {
+        "key": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\RulesEngine\\BackgroundData",
+        "view": "64",
+        "values": [
+          {
+            "name": "State",
+            "kind": "sz",
+            "data": "{\n  \"RetrieveIrisContentSuccess\":true,\n  \"RetrieveIrisContentStatusCode\":200,\n  \"RetrieveIrisContentSuccessDate\":\"2026-10-31T08:38:27Z\",\n  \"RetrieveIrisContentLastAttemptDate\":\"2026-10-31T08:38:27Z\",\n  \"RetrieveIrisContentRetryCount\":0,\n  \"RetrieveIrisContentRetryDate\":\"2026-11-01T07:38:27Z\",\n  \"LastTriggerType\":0,\n  \"LastBackgroundTaskRunDate\":\"2026-10-31T08:38:27Z\"\n}"
+          },
+          {
+            "name": "UpdateTimer",
+            "kind": "sz",
+            "data": "2026-10-31T08:38:27Z"
+          }
+        ]
+      },
+      "after": {
+        "key": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\RulesEngine\\BackgroundData",
+        "view": "64",
+        "values": [
+          {
+            "name": "State",
+            "kind": "sz",
+            "data": "{\n  \"RetrieveIrisContentSuccess\":true,\n  \"RetrieveIrisContentStatusCode\":200,\n  \"RetrieveIrisContentSuccessDate\":\"2026-10-31T11:16:21Z\",\n  \"RetrieveIrisContentLastAttemptDate\":\"2026-10-31T11:16:21Z\",\n  \"RetrieveIrisContentRetryCount\":0,\n  \"RetrieveIrisContentRetryDate\":\"2026-11-01T10:16:21Z\",\n  \"LastTriggerType\":0,\n  \"LastBackgroundTaskRunDate\":\"2026-10-31T11:16:21Z\"\n}"
+          },
+          {
+            "name": "UpdateTimer",
+            "kind": "sz",
+            "data": "2026-10-31T11:16:21Z"
+          }
+        ]
+      },
+      "fields": [
+        {
+          "field": "State",
+          "before": "sz:{\n  \"RetrieveIrisContentSuccess\":true,\n  \"RetrieveIrisContentStatusCode\":200,\n  \"RetrieveIrisContentSuccessDate\":\"2026-10-31T08:38:27Z\",\n  \"RetrieveIrisContentLastAttemptDate\":\"2026-10-31T08:38:27Z\",\n  \"RetrieveIrisContentRetryCount\":0,\n  \"RetrieveIrisContentRetryDate\":\"2026-11-01T07:38:27Z\",\n  \"LastTriggerType\":0,\n  \"LastBackgroundTaskRunDate\":\"2026-10-31T08:38:27Z\"\n}",
+          "after": "sz:{\n  \"RetrieveIrisContentSuccess\":true,\n  \"RetrieveIrisContentStatusCode\":200,\n  \"RetrieveIrisContentSuccessDate\":\"2026-10-31T11:16:21Z\",\n  \"RetrieveIrisContentLastAttemptDate\":\"2026-10-31T11:16:21Z\",\n  \"RetrieveIrisContentRetryCount\":0,\n  \"RetrieveIrisContentRetryDate\":\"2026-11-01T10:16:21Z\",\n  \"LastTriggerType\":0,\n  \"LastBackgroundTaskRunDate\":\"2026-10-31T11:16:21Z\"\n}"
+        },
+        {
+          "field": "UpdateTimer",
+          "before": "sz:2026-10-31T08:38:27Z",
+          "after": "sz:2026-10-31T11:16:21Z"
+        }
+      ]
+    },
+    {
+      "key": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\RulesEngine\\Providers\\UserAccount",
+      "view": "32",
+      "kind": "modified",
+      "before": {
+        "key": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\RulesEngine\\Providers\\UserAccount",
+        "view": "32",
+        "values": [
+          {
+            "name": "UpdateTime",
+            "kind": "sz",
+            "data": "2026-10-31T11:08:11Z"
+          }
+        ]
+      },
+      "after": {
+        "key": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\RulesEngine\\Providers\\UserAccount",
+        "view": "32",
+        "values": [
+          {
+            "name": "UpdateTime",
+            "kind": "sz",
+            "data": ""
+          }
+        ]
+      },
+      "fields": [
+        {
+          "field": "UpdateTime",
+          "before": "sz:2026-10-31T11:08:11Z",
+          "after": "sz:"
+        }
+      ]
+    },
+    {
+      "key": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\RulesEngine\\Providers\\UserAccount",
+      "view": "64",
+      "kind": "modified",
+      "before": {
+        "key": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\RulesEngine\\Providers\\UserAccount",
+        "view": "64",
+        "values": [
+          {
+            "name": "UpdateTime",
+            "kind": "sz",
+            "data": "2026-10-31T11:08:11Z"
+          }
+        ]
+      },
+      "after": {
+        "key": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\RulesEngine\\Providers\\UserAccount",
+        "view": "64",
+        "values": [
+          {
+            "name": "UpdateTime",
+            "kind": "sz",
+            "data": ""
+          }
+        ]
+      },
+      "fields": [
+        {
+          "field": "UpdateTime",
+          "before": "sz:2026-10-31T11:08:11Z",
+          "after": "sz:"
+        }
+      ]
+    },
+    {
+      "key": "HKLM\\SOFTWARE\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Deployment\\Package\\*\\S-1-5-21-%REDACTED%\\{4AC1EB66-4753-49E1-B57C-E5EF0BA1A589}",
+      "view": "32",
+      "kind": "added",
+      "before": null,
+      "after": {
+        "key": "HKLM\\SOFTWARE\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Deployment\\Package\\*\\S-1-5-21-%REDACTED%\\{4AC1EB66-4753-49E1-B57C-E5EF0BA1A589}",
+        "view": "32",
+        "values": [
+          {
+            "name": "ProcessCreationTime",
+            "kind": "qword",
+            "data": "134379093198188374"
+          },
+          {
+            "name": "ProcessId",
+            "kind": "dword",
+            "data": "13172"
+          },
+          {
+            "name": "ProcessName",
+            "kind": "sz",
+            "data": "explorer.exe"
+          },
+          {
+            "name": "Version",
+            "kind": "qword",
+            "data": "0"
+          }
+        ]
+      },
+      "fields": []
+    },
+    {
+      "key": "HKLM\\SOFTWARE\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Deployment\\Package\\*\\S-1-5-21-%REDACTED%\\{4AC1EB66-4753-49E1-B57C-E5EF0BA1A589}",
+      "view": "64",
+      "kind": "added",
+      "before": null,
+      "after": {
+        "key": "HKLM\\SOFTWARE\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\Deployment\\Package\\*\\S-1-5-21-%REDACTED%\\{4AC1EB66-4753-49E1-B57C-E5EF0BA1A589}",
+        "view": "64",
+        "values": [
+          {
+            "name": "ProcessCreationTime",
+            "kind": "qword",
+            "data": "134379093198188374"
+          },
+          {
+            "name": "ProcessId",
+            "kind": "dword",
+            "data": "13172"
+          },
+          {
+            "name": "ProcessName",
+            "kind": "sz",
+            "data": "explorer.exe"
+          },
+          {
+            "name": "Version",
+            "kind": "qword",
+            "data": "0"
+          }
+        ]
+      },
+      "fields": []
+    },
+    {
+      "key": "HKLM\\SOFTWARE\\Microsoft\\Wbem\\Tracing\\Providers\\WMIProv @ root/WMI",
+      "view": "64",
+      "kind": "removed",
+      "before": {
+        "key": "HKLM\\SOFTWARE\\Microsoft\\Wbem\\Tracing\\Providers\\WMIProv @ root/WMI",
+        "view": "64",
+        "values": [
+          {
+            "name": "134379185124018029",
+            "kind": "sz",
+            "data": "ProcessID: 9456"
+          }
+        ]
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "key": "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Notifications\\Data",
+      "view": "64",
+      "kind": "modified",
+      "before": {
+        "key": "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Notifications\\Data",
+        "view": "64",
+        "values": [
+          {
+            "name": "418A073AA3BC2475",
+            "kind": "binary",
+            "data": "73ad000000000000040004000100d30102000000012e770302941703030657030310a202035eb403043eab0305f3ac03062e4c0306865303074ca60309ab6b0309cbaf030a7c0d030b349d020d6d1e020d7879000dc62e030e8248030ee3ae030f70ad03107e91031113bd02117b7303118d6f0312c13e0314b41b03150a900315a0af0315d2f102166940031684690317fadd021ade71021ae0c0021b1eb7031b7553031b7798011bcf6b031bf60b001de4ce021e685a031e905e031f7b53032018f2002087e902214f910221777a002226aa0323336c03246ebc0324c18b0125a4eb00274d74032814a003294ab1022a103f032a3151032a62e3022aa69e032c1567022c5080022ceaab032cec3f032d5aa5032dbf55032e215c032e9b90022ea1b2032f39d5002f8b5703301e3c03302bad03304cc1023112bc03316e1a033192b50331c8550231ee8f03327e6c033314a903334da603340d350335d14103364cac03365fa70336e9d20036f9a203370599033780870237b4390338bbed023b92ab033d9d8e033db89e033dc7a2033de794033e3383003e44a4033ffc5002407fb30240b9990242b3ae004540570345b67e0245e3340345f9630345fca6034645650246a974034704a303475756034759470347c63e0347d08703483bdb0148c24f00496188024b55b1034b6ee3014b765b024b7dcb024e78a8034e97c7025009aa035050ab035055a603508f0002511e0f025122da01514d0a03520043035243a7035266650353c9c00253ec740354029c0354b7dc0054c6fb0254e18703554f9a0355d33e03560a85005677e80256d3a90357426b0157ad120158fa560259666503598303035a02bd035b0b30025b1203025b2587035caeb9025d939d035dc09a035e36ff025e856002605f6a03608c620260d89c0361319703626c880362db620262edae03637c930363d03e0363d2a50363e697036455740164799e036532bf02656aaf0365a69e0065be690366497c036697b50366f96503670017036731960367a0af0367e539036878a80368c0a2036b1da8026b5847036cd4b5036cd6a5036d5639036e7379036eceff016efaa8027007a402700b5e027138b403726e4a00731054037359b90373e66c03743dac027511b103755caf0275a37e00762b8003780b9e037821ac03784d9402785dd301792f6c0379f237037a35ad037b62ce027bdd3c037be4a6037c1057037c82c9017d4fa7037d936d037dce11027df1e8017e0abe027eb1ab037ff59503803db303804a710280af890381b4e90281b98903824a69028391e60283f160008416610384584703848aa4038497df0286737b03867b060187de830087f0250188d1330289244f0389bea9038a3b8b038a8093008d12c6028dd472038de434038e27b0038e78a2008ea54c038f0abc038f7887039005a003906262039079a8039094a30390d5d0009123d30091a4ba03922fa1039286970392e4bd039340640393419c0393665c03942f4003944aa003949d6303949fb9039512510395b49203974869029776610297f6c400986fab039a2db9029abb7a039ca1af039d2bb4039e1761039e1b5a039ebc83039f37b2039febd402a157b103a2050600a3d40803a425a303a532a103a616a403a61f7603a6573f03a69ca403a6e9b300a736a800a7b57703a7c23301a885ae03a98b9903ab66e202ab7a9403ac86a903acd0a403ad30a103adcc5b03ae76af02ae867f03af60bd03b03acf02b1328503b1414503b1b82e03b1c77203b2ccc002b309aa03b3732002b409aa03b4287903b63c6e03b7345703b8029700b9088f03b9179e03b98ba003ba053303ba1bb702ba359d02bc6eb400be4e7f03be5a4e03bedf4403bef89f03bf31f802c0079a00c04f9c03c0cc9900c187a403c36d8100c37c4d03c3dc2403c3ef5d02c48ca203c4e8b403c5067c03c5399c03c70bc200c7fca303c8c95b03ca23b700cac5fb02cbe4b703cc495600cf2da203cf74aa00cf9eae03cfc29400cfe3ab03d0306f03d0b93503d0f6e401d10aa603d1fd4703d2c87703d3826100d3834b01d3e88d00d4806603d493a903d4cb3e03d5414803d5627602d565ff02d615b403d627b203d6643a03d6ecc602d7beb503d7d06003d7da7503d8e79c01d8ed8403d9054c03d916ac03d956c102d9612102d9dd8f03da19d700da858e03da896703da9ca403db2b9c03dc10ae03dc14b203dc3d9f03dd1b1901ddafab03de84b602def76a03e008b403e0198f02e0bc7d03e16d9901e183ac02e193b001e1ec7403e2e2c802e394a103e3c09a03e3ed8303e524bc02e74f7103e75f9703e7658003e7793503e8344803e8d1a903e95f9b03ea344803eab4a403ec279c03ec297a02ec389203ec487603ed793503edcfb903f003b302f0249f02f0409c03f0616d03f07f7103f0e0b600f0fedd02f10aaa02f17d5f00f1927f03f1f75002f1fc6000f2ffa501f308db00f38fae03f3a2b002f3cb9e03f457b402f4793503f531b802f62d3102f6f45703f7125e00f765a503f7ce7d02f7d36f00f8266103f8793503f9215500f980cc02fb793503fbf1ae03fbf7a203fc034a03fc4f0201fcd59503fd0cb702fd175202fd4e8303fe834d03ff10dd01ffe3ce02ee0006000000007012020086aa0300e7ba0301c2a2030212a40304e5a403059ea70308ba140208ed2f030937930309afa6030a056a030a8989030b1fac030c0b64030c267a030f44a30310b2750311637603118259031184a40312f3a403157999031675b7031682ae0317699503180a7c0319f7a5031aaba5031b5188031b74ab031d5aa1032001bb03211c8a0321bba80321c1a20322d7a103240b640326fdbb0328ba80032a26a0032ac8a8032b898e032ec1a2032fd35f013063a10330d1ed0232dd8a033336a20334a0ab0334a4960334abb603358ca20335f9a303366c730236cf7b0337295503378daa03380a5b03386989033917ea023d2a93033facb20341f9a3034229730342fba20343d3ad03453da40347b5b403499bac034caa74034dd9a40350c3880352136a03525bac035275a10352a2af0353ef970354d7b20356e1390357fbb00359e0a4035a9ea2035ad3a4035d80a0025e10e3025e26a3035f4ba4035fe4a9036058a203615db90364408303645db90364e1a50367269c036937a00369aa74036a289c036b31d5026b59a9036bbd45036ec7a1026fa4ab0370f9a203713dae037170ac0374b6320374c17e0375d6a0037669a20376f09a03770d2203784b5b037aa0b8037aab79037bd7a5037dbe31027fab9e037faf8903817a3703822bac0383bf480184c2730385b6320387387103890ea3038a2aa3038b84a0038c1687038c3889038dab9e038dd50303918cb60392589c039279a403941ca3039470a2039489a80395753803963e77039898aa03989f92039990ad039a00a3039ab68a039b1687039b619a039d2317039de18003a23a9a03a366a003a6c38e03a7b6a503a7cbb103a838a503a8615203a91eac02a9d66b03a9fe7503aaa82503aae4a503ab0fab03ab769a03ac7d6403aebb7a03af92a303afe3b703b0cc5002b2d2bb03b407b603b4e4a503b5328a03b702a303b7328003b8e4a503b9118f03b937a003b9978903b9e4a503ba01a303ba1caf03c03b8203c07c4901c07fa903c4dcb803c5f69e03c75ba403c7957802c7de3e03c8878703c8f5a103ca638903ccd3aa03ccf39102cd8a8003cdf54b03ce50a403cf50a403d0a96c03d1667c03d22fa503d246a703d3393f03d5dcbc03d5de4403d728a203d7865303d879a803d8f18f03d9796203db8d5103de35a103deb39e03dffeba03e90fa603e9789c03e9acaf03e9c1a203e9df3903eadb7a03ebbca403eca09302ecb17403edba7503edbe3403edd64c03eec1a203ef879503f24ca303f549b203f57f8503f69da203f6c7a803f8168703f8c7b702fb27ac03fb68a203fd01b3030400400100000303dd012f39d5004b11b400f3a2b002010041010000e645a803"
+          },
+          {
+            "name": "418A073AA3BC3475",
+            "kind": "binary",
+            "data": "08210100000000000400040001020500000000000e0000000d787900010000001a610b02f0000000a19f5e000c000000bc6eb40023000000d86c830206000100000027000000276b69018802000056737d00070000006b507e000200000090d5d00066000000cb0f660007000000e6c5310001000400000007000000a861520301006400000001000000cd67c5010600650000007400000065a69e000200000090d5d000af010000a205060096000000c46b8100d0360000e6c5310036050000f0e0b60001006600000046000000a20506000100670000003b000000a20506000200680000003f000000a205060002000000bc6eb4000200700000000700000065a69e0002000000a2050600010072000000f5040000a20506000100730000003d00000065a69e000100760000001900000065a69e000100770000000800000065a69e0001007d0000002400000065a69e0001007f0000002c00000065a69e00"
+          }
+        ]
+      },
+      "after": {
+        "key": "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Notifications\\Data",
+        "view": "64",
+        "values": [
+          {
+            "name": "418A073AA3BC2475",
+            "kind": "binary",
+            "data": "7bad000000000000040004000100da0102000000012e770302941703030657030310a202035eb403043eab0305f3ac03062e4c0306865303074ca60309ab6b0309cbaf030a7c0d030b349d020d6d1e020d7879000dc62e030e8248030ee3ae030f70ad03107e91031113bd02117b7303118d6f0312c13e0314b41b03150a900315a0af0315d2f102166940031684690317fadd021ade71021ae0c0021b1eb7031b7553031b7798011bcf6b031bf60b001de4ce021e685a031e905e031f7b53032018f2002087e902214f910221777a002226aa0323336c03246ebc0324c18b0125a4eb00274d74032814a003294ab1022a103f032a3151032a62e3022aa69e032c1567022c5080022ceaab032cec3f032d5aa5032dbf55032e215c032e9b90022ea1b2032ef644032f39d5002f8b5703301e3c03302bad03304cc1023112bc03316e1a033192b50331c8550231ee8f03327e6c033314a903334da603340d350335d14103364cac03365fa70336e9d20036f9a203370599033780870237b4390338bbed023b92ab033d9d8e033db89e033dc7a2033de794033e3383003e44a4033ffc5002407fb30240b9990242b3ae004540570345b67e0245e3340345f9630345fca6034645650246a974034704a303475756034759470347c63e0347d08703483bdb0148c24f00496188024b55b1034b5db6024b6ee3014b765b024b7dcb024e78a8034e97c7025009aa035050ab035055a603508f0002511e0f025122da01514d0a03520043035243a7035266650353c9c00253ec740354029c0354b7dc0054c6fb0254e18703554f9a0355d33e03560a85005677e80256d3a90357426b0157ad120158fa560259666503598303035a02bd035b0b30025b1203025b2587035caeb9025d939d035dc09a035e36ff025e856002601bb303605f6a03608c620260d89c0361319703626c880362db620262edae03637c930363d03e0363d2a50363e697036455740164799e036532bf02656aaf0365a69e0065be690366497c036697b50366f96503670017036731960367a0af0367e539036878a80368c0a2036b1da8026b5847036cd4b5036cd6a5036d5639036e7379036eceff016efaa8027007a402700b5e027138b403726e4a00731054037359b90373e66c03743dac027511b103755caf0275a37e00762b8003780b9e037821ac03784d9402785dd301792f6c0379f237037a35ad037b62ce027bdd3c037be4a6037c1057037c5d5e037c82c9017d4fa7037d936d037dce11027df1e8017e0abe027eb1ab037ff59503803db303804a710280af890381b4e90281b98903824a69028391e60283f160008416610384584703848aa4038497df0286737b03867b060187de830087f0250188d1330289244f0389bea9038a3b8b038a8093008d12c6028dd472038de434038e27b0038e78a2008ea54c038f0abc038f7887039005a003906262039079a8039094a30390d5d0009123d30091a4ba03922fa1039286970392e4bd039340640393419c0393665c03942f4003944aa003949d6303949fb9039512510395b49203974869029776610297f6c400986fab039a2db9029abb7a039ca1af039d2bb4039e1761039e1b5a039ebc83039f37b2039febd402a157b103a2050600a3d40803a425a303a532a103a616a403a61f7603a6573f03a69ca403a6e9b300a736a800a7b57703a7c23301a885ae03a98b9903ab66e202ab7a9403ac86a903acd0a403ad30a103adcc5b03ae76af02ae867f03af60bd03af702e03b03acf02b1328503b1414503b1b82e03b1c77203b2ccc002b309aa03b3732002b409aa03b4287903b63c6e03b7345703b8029700b9088f03b9179e03b98ba003ba053303ba1bb702ba359d02bc6eb400be4e7f03be5a4e03bedf4403bef89f03bf31f802c0079a00c04f9c03c0cc9900c187a403c36d8100c37c4d03c3dc2403c3ef5d02c48ca203c4e8b403c5067c03c5399c03c70bc200c7fca303c8c95b03ca23b700cac5fb02cbe4b703cc495600cf2da203cf74aa00cf9eae03cfc29400cfe3ab03d0306f03d0b93503d0f6e401d10aa603d1fd4703d2c87703d3826100d3834b01d3e88d00d4806603d493a903d4cb3e03d5414803d5627602d565ff02d615b403d627b203d6643a03d6ecc602d7beb503d7d06003d7da7503d8e79c01d8ed8403d9054c03d916ac03d956c102d9612102d9dd8f03da19d700da858e03da896703da9ca403db2b9c03dc10ae03dc14b203dc3d9f03dd1b1901ddafab03de84b602def76a03e008b403e0198f02e0bc7d03e16d9901e183ac02e193b001e1ec7403e2e2c802e394a103e3c09a03e3ed8303e524bc02e74f7103e75f9703e7658003e7793503e8344803e8d1a903e95f9b03ea344803eab4a403ec279c03ec297a02ec389203ec487603ed056503ed793503edcfb903f003b302f0249f02f0409c03f0616d03f07f7103f0e0b600f0fedd02f10aaa02f17d5f00f1927f03f1f75002f1fc6000f2ffa501f308db00f38fae03f3a2b002f3cb9e03f457b402f4793503f531b802f62d3102f6f45703f7125e00f765a503f7ce7d02f7d36f00f8266103f86fb503f8793503f9215500f980cc02fb793503fbf1ae03fbf7a203fc034a03fc4f0201fcd59503fd0cb702fd175202fd4e8303fe834d03ff10dd01ffe3ce02f40006000000007012020086aa0300e7ba0301c2a2030212a40304e5a403059ea70308ba140208ed2f030937930309afa6030a056a030a8989030b1fac030c0b64030c267a030f44a30310b2750311637603118259031184a40312f3a4031579990315b784031675b7031682ae0317699503180a7c0319f7a5031aaba5031b5188031b74ab031d5aa1032001bb03211c8a0321bba80321c1a20322d7a103240b640326fdbb0328ba80032a26a0032ac8a8032b898e032ec1a2032fd35f013063a10330d1ed0232dd8a033336a20334a0ab0334a4960334abb603358ca20335f9a303366c730236cf7b0337295503378daa03380a5b03386989033917ea023d2a93033facb20340f4160341f9a3034229730342fba20343d3ad03453da40347b5b403480b0603499bac034caa74034dd9a40350c3880352136a03525bac035275a10352a2af0353ef970354d7b20356e1390357fbb00359e0a4035a9ea2035ad3a4035d80a0025e10e3025e26a3035f4ba4035fe4a9036058a203615db90364408303645db90364e1a50367269c036937a00369aa74036a289c036b31d5026b59a9036bbd45036ec7a1026fa4ab0370f9a203713dae037170ac0374b6320374c17e0375d6a0037669a20376f09a03770d2203784b5b037aa0b8037aab79037bd7a5037dbe31027fab9e037faf8903817a3703822bac0383bf480184c2730385b6320387387103890ea3038a2aa3038b84a0038c1687038c3889038dab9e038dd50303902eff02918cb60392589c039279a403941ca3039470a2039489a80395753803963e77039898aa03989f92039990ad039a00a3039ab68a039b1687039b619a039bd0b6039d2317039de18003a23a9a03a366a003a6c38e03a7b6a503a7cbb103a838a503a8615203a91eac02a9d66b03a9fe7503aaa82503aae4a503ab0fab03ab769a03ac7d6403aebb7a03af92a303afe3b703b0cc5002b2d2bb03b407b603b4e4a503b5328a03b702a303b7328003b8e4a503b9118f03b937a003b9978903b9e4a503ba01a303ba1caf03c03b8203c07c4901c07fa903c4dcb803c5f69e03c75ba403c7957802c7de3e03c8878703c8f5a103ca638903ccd3aa03ccf39102cd8a8003cdf54b03ce50a403cf50a403d0a96c03d1667c03d22fa503d246a703d3393f03d5dcbc03d5de4403d728a203d7865303d879a803d8f18f03d9796203db8d5103de35a103deb39e03dffeba03e90fa603e9789c03e9acaf03e9c1a203e9df3903eadb7a03ebbca403eca09302ecb17403edba7503edbe3403edd64c03eec1a203ef879503f24ca303f549b203f57f8503f69da203f6c7a803f8168703f8c7b702fb27ac03fb49ba03fb68a203fd01b3030400400100000303dd012f39d5004b11b400f3a2b002010041010000e645a803"
+          },
+          {
+            "name": "418A073AA3BC3475",
+            "kind": "binary",
+            "data": "10210100000000000400040001020500000000000e0000000d787900010000001a610b02f2000000a19f5e000c000000bc6eb40028000000d86c830206000100000027000000276b69019502000056737d00070000006b507e000200000090d5d00066000000cb0f660007000000e6c5310001000400000008000000a861520301006400000002000000cd67c5010600650000007600000065a69e000200000090d5d000f2010000a205060098000000c46b8100d0360000e6c5310011060000f0e0b6000100660000005f000000a20506000100670000003e000000a205060002006800000043000000a205060002000000bc6eb4000200700000000900000065a69e0002000000a20506000100720000003c050000a20506000100730000004200000065a69e000100760000001900000065a69e000100770000000900000065a69e0001007d0000002900000065a69e0001007f0000003200000065a69e00"
+          }
+        ]
+      },
+      "fields": [
+        {
+          "field": "418A073AA3BC2475",
+          "before": "binary:73ad000000000000040004000100d30102000000012e770302941703030657030310a202035eb403043eab0305f3ac03062e4c0306865303074ca60309ab6b0309cbaf030a7c0d030b349d020d6d1e020d7879000dc62e030e8248030ee3ae030f70ad03107e91031113bd02117b7303118d6f0312c13e0314b41b03150a900315a0af0315d2f102166940031684690317fadd021ade71021ae0c0021b1eb7031b7553031b7798011bcf6b031bf60b001de4ce021e685a031e905e031f7b53032018f2002087e902214f910221777a002226aa0323336c03246ebc0324c18b0125a4eb00274d74032814a003294ab1022a103f032a3151032a62e3022aa69e032c1567022c5080022ceaab032cec3f032d5aa5032dbf55032e215c032e9b90022ea1b2032f39d5002f8b5703301e3c03302bad03304cc1023112bc03316e1a033192b50331c8550231ee8f03327e6c033314a903334da603340d350335d14103364cac03365fa70336e9d20036f9a203370599033780870237b4390338bbed023b92ab033d9d8e033db89e033dc7a2033de794033e3383003e44a4033ffc5002407fb30240b9990242b3ae004540570345b67e0245e3340345f9630345fca6034645650246a974034704a303475756034759470347c63e0347d08703483bdb0148c24f00496188024b55b1034b6ee3014b765b024b7dcb024e78a8034e97c7025009aa035050ab035055a603508f0002511e0f025122da01514d0a03520043035243a7035266650353c9c00253ec740354029c0354b7dc0054c6fb0254e18703554f9a0355d33e03560a85005677e80256d3a90357426b0157ad120158fa560259666503598303035a02bd035b0b30025b1203025b2587035caeb9025d939d035dc09a035e36ff025e856002605f6a03608c620260d89c0361319703626c880362db620262edae03637c930363d03e0363d2a50363e697036455740164799e036532bf02656aaf0365a69e0065be690366497c036697b50366f96503670017036731960367a0af0367e539036878a80368c0a2036b1da8026b5847036cd4b5036cd6a5036d5639036e7379036eceff016efaa8027007a402700b5e027138b403726e4a00731054037359b90373e66c03743dac027511b103755caf0275a37e00762b8003780b9e037821ac03784d9402785dd301792f6c0379f237037a35ad037b62ce027bdd3c037be4a6037c1057037c82c9017d4fa7037d936d037dce11027df1e8017e0abe027eb1ab037ff59503803db303804a710280af890381b4e90281b98903824a69028391e60283f160008416610384584703848aa4038497df0286737b03867b060187de830087f0250188d1330289244f0389bea9038a3b8b038a8093008d12c6028dd472038de434038e27b0038e78a2008ea54c038f0abc038f7887039005a003906262039079a8039094a30390d5d0009123d30091a4ba03922fa1039286970392e4bd039340640393419c0393665c03942f4003944aa003949d6303949fb9039512510395b49203974869029776610297f6c400986fab039a2db9029abb7a039ca1af039d2bb4039e1761039e1b5a039ebc83039f37b2039febd402a157b103a2050600a3d40803a425a303a532a103a616a403a61f7603a6573f03a69ca403a6e9b300a736a800a7b57703a7c23301a885ae03a98b9903ab66e202ab7a9403ac86a903acd0a403ad30a103adcc5b03ae76af02ae867f03af60bd03b03acf02b1328503b1414503b1b82e03b1c77203b2ccc002b309aa03b3732002b409aa03b4287903b63c6e03b7345703b8029700b9088f03b9179e03b98ba003ba053303ba1bb702ba359d02bc6eb400be4e7f03be5a4e03bedf4403bef89f03bf31f802c0079a00c04f9c03c0cc9900c187a403c36d8100c37c4d03c3dc2403c3ef5d02c48ca203c4e8b403c5067c03c5399c03c70bc200c7fca303c8c95b03ca23b700cac5fb02cbe4b703cc495600cf2da203cf74aa00cf9eae03cfc29400cfe3ab03d0306f03d0b93503d0f6e401d10aa603d1fd4703d2c87703d3826100d3834b01d3e88d00d4806603d493a903d4cb3e03d5414803d5627602d565ff02d615b403d627b203d6643a03d6ecc602d7beb503d7d06003d7da7503d8e79c01d8ed8403d9054c03d916ac03d956c102d9612102d9dd8f03da19d700da858e03da896703da9ca403db2b9c03dc10ae03dc14b203dc3d9f03dd1b1901ddafab03de84b602def76a03e008b403e0198f02e0bc7d03e16d9901e183ac02e193b001e1ec7403e2e2c802e394a103e3c09a03e3ed8303e524bc02e74f7103e75f9703e7658003e7793503e8344803e8d1a903e95f9b03ea344803eab4a403ec279c03ec297a02ec389203ec487603ed793503edcfb903f003b302f0249f02f0409c03f0616d03f07f7103f0e0b600f0fedd02f10aaa02f17d5f00f1927f03f1f75002f1fc6000f2ffa501f308db00f38fae03f3a2b002f3cb9e03f457b402f4793503f531b802f62d3102f6f45703f7125e00f765a503f7ce7d02f7d36f00f8266103f8793503f9215500f980cc02fb793503fbf1ae03fbf7a203fc034a03fc4f0201fcd59503fd0cb702fd175202fd4e8303fe834d03ff10dd01ffe3ce02ee0006000000007012020086aa0300e7ba0301c2a2030212a40304e5a403059ea70308ba140208ed2f030937930309afa6030a056a030a8989030b1fac030c0b64030c267a030f44a30310b2750311637603118259031184a40312f3a403157999031675b7031682ae0317699503180a7c0319f7a5031aaba5031b5188031b74ab031d5aa1032001bb03211c8a0321bba80321c1a20322d7a103240b640326fdbb0328ba80032a26a0032ac8a8032b898e032ec1a2032fd35f013063a10330d1ed0232dd8a033336a20334a0ab0334a4960334abb603358ca20335f9a303366c730236cf7b0337295503378daa03380a5b03386989033917ea023d2a93033facb20341f9a3034229730342fba20343d3ad03453da40347b5b403499bac034caa74034dd9a40350c3880352136a03525bac035275a10352a2af0353ef970354d7b20356e1390357fbb00359e0a4035a9ea2035ad3a4035d80a0025e10e3025e26a3035f4ba4035fe4a9036058a203615db90364408303645db90364e1a50367269c036937a00369aa74036a289c036b31d5026b59a9036bbd45036ec7a1026fa4ab0370f9a203713dae037170ac0374b6320374c17e0375d6a0037669a20376f09a03770d2203784b5b037aa0b8037aab79037bd7a5037dbe31027fab9e037faf8903817a3703822bac0383bf480184c2730385b6320387387103890ea3038a2aa3038b84a0038c1687038c3889038dab9e038dd50303918cb60392589c039279a403941ca3039470a2039489a80395753803963e77039898aa03989f92039990ad039a00a3039ab68a039b1687039b619a039d2317039de18003a23a9a03a366a003a6c38e03a7b6a503a7cbb103a838a503a8615203a91eac02a9d66b03a9fe7503aaa82503aae4a503ab0fab03ab769a03ac7d6403aebb7a03af92a303afe3b703b0cc5002b2d2bb03b407b603b4e4a503b5328a03b702a303b7328003b8e4a503b9118f03b937a003b9978903b9e4a503ba01a303ba1caf03c03b8203c07c4901c07fa903c4dcb803c5f69e03c75ba403c7957802c7de3e03c8878703c8f5a103ca638903ccd3aa03ccf39102cd8a8003cdf54b03ce50a403cf50a403d0a96c03d1667c03d22fa503d246a703d3393f03d5dcbc03d5de4403d728a203d7865303d879a803d8f18f03d9796203db8d5103de35a103deb39e03dffeba03e90fa603e9789c03e9acaf03e9c1a203e9df3903eadb7a03ebbca403eca09302ecb17403edba7503edbe3403edd64c03eec1a203ef879503f24ca303f549b203f57f8503f69da203f6c7a803f8168703f8c7b702fb27ac03fb68a203fd01b3030400400100000303dd012f39d5004b11b400f3a2b002010041010000e645a803",
+          "after": "binary:7bad000000000000040004000100da0102000000012e770302941703030657030310a202035eb403043eab0305f3ac03062e4c0306865303074ca60309ab6b0309cbaf030a7c0d030b349d020d6d1e020d7879000dc62e030e8248030ee3ae030f70ad03107e91031113bd02117b7303118d6f0312c13e0314b41b03150a900315a0af0315d2f102166940031684690317fadd021ade71021ae0c0021b1eb7031b7553031b7798011bcf6b031bf60b001de4ce021e685a031e905e031f7b53032018f2002087e902214f910221777a002226aa0323336c03246ebc0324c18b0125a4eb00274d74032814a003294ab1022a103f032a3151032a62e3022aa69e032c1567022c5080022ceaab032cec3f032d5aa5032dbf55032e215c032e9b90022ea1b2032ef644032f39d5002f8b5703301e3c03302bad03304cc1023112bc03316e1a033192b50331c8550231ee8f03327e6c033314a903334da603340d350335d14103364cac03365fa70336e9d20036f9a203370599033780870237b4390338bbed023b92ab033d9d8e033db89e033dc7a2033de794033e3383003e44a4033ffc5002407fb30240b9990242b3ae004540570345b67e0245e3340345f9630345fca6034645650246a974034704a303475756034759470347c63e0347d08703483bdb0148c24f00496188024b55b1034b5db6024b6ee3014b765b024b7dcb024e78a8034e97c7025009aa035050ab035055a603508f0002511e0f025122da01514d0a03520043035243a7035266650353c9c00253ec740354029c0354b7dc0054c6fb0254e18703554f9a0355d33e03560a85005677e80256d3a90357426b0157ad120158fa560259666503598303035a02bd035b0b30025b1203025b2587035caeb9025d939d035dc09a035e36ff025e856002601bb303605f6a03608c620260d89c0361319703626c880362db620262edae03637c930363d03e0363d2a50363e697036455740164799e036532bf02656aaf0365a69e0065be690366497c036697b50366f96503670017036731960367a0af0367e539036878a80368c0a2036b1da8026b5847036cd4b5036cd6a5036d5639036e7379036eceff016efaa8027007a402700b5e027138b403726e4a00731054037359b90373e66c03743dac027511b103755caf0275a37e00762b8003780b9e037821ac03784d9402785dd301792f6c0379f237037a35ad037b62ce027bdd3c037be4a6037c1057037c5d5e037c82c9017d4fa7037d936d037dce11027df1e8017e0abe027eb1ab037ff59503803db303804a710280af890381b4e90281b98903824a69028391e60283f160008416610384584703848aa4038497df0286737b03867b060187de830087f0250188d1330289244f0389bea9038a3b8b038a8093008d12c6028dd472038de434038e27b0038e78a2008ea54c038f0abc038f7887039005a003906262039079a8039094a30390d5d0009123d30091a4ba03922fa1039286970392e4bd039340640393419c0393665c03942f4003944aa003949d6303949fb9039512510395b49203974869029776610297f6c400986fab039a2db9029abb7a039ca1af039d2bb4039e1761039e1b5a039ebc83039f37b2039febd402a157b103a2050600a3d40803a425a303a532a103a616a403a61f7603a6573f03a69ca403a6e9b300a736a800a7b57703a7c23301a885ae03a98b9903ab66e202ab7a9403ac86a903acd0a403ad30a103adcc5b03ae76af02ae867f03af60bd03af702e03b03acf02b1328503b1414503b1b82e03b1c77203b2ccc002b309aa03b3732002b409aa03b4287903b63c6e03b7345703b8029700b9088f03b9179e03b98ba003ba053303ba1bb702ba359d02bc6eb400be4e7f03be5a4e03bedf4403bef89f03bf31f802c0079a00c04f9c03c0cc9900c187a403c36d8100c37c4d03c3dc2403c3ef5d02c48ca203c4e8b403c5067c03c5399c03c70bc200c7fca303c8c95b03ca23b700cac5fb02cbe4b703cc495600cf2da203cf74aa00cf9eae03cfc29400cfe3ab03d0306f03d0b93503d0f6e401d10aa603d1fd4703d2c87703d3826100d3834b01d3e88d00d4806603d493a903d4cb3e03d5414803d5627602d565ff02d615b403d627b203d6643a03d6ecc602d7beb503d7d06003d7da7503d8e79c01d8ed8403d9054c03d916ac03d956c102d9612102d9dd8f03da19d700da858e03da896703da9ca403db2b9c03dc10ae03dc14b203dc3d9f03dd1b1901ddafab03de84b602def76a03e008b403e0198f02e0bc7d03e16d9901e183ac02e193b001e1ec7403e2e2c802e394a103e3c09a03e3ed8303e524bc02e74f7103e75f9703e7658003e7793503e8344803e8d1a903e95f9b03ea344803eab4a403ec279c03ec297a02ec389203ec487603ed056503ed793503edcfb903f003b302f0249f02f0409c03f0616d03f07f7103f0e0b600f0fedd02f10aaa02f17d5f00f1927f03f1f75002f1fc6000f2ffa501f308db00f38fae03f3a2b002f3cb9e03f457b402f4793503f531b802f62d3102f6f45703f7125e00f765a503f7ce7d02f7d36f00f8266103f86fb503f8793503f9215500f980cc02fb793503fbf1ae03fbf7a203fc034a03fc4f0201fcd59503fd0cb702fd175202fd4e8303fe834d03ff10dd01ffe3ce02f40006000000007012020086aa0300e7ba0301c2a2030212a40304e5a403059ea70308ba140208ed2f030937930309afa6030a056a030a8989030b1fac030c0b64030c267a030f44a30310b2750311637603118259031184a40312f3a4031579990315b784031675b7031682ae0317699503180a7c0319f7a5031aaba5031b5188031b74ab031d5aa1032001bb03211c8a0321bba80321c1a20322d7a103240b640326fdbb0328ba80032a26a0032ac8a8032b898e032ec1a2032fd35f013063a10330d1ed0232dd8a033336a20334a0ab0334a4960334abb603358ca20335f9a303366c730236cf7b0337295503378daa03380a5b03386989033917ea023d2a93033facb20340f4160341f9a3034229730342fba20343d3ad03453da40347b5b403480b0603499bac034caa74034dd9a40350c3880352136a03525bac035275a10352a2af0353ef970354d7b20356e1390357fbb00359e0a4035a9ea2035ad3a4035d80a0025e10e3025e26a3035f4ba4035fe4a9036058a203615db90364408303645db90364e1a50367269c036937a00369aa74036a289c036b31d5026b59a9036bbd45036ec7a1026fa4ab0370f9a203713dae037170ac0374b6320374c17e0375d6a0037669a20376f09a03770d2203784b5b037aa0b8037aab79037bd7a5037dbe31027fab9e037faf8903817a3703822bac0383bf480184c2730385b6320387387103890ea3038a2aa3038b84a0038c1687038c3889038dab9e038dd50303902eff02918cb60392589c039279a403941ca3039470a2039489a80395753803963e77039898aa03989f92039990ad039a00a3039ab68a039b1687039b619a039bd0b6039d2317039de18003a23a9a03a366a003a6c38e03a7b6a503a7cbb103a838a503a8615203a91eac02a9d66b03a9fe7503aaa82503aae4a503ab0fab03ab769a03ac7d6403aebb7a03af92a303afe3b703b0cc5002b2d2bb03b407b603b4e4a503b5328a03b702a303b7328003b8e4a503b9118f03b937a003b9978903b9e4a503ba01a303ba1caf03c03b8203c07c4901c07fa903c4dcb803c5f69e03c75ba403c7957802c7de3e03c8878703c8f5a103ca638903ccd3aa03ccf39102cd8a8003cdf54b03ce50a403cf50a403d0a96c03d1667c03d22fa503d246a703d3393f03d5dcbc03d5de4403d728a203d7865303d879a803d8f18f03d9796203db8d5103de35a103deb39e03dffeba03e90fa603e9789c03e9acaf03e9c1a203e9df3903eadb7a03ebbca403eca09302ecb17403edba7503edbe3403edd64c03eec1a203ef879503f24ca303f549b203f57f8503f69da203f6c7a803f8168703f8c7b702fb27ac03fb49ba03fb68a203fd01b3030400400100000303dd012f39d5004b11b400f3a2b002010041010000e645a803"
+        },
+        {
+          "field": "418A073AA3BC3475",
+          "before": "binary:08210100000000000400040001020500000000000e0000000d787900010000001a610b02f0000000a19f5e000c000000bc6eb40023000000d86c830206000100000027000000276b69018802000056737d00070000006b507e000200000090d5d00066000000cb0f660007000000e6c5310001000400000007000000a861520301006400000001000000cd67c5010600650000007400000065a69e000200000090d5d000af010000a205060096000000c46b8100d0360000e6c5310036050000f0e0b60001006600000046000000a20506000100670000003b000000a20506000200680000003f000000a205060002000000bc6eb4000200700000000700000065a69e0002000000a2050600010072000000f5040000a20506000100730000003d00000065a69e000100760000001900000065a69e000100770000000800000065a69e0001007d0000002400000065a69e0001007f0000002c00000065a69e00",
+          "after": "binary:10210100000000000400040001020500000000000e0000000d787900010000001a610b02f2000000a19f5e000c000000bc6eb40028000000d86c830206000100000027000000276b69019502000056737d00070000006b507e000200000090d5d00066000000cb0f660007000000e6c5310001000400000008000000a861520301006400000002000000cd67c5010600650000007600000065a69e000200000090d5d000f2010000a205060098000000c46b8100d0360000e6c5310011060000f0e0b6000100660000005f000000a20506000100670000003e000000a205060002006800000043000000a205060002000000bc6eb4000200700000000900000065a69e0002000000a20506000100720000003c050000a20506000100730000004200000065a69e000100760000001900000065a69e000100770000000900000065a69e0001007d0000002900000065a69e0001007f0000003200000065a69e00"
+        }
+      ]
+    },
+    {
+      "key": "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileService\\References\\S-1-5-21-%REDACTED%",
+      "view": "64",
+      "kind": "modified",
+      "before": {
+        "key": "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileService\\References\\S-1-5-21-%REDACTED%",
+        "view": "64",
+        "values": [
+          {
+            "name": "RefCount",
+            "kind": "binary",
+            "data": "09000000"
+          }
+        ]
+      },
+      "after": {
+        "key": "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileService\\References\\S-1-5-21-%REDACTED%",
+        "view": "64",
+        "values": [
+          {
+            "name": "RefCount",
+            "kind": "binary",
+            "data": "0a000000"
+          }
+        ]
+      },
+      "fields": [
+        {
+          "field": "RefCount",
+          "before": "binary:09000000",
+          "after": "binary:0a000000"
+        }
+      ]
+    },
+    {
+      "key": "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{80289FE3-3567-4214-9FFD-B16A50D53250}",
+      "view": "64",
+      "kind": "modified",
+      "before": {
+        "key": "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{80289FE3-3567-4214-9FFD-B16A50D53250}",
+        "view": "64",
+        "values": [
+          {
+            "name": "DynamicInfo",
+            "kind": "binary",
+            "data": "03000000611a08eee43add01d92d5ee02069dd010000000002000780457c7261fe4edd01"
+          }
+        ]
+      },
+      "after": {
+        "key": "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tasks\\{80289FE3-3567-4214-9FFD-B16A50D53250}",
+        "view": "64",
+        "values": [
+          {
+            "name": "DynamicInfo",
+            "kind": "binary",
+            "data": "03000000611a08eee43add01065422422969dd010000000002000780457c7261fe4edd01"
+          }
+        ]
+      },
+      "fields": [
+        {
+          "field": "DynamicInfo",
+          "before": "binary:03000000611a08eee43add01d92d5ee02069dd010000000002000780457c7261fe4edd01",
+          "after": "binary:03000000611a08eee43add01065422422969dd010000000002000780457c7261fe4edd01"
+        }
+      ]
+    },
+    {
+      "key": "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\VolatileNotifications",
+      "view": "64",
+      "kind": "modified",
+      "before": {
+        "key": "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\VolatileNotifications",
+        "view": "64",
+        "values": []
+      },
+      "after": {
+        "key": "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\VolatileNotifications",
+        "view": "64",
+        "values": [
+          {
+            "name": "41C64E6DA200A055",
+            "kind": "binary",
+            "data": "010004804400000050000000000000001400000002003000020000000000140003000000010100000000000512000000000014000000010001010000000000051200000001010000000000051200000001010000000000051200000020000000"
+          }
+        ]
+      },
+      "fields": [
+        {
+          "field": "41C64E6DA200A055",
+          "before": "",
+          "after": "binary:010004804400000050000000000000001400000002003000020000000000140003000000010100000000000512000000000014000000010001010000000000051200000001010000000000051200000001010000000000051200000020000000"
+        }
+      ]
+    },
+    {
+      "key": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\AntiCheatExpert",
+      "view": "64",
+      "kind": "removed",
+      "before": {
+        "key": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\AntiCheatExpert",
+        "view": "64",
+        "values": [
+          {
+            "name": "DisplayIcon",
+            "kind": "sz",
+            "data": "D:\\SteamLibrary\\steamapps\\common\\Wuthering Waves\\Client\\Binaries\\Win64\\AntiCheatExpert\\ACE-Setup64.exe"
+          },
+          {
+            "name": "DisplayName",
+            "kind": "sz",
+            "data": "AntiCheatExpert"
+          },
+          {
+            "name": "DisplayVersion",
+            "kind": "sz",
+            "data": "28.6.2606.970"
+          },
+          {
+            "name": "InstallLocation",
+            "kind": "sz",
+            "data": "C:\\Program Files\\AntiCheatExpert"
+          },
+          {
+            "name": "NoModify",
+            "kind": "dword",
+            "data": "1"
+          },
+          {
+            "name": "NoRepair",
+            "kind": "dword",
+            "data": "1"
+          },
+          {
+            "name": "UninstallString",
+            "kind": "sz",
+            "data": "C:\\Program Files\\AntiCheatExpert\\Uninstaller.exe"
+          }
+        ]
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "key": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\VFUProvider",
+      "view": "64",
+      "kind": "modified",
+      "before": {
+        "key": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\VFUProvider",
+        "view": "64",
+        "values": [
+          {
+            "name": "StartTime",
+            "kind": "qword",
+            "data": "134379189000127104"
+          }
+        ]
+      },
+      "after": {
+        "key": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\VFUProvider",
+        "view": "64",
+        "values": [
+          {
+            "name": "StartTime",
+            "kind": "qword",
+            "data": "134379191400055459"
+          }
+        ]
+      },
+      "fields": [
+        {
+          "field": "StartTime",
+          "before": "qword:134379189000127104",
+          "after": "qword:134379191400055459"
+        }
+      ]
+    },
+    {
+      "key": "HKLM\\SOFTWARE\\Microsoft\\Windows\\Windows Error Reporting\\TermReason\\26652",
+      "view": "64",
+      "kind": "added",
+      "before": null,
+      "after": {
+        "key": "HKLM\\SOFTWARE\\Microsoft\\Windows\\Windows Error Reporting\\TermReason\\26652",
+        "view": "64",
+        "values": [
+          {
+            "name": "CreationTime",
+            "kind": "qword",
+            "data": "134379190419148775"
+          },
+          {
+            "name": "Reason",
+            "kind": "dword",
+            "data": "4"
+          },
+          {
+            "name": "Terminator",
+            "kind": "sz",
+            "data": "HAM"
+          }
+        ]
+      },
+      "fields": []
+    },
+    {
+      "key": "HKLM\\SOFTWARE\\Microsoft\\Windows\\Windows Error Reporting\\TermReason\\37032",
+      "view": "64",
+      "kind": "added",
+      "before": null,
+      "after": {
+        "key": "HKLM\\SOFTWARE\\Microsoft\\Windows\\Windows Error Reporting\\TermReason\\37032",
+        "view": "64",
+        "values": [
+          {
+            "name": "CreationTime",
+            "kind": "qword",
+            "data": "134379190418055746"
+          },
+          {
+            "name": "Reason",
+            "kind": "dword",
+            "data": "4"
+          },
+          {
+            "name": "Terminator",
+            "kind": "sz",
+            "data": "HAM"
+          }
+        ]
+      },
+      "fields": []
+    },
+    {
+      "key": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\ACE-BASE",
+      "view": "32",
+      "kind": "removed",
+      "before": {
+        "key": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\ACE-BASE",
+        "view": "32",
+        "values": [
+          {
+            "name": "DisplayName",
+            "kind": "sz",
+            "data": "ACE-BASE"
+          },
+          {
+            "name": "ErrorControl",
+            "kind": "dword",
+            "data": "1"
+          },
+          {
+            "name": "ImagePath",
+            "kind": "expand_sz",
+            "data": "\\??\\C:\\WINDOWS\\system32\\drivers\\ACE-BASE.sys"
+          },
+          {
+            "name": "Start",
+            "kind": "dword",
+            "data": "3"
+          },
+          {
+            "name": "Type",
+            "kind": "dword",
+            "data": "1"
+          }
+        ]
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "key": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\ACE-BASE",
+      "view": "64",
+      "kind": "removed",
+      "before": {
+        "key": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\ACE-BASE",
+        "view": "64",
+        "values": [
+          {
+            "name": "DisplayName",
+            "kind": "sz",
+            "data": "ACE-BASE"
+          },
+          {
+            "name": "ErrorControl",
+            "kind": "dword",
+            "data": "1"
+          },
+          {
+            "name": "ImagePath",
+            "kind": "expand_sz",
+            "data": "\\??\\C:\\WINDOWS\\system32\\drivers\\ACE-BASE.sys"
+          },
+          {
+            "name": "Start",
+            "kind": "dword",
+            "data": "3"
+          },
+          {
+            "name": "Type",
+            "kind": "dword",
+            "data": "1"
+          }
+        ]
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "key": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\ACE-BASE\\Final",
+      "view": "32",
+      "kind": "removed",
+      "before": {
+        "key": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\ACE-BASE\\Final",
+        "view": "32",
+        "values": [
+          {
+            "name": "1",
+            "kind": "qword",
+            "data": "12720734"
+          },
+          {
+            "name": "11",
+            "kind": "qword",
+            "data": "12721984"
+          },
+          {
+            "name": "13",
+            "kind": "qword",
+            "data": "12722046"
+          },
+          {
+            "name": "14",
+            "kind": "qword",
+            "data": "12722265"
+          },
+          {
+            "name": "15",
+            "kind": "qword",
+            "data": "12722265"
+          },
+          {
+            "name": "16",
+            "kind": "qword",
+            "data": "12722531"
+          },
+          {
+            "name": "17",
+            "kind": "qword",
+            "data": "12722546"
+          },
+          {
+            "name": "18",
+            "kind": "qword",
+            "data": "12722546"
+          },
+          {
+            "name": "19",
+            "kind": "qword",
+            "data": "12722546"
+          },
+          {
+            "name": "2",
+            "kind": "qword",
+            "data": "12720734"
+          },
+          {
+            "name": "20",
+            "kind": "qword",
+            "data": "12722546"
+          },
+          {
+            "name": "2048",
+            "kind": "qword",
+            "data": "12720734"
+          },
+          {
+            "name": "2049",
+            "kind": "qword",
+            "data": "12720734"
+          },
+          {
+            "name": "22",
+            "kind": "qword",
+            "data": "12722578"
+          },
+          {
+            "name": "23",
+            "kind": "qword",
+            "data": "12723156"
+          },
+          {
+            "name": "24",
+            "kind": "qword",
+            "data": "12723156"
+          },
+          {
+            "name": "25",
+            "kind": "qword",
+            "data": "12723156"
+          },
+          {
+            "name": "26",
+            "kind": "qword",
+            "data": "12723156"
+          },
+          {
+            "name": "27",
+            "kind": "qword",
+            "data": "12724156"
+          },
+          {
+            "name": "28",
+            "kind": "qword",
+            "data": "12724156"
+          },
+          {
+            "name": "29",
+            "kind": "qword",
+            "data": "12724156"
+          },
+          {
+            "name": "3",
+            "kind": "qword",
+            "data": "12724468"
+          },
+          {
+            "name": "4",
+            "kind": "qword",
+            "data": "12724468"
+          },
+          {
+            "name": "5",
+            "kind": "qword",
+            "data": "12720734"
+          },
+          {
+            "name": "6",
+            "kind": "qword",
+            "data": "12720750"
+          },
+          {
+            "name": "7",
+            "kind": "qword",
+            "data": "12721671"
+          },
+          {
+            "name": "8",
+            "kind": "qword",
+            "data": "12721671"
+          },
+          {
+            "name": "9",
+            "kind": "qword",
+            "data": "12721984"
+          },
+          {
+            "name": "UData",
+            "kind": "dword",
+            "data": "4"
+          }
+        ]
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "key": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\ACE-BASE\\Final",
+      "view": "64",
+      "kind": "removed",
+      "before": {
+        "key": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\ACE-BASE\\Final",
+        "view": "64",
+        "values": [
+          {
+            "name": "1",
+            "kind": "qword",
+            "data": "12720734"
+          },
+          {
+            "name": "11",
+            "kind": "qword",
+            "data": "12721984"
+          },
+          {
+            "name": "13",
+            "kind": "qword",
+            "data": "12722046"
+          },
+          {
+            "name": "14",
+            "kind": "qword",
+            "data": "12722265"
+          },
+          {
+            "name": "15",
+            "kind": "qword",
+            "data": "12722265"
+          },
+          {
+            "name": "16",
+            "kind": "qword",
+            "data": "12722531"
+          },
+          {
+            "name": "17",
+            "kind": "qword",
+            "data": "12722546"
+          },
+          {
+            "name": "18",
+            "kind": "qword",
+            "data": "12722546"
+          },
+          {
+            "name": "19",
+            "kind": "qword",
+            "data": "12722546"
+          },
+          {
+            "name": "2",
+            "kind": "qword",
+            "data": "12720734"
+          },
+          {
+            "name": "20",
+            "kind": "qword",
+            "data": "12722546"
+          },
+          {
+            "name": "2048",
+            "kind": "qword",
+            "data": "12720734"
+          },
+          {
+            "name": "2049",
+            "kind": "qword",
+            "data": "12720734"
+          },
+          {
+            "name": "22",
+            "kind": "qword",
+            "data": "12722578"
+          },
+          {
+            "name": "23",
+            "kind": "qword",
+            "data": "12723156"
+          },
+          {
+            "name": "24",
+            "kind": "qword",
+            "data": "12723156"
+          },
+          {
+            "name": "25",
+            "kind": "qword",
+            "data": "12723156"
+          },
+          {
+            "name": "26",
+            "kind": "qword",
+            "data": "12723156"
+          },
+          {
+            "name": "27",
+            "kind": "qword",
+            "data": "12724156"
+          },
+          {
+            "name": "28",
+            "kind": "qword",
+            "data": "12724156"
+          },
+          {
+            "name": "29",
+            "kind": "qword",
+            "data": "12724156"
+          },
+          {
+            "name": "3",
+            "kind": "qword",
+            "data": "12724468"
+          },
+          {
+            "name": "4",
+            "kind": "qword",
+            "data": "12724468"
+          },
+          {
+            "name": "5",
+            "kind": "qword",
+            "data": "12720734"
+          },
+          {
+            "name": "6",
+            "kind": "qword",
+            "data": "12720750"
+          },
+          {
+            "name": "7",
+            "kind": "qword",
+            "data": "12721671"
+          },
+          {
+            "name": "8",
+            "kind": "qword",
+            "data": "12721671"
+          },
+          {
+            "name": "9",
+            "kind": "qword",
+            "data": "12721984"
+          },
+          {
+            "name": "UData",
+            "kind": "dword",
+            "data": "4"
+          }
+        ]
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "key": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\AntiCheatExpert Protection",
+      "view": "32",
+      "kind": "removed",
+      "before": {
+        "key": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\AntiCheatExpert Protection",
+        "view": "32",
+        "values": [
+          {
+            "name": "Description",
+            "kind": "sz",
+            "data": "AntiCheatExpert Protection"
+          },
+          {
+            "name": "DisplayName",
+            "kind": "sz",
+            "data": "AntiCheatExpert Protection"
+          },
+          {
+            "name": "ErrorControl",
+            "kind": "dword",
+            "data": "1"
+          },
+          {
+            "name": "ImagePath",
+            "kind": "expand_sz",
+            "data": "\"C:\\Program Files\\AntiCheatExpert\\ACE-Service64.exe\"  -autorun"
+          },
+          {
+            "name": "ObjectName",
+            "kind": "sz",
+            "data": "LocalSystem"
+          },
+          {
+            "name": "Start",
+            "kind": "dword",
+            "data": "3"
+          },
+          {
+            "name": "Type",
+            "kind": "dword",
+            "data": "272"
+          }
+        ]
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "key": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\AntiCheatExpert Protection",
+      "view": "64",
+      "kind": "removed",
+      "before": {
+        "key": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\AntiCheatExpert Protection",
+        "view": "64",
+        "values": [
+          {
+            "name": "Description",
+            "kind": "sz",
+            "data": "AntiCheatExpert Protection"
+          },
+          {
+            "name": "DisplayName",
+            "kind": "sz",
+            "data": "AntiCheatExpert Protection"
+          },
+          {
+            "name": "ErrorControl",
+            "kind": "dword",
+            "data": "1"
+          },
+          {
+            "name": "ImagePath",
+            "kind": "expand_sz",
+            "data": "\"C:\\Program Files\\AntiCheatExpert\\ACE-Service64.exe\"  -autorun"
+          },
+          {
+            "name": "ObjectName",
+            "kind": "sz",
+            "data": "LocalSystem"
+          },
+          {
+            "name": "Start",
+            "kind": "dword",
+            "data": "3"
+          },
+          {
+            "name": "Type",
+            "kind": "dword",
+            "data": "272"
+          }
+        ]
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "key": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\AntiCheatExpert Protection\\Security",
+      "view": "32",
+      "kind": "removed",
+      "before": {
+        "key": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\AntiCheatExpert Protection\\Security",
+        "view": "32",
+        "values": [
+          {
+            "name": "Security",
+            "kind": "binary",
+            "data": "01001480a0000000ac000000140000003000000002001c000100000002801400ff010f000101000000000001000000000200700005000000000014003000030001010000000000010000000000001400fd01020001010000000000051200000000001800ff010f0001020000000000052000000020020000000014008d010200010100000000000504000000000014008d010200010100000000000506000000010100000000000512000000010100000000000512000000"
+          }
+        ]
+      },
+      "after": null,
+      "fields": []
+    },
+    {
+      "key": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\AntiCheatExpert Protection\\Security",
+      "view": "64",
+      "kind": "removed",
+      "before": {
+        "key": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\AntiCheatExpert Protection\\Security",
+        "view": "64",
+        "values": [
+          {
+            "name": "Security",
+            "kind": "binary",
+            "data": "01001480a0000000ac000000140000003000000002001c000100000002801400ff010f000101000000000001000000000200700005000000000014003000030001010000000000010000000000001400fd01020001010000000000051200000000001800ff010f0001020000000000052000000020020000000014008d010200010100000000000504000000000014008d010200010100000000000506000000010100000000000512000000010100000000000512000000"
+          }
+        ]
+      },
+      "after": null,
+      "fields": []
+    }
+  ],
+  "registry_policy_changed": false,
+  "filesystem_policy_changed": false,
+  "libraries": [
+    {
+      "launcher": "steam",
+      "path": "C:\\Program Files (x86)\\Steam"
+    },
+    {
+      "launcher": "steam",
+      "path": "D:\\SteamLibrary"
+    },
+    {
+      "launcher": "epic",
+      "path": "D:\\another\\epic"
+    }
+  ],
+  "signers": {
+    "ACEVILLE PTE LTD": 2,
+    "Microsoft Windows Hardware Compatibility Publisher": 4
+  },
+  "refiltered": {
+    "registry_records": 0,
+    "registry_values": 0,
+    "access_denied": 0,
+    "emptied_keys": 0,
+    "files": 92518
+  }
+}
