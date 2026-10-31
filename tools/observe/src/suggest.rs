@@ -2406,6 +2406,15 @@ mod tests {
     const ACE_INSTALL_DRAFT: &str =
         include_str!("../../../observations/2026-10-10-anticheatexpert/draft.toml");
 
+    /// The committed `AntiCheatExpert` 29.6 install diff, by Arknights:
+    /// Endfield on a machine without ACE.
+    const ACE_29_INSTALL_DIFF: &str =
+        include_str!("../../../observations/2026-10-31-anticheatexpert/install.json");
+
+    /// The draft committed alongside it.
+    const ACE_29_INSTALL_DRAFT: &str =
+        include_str!("../../../observations/2026-10-31-anticheatexpert/draft.toml");
+
     /// The committed `AntiCheatExpert` diff, which runs from installed to
     /// uninstalled.
     const ACE_REMOVAL_DIFF: &str =
@@ -2477,6 +2486,29 @@ mod tests {
         .expect("the draft serialises");
 
         assert_eq!(rendered, ACE_INSTALL_DRAFT);
+    }
+
+    #[test]
+    fn the_committed_anticheatexpert_29_draft_is_reproducible_from_its_committed_diff() {
+        // Unscoped too. Its core drivers are services whose names alone carry
+        // the title's id, and `ACE-ADVT` is left out for a reviewer: nothing
+        // in the diff ties a Microsoft-signed file in System32 to ACE.
+        let diff: Diff =
+            serde_json::from_str(ACE_29_INSTALL_DIFF).expect("the committed install diff parses");
+
+        let generated = draft(&diff, None, Some("ACEVILLE PTE LTD"));
+        let rendered =
+            to_toml(&generated, generated_utc(ACE_29_INSTALL_DRAFT)).expect("the draft serialises");
+
+        assert_eq!(rendered, ACE_29_INSTALL_DRAFT);
+        assert!(
+            generated
+                .review
+                .iter()
+                .any(|note| note.contains("`24303`") && note.contains("per-title drivers")),
+            "{:?}",
+            generated.review
+        );
     }
 
     #[test]

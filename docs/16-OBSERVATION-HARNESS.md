@@ -602,6 +602,21 @@ contributor called it under whatever profile they keep it. The rules:
   (one title counted as two), a footprint that is itself an intersection, and
   footprints whose snapshots differ in format.
 
+**Titles ship different versions, and identity is by name.** The first
+intersection of real footprints (`observations/2026-10-31-anticheatexpert/`)
+put ACE 28.6, from Wuthering Waves, beside ACE 29.6, from Arknights: Endfield.
+Their shared part has the service, its key, the folders and the uninstall
+entry, but no kernel driver service. The two versions register different
+drivers, and each title adds a core pair of its own. A driver one version
+renames therefore drops out of the intersection, which is correct: it is not
+shared. A catalog entry covers the union of what was observed. The
+intersection says which part every title relies on.
+
+Churn that both windows happened to share matches by identity too. In that
+first intersection, Steam's logs and Windows' own state outnumbered the
+anti-cheat's records by about nine to one. `suggest` attributes by signer and folder, so
+the draft does not include that churn. A third footprint thins it.
+
 A title observed with the anti-cheat **already installed** has it missing from
 its footprint, and then so does the intersection. That errs towards too little
 — a shared footprint without the anti-cheat's own service is conspicuous — but

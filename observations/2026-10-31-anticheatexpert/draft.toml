@@ -1,0 +1,106 @@
+# DRAFT — generated 2026-10-31T12:10:12.765Z
+# REVIEW EVERY FIELD BEFORE SUBMITTING.
+#
+# This is a hypothesis produced from an observation diff, not an entry.
+# CONTRIBUTING.md rejects entries that are not derived from a diff; it does
+# not accept one that was derived from a diff and never read.
+#
+# Publishers seen in this diff:
+#       2 file(s)  ACEVILLE PTE LTD
+#       2 file(s)  Microsoft Windows Hardware Compatibility Publisher
+#
+# Before submitting:
+#   - 182 file(s) inside game libraries were left out: a game's own files, its
+#     copy of the anti-cheat included, are the game's footprint, and an
+#     anti-cheat entry must not claim them. Title folders: `Arknights Endfield`.
+#   - KERNEL DRIVER service `ACE-ADVT` (image
+#     `C:\WINDOWS\system32\drivers\ACE-ADVT.sys`) was added but nothing ties it
+#     to ACEVILLE PTE LTD, so it was left out. Add it back only if it is this
+#     anti-cheat's.
+#   - driver file `C:\WINDOWS\System32\drivers\ACE-ADVT.sys` was added but
+#     nothing ties it to ACEVILLE PTE LTD, so it was left out. Add it to
+#     `drivers` only if it is this anti-cheat's.
+#   - a driver was observed but not at boot start. Vanguard has been seen
+#     configured either way, so confirm the start type rather than assuming this
+#     one generalises.
+#   - 111 added file(s) could not be attributed to this publisher and were left
+#     out. That is ordinary machine churn between the two snapshots; check the
+#     diff if the footprint looks short.
+#   - 20 added registry key(s) could not be attributed to this anti-cheat and
+#     were left out.
+#   - 1 key(s) were seen in one WOW64 view only and are recorded that way rather
+#     than as `both`:
+#     `HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\AntiCheatExpert`
+#     (64-bit view only). `HKLM\SOFTWARE` is redirected and `HKLM\SYSTEM` is
+#     not, so a single view is usually a fact about redirection — but confirm
+#     it, because widening to `both` claims a key the observation never saw.
+#   - `ACE-CORE1024303.sys` and `ACE-CORE2024303.sys` differ only in the digit
+#     after `ACE-CORE` and end in the same id, `24303`, which no key in this
+#     footprint carries: per-title drivers. Another title installs its own under
+#     its own id, and the catalog lists drivers by exact name, so an entry
+#     covering every title needs a pattern the schema does not have (docs/04)
+#     — a maintainer's decision, not a draft's.
+#   - no residue diff was given, so every path is classified from the install
+#     diff alone. docs/16 calls the residue diff the more valuable of the two
+#     — it is the exact set of things the vendor's uninstaller leaves behind.
+#   - `shared` is `true` and must stay so until at least two titles have been
+#     observed. docs/04: a wrong `shared = false` is the G1 violation this
+#     project exists to prevent.
+#   - verify every signer with `signtool verify /v /pa <file>` and paste the
+#     output into the pull request, per the docs/16 checklist.
+
+[[anticheat]]
+id = "REVIEW-me"
+display = "REVIEW: ACEVILLE PTE LTD"
+vendor = "ACEVILLE PTE LTD"
+kind = "kernel"
+shared = true
+risk = "high"
+authenticode_cn = ["ACEVILLE PTE LTD"]
+file_hashes = []
+services = [
+    "ACE-CORE1024303",
+    "ACE-CORE2024303",
+    "AntiCheatExpert Protection",
+]
+drivers = [
+    "ACE-BASE.sys",
+    "ACE-CORE1024303.sys",
+    "ACE-CORE2024303.sys",
+]
+tasks = []
+firewall_rules = []
+event_sources = []
+
+[[anticheat.paths]]
+path = '%ProgramFiles%\AntiCheatExpert'
+class = "data"
+
+[[anticheat.paths]]
+path = '%ProgramData%\AntiCheatExpert'
+class = "data"
+
+[[anticheat.registry]]
+key = 'HKCU\SOFTWARE\appdatalow\AntiCheatExpert\{D15B7548-72D6-4BF4-93E7-98A44949A3BC}\Tencent'
+view = "both"
+class = "config"
+
+[[anticheat.registry]]
+key = 'HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\AntiCheatExpert'
+view = "64"
+class = "config"
+
+[[anticheat.registry]]
+key = 'HKLM\SYSTEM\CurrentControlSet\Services\ACE-CORE1024303'
+view = "both"
+class = "config"
+
+[[anticheat.registry]]
+key = 'HKLM\SYSTEM\CurrentControlSet\Services\ACE-CORE2024303'
+view = "both"
+class = "config"
+
+[[anticheat.registry]]
+key = 'HKLM\SYSTEM\CurrentControlSet\Services\AntiCheatExpert Protection'
+view = "both"
+class = "config"

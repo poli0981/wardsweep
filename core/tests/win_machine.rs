@@ -208,6 +208,7 @@ fn drafts() -> Catalog {
     for draft in [
         "observations/2026-10-09-ea-anticheat/draft.toml",
         "observations/2026-10-10-anticheatexpert/draft.toml",
+        "observations/2026-10-31-anticheatexpert/draft.toml",
     ] {
         let body = std::fs::read_to_string(root.join(draft)).expect("the draft is committed");
         text.push_str(&body);

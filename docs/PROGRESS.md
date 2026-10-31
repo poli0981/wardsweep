@@ -3,9 +3,9 @@
 Where the project actually stands, and what to pick up next. `CHANGELOG.md`
 records what happened; this file records what is true now and what is not done.
 
-Last updated **2026-10-10**, at the end of the 2026-10-09 observation cycle —
-see "Next, in order" below. The audit of 2026-10-08 and the work that followed
-it are under "The 2026-10-08 audit".
+Last updated **2026-10-31**, after that day's ACE cycle — see "Next, in
+order" below. The audit of 2026-10-08 and the work that followed it are under
+"The 2026-10-08 audit".
 
 ---
 
@@ -30,9 +30,11 @@ architecture survived contact, its protocol did not survive it unamended.
 Three anti-cheats have since been observed leaving through their own
 uninstallers:
 
-- **AntiCheatExpert** left **nothing of its own**, twice: in August, and on
-  2026-10-10 behind a different title, this time with empty keys and
-  directories in view.
+- **AntiCheatExpert** left **nothing of its own**, three times:
+  - in August;
+  - on 2026-10-10, behind a different title, with empty keys and directories
+    in view this time;
+  - on 2026-10-31.
 - **Riot Vanguard** left two files and two empty directories, which its own
   reinstall did not reset either.
 - **EA AntiCheat**, observed from a clean baseline, left the 32-bit view of a
@@ -78,6 +80,18 @@ compare against. The third, in October, added three more:
   Since 2026-10-30 the libraries Steam and Epic name are walked
   (`docs/16`).
 
+The fourth ACE cycle, on 2026-10-31, intersected two titles' footprints for the
+first time. Every observed ACE install had three things in common: its
+service, its folders and its uninstall entry. They had no kernel driver in
+common. Versions 28.6 and 29.6 register different drivers, and each title adds
+a core pair named after its own id. Two more findings came out of the same
+cycle:
+- A title can carry ACE without ever using it here. Stella Sora carries ACE
+  18.4 and ran beside an installed 28.6 without touching it, as NTE had.
+- A window of minutes still reaches personal data. This time it was a game's
+  settings key holding its account's identifier, under a name the identifier
+  rule could not see.
+
 **Since 2026-10-30 WardSweep can audit.** With S1, S5 and S7 deferred for v0.1,
 the detection engine began: `wardsweep scan` matches a catalog against this
 machine through SCM, the `Services` key, both WOW64 views and `WinVerifyTrust`
@@ -86,7 +100,10 @@ disbelieved and what it could not read. Its first run, here, with the committed
 drafts, found ACE as Wuthering Waves installed it and EA AntiCheat's two
 leftover keys — and called ACE's driver suspicious, because Microsoft re-signs
 the kernel drivers it attests under its own name. That is now `probable`
-(`docs/05`). It still removes nothing, and the shipped catalog has no entries,
+(`docs/05`). On 2026-10-31 it ran again, with ACE 29.6 installed and unelevated.
+It found ACE, and confirmed nothing: the service refuses an unelevated query,
+the drivers carry Microsoft's signature, and the core images are absent while
+no game runs. It still removes nothing, and the shipped catalog has no entries,
 so it finds nothing until one is signed.
 
 ## What exists and is verified
@@ -99,7 +116,7 @@ so it finds nothing until one is signed.
 | `core/src/catalog/` — schema, Ed25519, integrity checks | Done |
 | `tools/catalog/` — `wardsweep-catalog` | Done. Implements the six invocations `catalog-verify.yml` runs, with a parity test; `sign` refuses a catalog any of them would refuse. |
 | `cli/` — `wardsweep catalog …`, `wardsweep scan`, `wardsweep observe …` | Verifies the signature **and** runs the four integrity checks before using a catalog, and warns when `minimum_app_version` is newer than the build. `scan` audits this machine (`--mode audit` only) and writes NDJSON with `--json`. `observe` runs the harness from beside the CLI, never from `PATH`. |
-| `core/src/scan/` — the detection engine, audit mode | The audit over a read-only machine view, and on Windows the view itself: SCM and the `Services` key, both WOW64 views, paths without following links, Authenticode offline. Unreadable is reported, never absent. Tested on a machine built from the EA install diff, and on Windows against the real one. Run here on 2026-10-30 with the committed drafts: ACE found and confirmed, EA's leftover keys found. Not yet: games, the filesystem walk, refcount (S2). |
+| `core/src/scan/` — the detection engine, audit mode | The audit over a read-only machine view, and on Windows the view itself: SCM and the `Services` key, both WOW64 views, paths without following links, Authenticode offline. Unreadable is reported, never absent. Tested on a machine built from the EA install diff, and on Windows against the real one. Run here on 2026-10-30 with the committed drafts: ACE found and confirmed, EA's leftover keys found. On 2026-10-31, with ACE 29.6 installed, ACE was found and nothing could be confirmed unelevated (`docs/05`). Not yet: games, the filesystem walk, refcount (S2). |
 | `catalog/catalog.toml` | Signed, and **empty of entries** on purpose — see below |
 | `core/benches/scan_corpus.rs` | Done, gated on the hard-fail budgets in [`10`](10-PERF-BUDGET.md) |
 | `ui/` — WPF shell | Shell only, plus the architecture tests that assert the UI has no destructive code path |
@@ -107,7 +124,8 @@ so it finds nothing until one is signed.
 | CI — SonarCloud | One analysis of C# and Rust with coverage for both, plus the workflows and scripts. Informational; Rust is brought in through `sonar.text.inclusions` and a step fails if it drops out (`docs/12`). Needs Automatic Analysis off in the project. |
 | Spike S3 — split-privilege architecture | **PASS.** All six criteria measured — 23 checks, 0 failed. `spikes/S3-RESULT.md`. Throwaway code in `spikes/s3-split-privilege/`, unreachable from either build. |
 | `observations/2026-08-19-anticheatexpert/` | **First real observation.** Uninstall half of the `docs/16` cycle, committed with its diff, draft entry and notes. The reinstall half now needs a new full cycle: its raw snapshots are gone (next step 1). |
-| `observations/2026-10-10-anticheatexpert/` | **ACE's install, by a second title, and its uninstall.** It left nothing of its own. Wuthering Waves' first launch installed ACE 28.6: a service, a kernel driver whose image stays on disk, and per-title state keyed by a game id — two core drivers and a per-user key — beside the shared parts. Every installed binary is a byte copy of the game's payload; the installer doubles as the uninstaller. Draft pinned by a test. Next: a second title on the installed ACE, then the residue half. |
+| `observations/2026-10-10-anticheatexpert/` | **ACE's install, by a second title, and its uninstall.** It left nothing of its own. Wuthering Waves' first launch installed ACE 28.6: a service, a kernel driver whose image stays on disk, and per-title state keyed by a game id — two core drivers and a per-user key — beside the shared parts. Every installed binary is a byte copy of the game's payload; the installer doubles as the uninstaller. Draft pinned by a test. The residue half followed the same day, and a second title on the installed ACE on 2026-10-31. |
+| `observations/2026-10-31-anticheatexpert/` | **ACE under two more titles, and its first shared footprint.** Stella Sora ran on an installed ACE 28.6 and changed nothing of it. ACE's own uninstaller then removed 28.6 and left nothing of its own. Arknights: Endfield installed ACE 29.6 on a machine without ACE, with a different set of drivers: `ACE-ADVT` and a core pair registered as services under the title's id, `24303`, with the core images absent while the game is closed. `shared.json` intersects that footprint with Wuthering Waves': the service, the folders and the uninstall entry are shared, and no driver is. The draft and the intersection are both pinned by tests. |
 | `observations/2026-10-09-ea-anticheat/` | **First observation from a clean baseline, both halves.** EA AntiCheat's install, by FC 26's first launch through Steam's install script: a service, a minifilter driver SCM does not list until a restart and whose image is absent while no game runs, and EA's own record of the games that installed it. Its uninstall, through Steam, left the 32-bit view of a key it removed in the 64-bit one, its per-user key, and a stale SCM entry until the next boot. Draft scoped with `--only` and pinned by a test. |
 | `tools/observe/` — the observation harness | **`snapshot`, `diff`, `suggest`, `intersect`, `redact`, `refilter`.** Services, filesystem and registry, with Authenticode signer clustering and both WOW64 views. Never records account identity, credentials, activity history or G3 material, in the registry or on disk, and the differ re-applies that policy to older snapshots. Snapshot format 2 also records registry keys left standing with no value and oversized values by size, and `diff` refuses to compare across formats. A draft entry is generated from the shipped schema, is proven to load through the real parser, and each committed draft is pinned by a test to its committed diff. Scheduled tasks, firewall, event sources and environment are named as `not_captured` rather than omitted. |
 
@@ -247,8 +265,9 @@ fixes those diffs prompted first (#50 to #52):
 - **AntiCheatExpert, both halves** (`observations/2026-10-10-anticheatexpert/`):
   - installed by Wuthering Waves, a second title after August's;
   - removed by its own uninstaller, leaving nothing of its own.
-  - It keeps per-title state keyed by a game id, and its uninstaller installs
-    both services again before removing them.
+  - It keeps per-title state keyed by a game id. That time its uninstaller
+    installed both services again before removing them; on 2026-10-31 it did
+    not.
 - **A second ACE title did not engage ACE.** NTE, from Steam, ran once with ACE
   installed and touched nothing of ACE's.
 
@@ -256,27 +275,34 @@ The follow-up is done: after a restart, `sc query EAAntiCheat` answered 1060 on
 2026-10-30. Recorded in the EA notes, with the residue computed against the
 clean baseline.
 
-**2. ACE from two more titles: prepared, waiting for the maintainer.** ACE is
-installed again — Wuthering Waves reinstalled it on 2026-10-12 — and two ACE
-titles are in the Steam library on `D:`: Stella Sora and Arknights: Endfield.
-The cycle is ready in `%LOCALAPPDATA%\WardSweep\observations\2026-10-30-ace\`:
-a collector pinned for it (built from `c3e1532`, its SHA-256 in
-`collector.txt`) and `run-cycle.ps1`, which takes each snapshot in turn,
-refuses while a game or ACE runs, and resumes where it stopped. Run it in an
-**elevated** PowerShell:
+**2. Done: ACE from two more titles** (`observations/2026-10-31-anticheatexpert/`).
+The maintainer ran the prepared cycle on 2026-10-31: four snapshots in one boot,
+elevated, by a collector pinned for it. What it showed:
+- **Stella Sora**, on the ACE 28.6 that Wuthering Waves installed, changed
+  nothing of ACE's. It carries ACE 18.4, as NTE does, and NTE changed nothing
+  either on 2026-10-10. The question of what a second title adds to an
+  installed ACE is therefore still open, for a title that actually engages it.
+- **ACE's own uninstaller** removed 28.6 and left nothing of its own, for the
+  third time. This time it logged no SCM events.
+- **Arknights: Endfield** installed ACE 29.6 on a machine without ACE. It
+  registers `ACE-ADVT`, plus a core pair as services named after the title's
+  id, `ACE-CORE1024303` and `ACE-CORE2024303`. The core images are absent while
+  the game is closed. The service admits only SYSTEM and Administrators.
 
-1. `00`, ACE as Wuthering Waves installed it.
-2. Stella Sora, played past login, closed; then `01`. `00`→`01` is what a
-   second title adds to an ACE already installed.
-3. ACE's own `Uninstaller.exe`; then `02`.
-4. Arknights: Endfield, played past login, closed; then `03`. `02`→`03` is
-   ACE's install footprint by a third title, from a machine without it —
-   the second input `observe intersect` has been waiting for (step 4).
+The harness fixes these windows prompted are recorded in `CHANGELOG.md` and
+`docs/16`.
 
-Then: the two diffs, `intersect` with
-`observations/2026-10-10-anticheatexpert/install.json`, `suggest`, `review`
-and `redact`, and `observations/2026-10-30-anticheatexpert/` with notes, meta,
-draft and a pinned test.
+Next for ACE, while 29.6 is installed:
+1. a snapshot of the current state;
+2. Wuthering Waves, which engages ACE, launched past login and closed, then a
+   snapshot;
+3. 29.6's own uninstaller, then a snapshot;
+4. Stella Sora on a machine without ACE, then a snapshot.
+
+The cycle answers three questions: what a second engaging title does to an
+installed ACE, what 29.6 leaves behind, and whether a title carrying 18.4
+installs ACE at all. The cycle needs a script and a collector pinned to the
+build that has this cycle's fixes.
 
 **3. A second title carrying Riot Vanguard**: blocked on this machine while
 Vanguard is failing (step 0). The Vanguard cycle is complete, both halves, and
@@ -291,12 +317,18 @@ forward:
 - `vgk` is installed at `SYSTEM_START` and lowered to `demand` by Vanguard's own
   service minutes into a boot. `risk` must not be inferred from a late reading.
 
-**4. Feed `observe intersect`.** It was written on 2026-10-08 and is waiting
-for input. It turns footprints of one anti-cheat under several titles into the
-shared footprint, which is what makes a `shared = true` entry right and what S2
-starts from. It needs two titles' install footprints, each from a machine
-without the anti-cheat. Wuthering Waves' ACE footprint is one, and step 2's
-Arknights: Endfield footprint will be the other.
+**4. Done: the first intersection.** `observe intersect` turned ACE's footprints
+under Wuthering Waves (28.6) and Arknights: Endfield (29.6) into
+`observations/2026-10-31-anticheatexpert/shared.json`, which a test pins to
+both. Every observed install had:
+- the service `AntiCheatExpert Protection`;
+- its folders under Program Files and ProgramData;
+- its uninstall entry.
+
+No kernel driver is shared, because each version registers different ones.
+Matching by identity also keeps churn that both windows happened to have; a
+third title's footprint would thin it (`docs/16`). This is what S2 starts
+from.
 
 **5. Run S1 and S2**, which S3 unblocked, in parallel. **Read
 [`15`](15-TEST-MACHINE-PROTOCOL.md) before S1 touches real hardware**: the
@@ -315,7 +347,9 @@ a missing image under a present key not a removal, both WOW64 views, and
 unreadable never absent. Next for it:
 - games, from the launchers' install records (`appmanifest_*.acf`, Epic's
   `.item` files), which the residue and the refcount both need;
-- the bounded filesystem walk, with the signature cache `docs/05` describes;
+- the bounded filesystem walk, with the signature cache `docs/05` describes.
+  It is also what would let an unelevated audit confirm ACE 29.6, whose only
+  vendor-signed files sit in its folder;
 - `--mode orphan` and `full`, after refcount (step 6);
 - S4 and S6, which measure the scanner and can now be run against it.
 
@@ -336,6 +370,8 @@ unreadable never absent. Next for it:
   - name per-title files, ACE's `ACE-CORE1<id>.sys`, by pattern rather than by
     one title's name. Pointed out in the review notes now; a pattern in an
     entry needs a schema decision, under "Open, needs a maintainer decision".
+    Since 2026-10-31 it is also pointed out when no key carries the id, as
+    under ACE 29.6.
 - A scoped residue diff. A residue taken against a clean baseline spans the
   hours between the two snapshots, and EA's spanned fourteen of a machine in
   use: committing it would publish a day of unrelated activity, so its EA
@@ -384,6 +420,15 @@ that S2 should start from rather than rediscover:
 - ACE keeps per-title state keyed by a game id: two core drivers named after
   it, and a per-user key. A refcount resolver can read which titles registered
   with an installed ACE from those, beside counting installed games itself.
+  Under 29.6, the id is in the core drivers' names only, and those drivers are
+  services as well as files.
+- **A title can carry an anti-cheat without having installed it.** On
+  2026-10-31, four titles in the library carried ACE in their own folders, and
+  only two had installed it here. The other two carry ACE 18.4 and ran past
+  login beside a newer installed ACE without touching it. Each could install
+  ACE on a machine without it, so each is a reference whatever it has done
+  here. ACE writes `pld.dat` into the folder of a title that installed it,
+  which tells the two kinds apart, but it is a lead and never a count.
 
 ## Open, needs a maintainer decision
 
@@ -405,8 +450,8 @@ that S2 should start from rather than rediscover:
 - **How Stage 3 removes a driver SCM does not know.** [`06`](06-REMOVAL-PIPELINE.md)
   leaves it open. Two observed drivers need an answer: EA's minifilter, which SCM
   does not know until a reboot, and NTE's, which SCM never knows.
-- **Catalog entries from the drafts.** Vanguard, ACE (twice) and EA AntiCheat
-  have drafts pinned to their diffs. Turning any of them into a `catalog/` entry
+- **Catalog entries from the drafts.** Vanguard, ACE (three times) and EA
+  AntiCheat have drafts pinned to their diffs. Turning any of them into a `catalog/` entry
   needs maintainer sign-off and the `docs/16` checklist (signer verification,
   and a second title before `shared` can be argued).
 - **A launcher a game's install script installs.** FC 26's Steam install script
@@ -414,12 +459,14 @@ that S2 should start from rather than rediscover:
   running service. Whether WardSweep offers to remove such a launcher —
   refcounted across the games that use it, as a shared anti-cheat is — or
   only reports it, is a product decision this observation raised.
-- **Per-title driver names.** ACE installs `ACE-CORE1<id>.sys` and
-  `ACE-CORE2<id>.sys` for each title. The catalog lists drivers by exact name
-  and the deny-list's carve-outs are exact, so an entry either lists every
-  title's pair it has seen or the schema gains a pattern — which touches
-  `catalog/` and `core/src/safety/` and needs sign-off. `suggest` points such
-  drivers out and decides nothing.
+- **Per-title driver names.** For each title, ACE installs a core pair named
+  `ACE-CORE1` or `ACE-CORE2`, then a `0`, then the title's id: `6095005` for
+  Wuthering Waves, `24303` for Arknights: Endfield. Under 29.6 the pair is
+  registered as services, so the names are service names as well as driver
+  files. The catalog lists both by exact name, and the deny-list's carve-outs
+  are exact. So either an entry lists every title's pair it has seen, or the
+  schema gains a pattern. A pattern touches `catalog/` and `core/src/safety/`
+  and needs sign-off. `suggest` points such drivers out and decides nothing.
 
 ## What S3 changed, in one place
 
