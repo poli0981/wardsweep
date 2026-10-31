@@ -356,6 +356,30 @@ The catalog (`catalog/catalog.toml`) is versioned separately — see
   platform.
 
 ### Fixed
+- **Identity the 2026-10-31 ACE cycle reached, which no rule named.** Windows
+  of four to thirteen minutes were enough to reach:
+  - Credential Manager's saved credentials;
+  - Windows' identity cache;
+  - Google Drive for desktop's folder, named after the account's identifier;
+  - the packaged Claude app's data folder, with its session folders and a list
+    of the worktrees they opened;
+  - a game SDK's identifier for the installation, under
+    `HKCU\SOFTWARE\Gryphline\sdk_data`.
+
+  The walk and the registry policy now leave all of them out. No committed diff
+  held any of them.
+
+  The cycle also found the account's, the character's and a session's
+  identifiers in the game's own settings key. Unity writes each name with a
+  hash after it, so `redact`'s rule for identifier names could not see them.
+  `redact` now reads past that hash, and also masks names ending in `RoleId` or
+  `_uid`.
+- **`suggest` points out per-title drivers when no key carries the id.** ACE
+  29.6, installed by Arknights: Endfield, writes no `Tencent\<id>` key. It
+  registers its core drivers as services, `ACE-CORE1024303` and
+  `ACE-CORE2024303`, and the names are the only place the id appears. Two names
+  that differ only in the digit after a shared stem, and end in the same
+  number, are now named for the reviewer, as a key's id already was.
 - An attestation-signed kernel driver no longer makes an audit `suspicious`.
   Microsoft re-signs third-party drivers as *Microsoft Windows Hardware
   Compatibility Publisher*, which names no vendor: such a driver is now

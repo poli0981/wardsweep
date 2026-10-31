@@ -161,6 +161,11 @@ pub const ID_PLACEHOLDER: &str = "%ID%";
 /// EA's anti-cheat keeps `LastSessionId` and `LastServiceSessionId` under its
 /// own key. The key and the value names are footprint and stay; the identifiers
 /// mean something only to the vendor's servers, and are masked.
+///
+/// Arknights: Endfield keeps the account's and its character's identifiers in
+/// its settings key, as `PLDK_cachedUserId`, `PLDK_cachedRoleId` and
+/// `u8sdk_cached_uid`. `_uid` keeps its underscore so that a value named after a
+/// GUID is not taken for one.
 const IDENTIFIER_NAMES: &[&str] = &[
     "sessionid",
     "deviceid",
@@ -169,6 +174,8 @@ const IDENTIFIER_NAMES: &[&str] = &[
     "installid",
     "userid",
     "accountid",
+    "roleid",
+    "_uid",
 ];
 
 /// Redact a whole document: learn the account names, rewrite, then audit.
@@ -440,10 +447,21 @@ pub fn rewrite(
 
 /// Whether a registry value's name says it holds an opaque identifier.
 fn names_an_identifier(name: &str) -> bool {
-    let lowered = name.to_ascii_lowercase();
+    let lowered = without_unity_hash(name).to_ascii_lowercase();
     IDENTIFIER_NAMES
         .iter()
         .any(|suffix| lowered.ends_with(suffix))
+}
+
+/// A value name without the hash Unity appends to it.
+///
+/// Unity keeps a game's `PlayerPrefs` in the registry as the name it was given,
+/// `_h` and a hash of that name: `unity.player_sessionid_h1351336811`. The hash
+/// would otherwise hide every ending above.
+fn without_unity_hash(name: &str) -> &str {
+    name.rsplit_once("_h")
+        .filter(|(_, hash)| !hash.is_empty() && hash.bytes().all(|byte| byte.is_ascii_digit()))
+        .map_or(name, |(name, _)| name)
 }
 
 /// Mask the data of a registry value, or of a change to one, whose name says
@@ -1010,6 +1028,52 @@ mod tests {
         assert!(text.contains("sz:%ID%"), "the type survives a field change");
         assert!(text.contains("1.2.3"), "an ordinary value is untouched");
         assert_eq!(report.applied.get(ID_PLACEHOLDER), Some(&3));
+    }
+
+    #[test]
+    fn a_game_s_cached_identifiers_are_masked_behind_unity_s_hash() {
+        // Arknights: Endfield's settings key, 2026-10-31, with made-up values:
+        // Unity writes each `PlayerPrefs` name with `_h` and a hash after it,
+        // and the identifiers as ASCII in a binary value.
+        let mut document = serde_json::json!({
+            "registry": [{
+                "key": "HKCU\\SOFTWARE\\Gryphline\\Endfield",
+                "after": {"values": [
+                    {"name": "PLDK_cachedUserId_h447948701", "kind": "binary", "data": "31323334353637383900"},
+                    {"name": "PLDK_cachedRoleId_h211545240", "kind": "binary", "data": "39383736353433323100"},
+                    {"name": "u8sdk_cached_uid_h840306820", "kind": "binary", "data": "31323334353637383900"},
+                    {"name": "unity.player_sessionid_h1351336811", "kind": "binary", "data": "3131313131313100"},
+                    {"name": "unity.player_session_count_h922449978", "kind": "binary", "data": "3100"},
+                    {"name": "InstallGuid", "kind": "sz", "data": "{00000000-0000-0000-0000-000000000001}"},
+                    {"name": "Screenmanager Resolution Width_h182942802", "kind": "dword", "data": "2560"}
+                ]}
+            }]
+        });
+
+        let report = redact(&mut document);
+
+        let text = serde_json::to_string(&document).unwrap();
+        for identifier in ["3132333435", "3938373635", "31313131"] {
+            assert!(!text.contains(identifier), "{identifier} survived: {text}");
+        }
+        assert!(text.contains("\"PLDK_cachedUserId_h447948701\""), "{text}");
+        // A count, a value named after a GUID and a setting are not identifiers.
+        for kept in [
+            "\"3100\"",
+            "00000000-0000-0000-0000-000000000001",
+            "\"2560\"",
+        ] {
+            assert!(text.contains(kept), "{kept} was masked: {text}");
+        }
+        assert_eq!(report.applied.get(ID_PLACEHOLDER), Some(&4));
+    }
+
+    #[test]
+    fn only_a_trailing_unity_hash_is_set_aside() {
+        assert_eq!(without_unity_hash("a_userid_h123"), "a_userid");
+        assert_eq!(without_unity_hash("userid"), "userid");
+        assert_eq!(without_unity_hash("graph_height"), "graph_height");
+        assert_eq!(without_unity_hash("x_h"), "x_h");
     }
 
     #[test]

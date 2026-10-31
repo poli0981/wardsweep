@@ -150,6 +150,10 @@ pub const EXCLUDED_FRAGMENTS: &[&str] = &[
     // Windows' cache of the identities signed in to the machine, keyed by
     // their security identifiers.
     "\\microsoft\\identitystore\\",
+    // A game publisher's SDK keeps this installation's identifier, and an
+    // encrypted copy of it, in a key named after a hash. Written by Arknights:
+    // Endfield at its first launch.
+    "\\gryphline\\sdk_data\\",
     // --- Activity history --------------------------------------------------
     // Every program run, keyed by its path.
     "\\appcompatflags\\compatibility assistant\\",
@@ -460,9 +464,13 @@ mod tests {
             "HKCU\\SOFTWARE\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\SystemAppData\\Some.App_x\\PersistedPickerData\\Some.App_x!App",
             "HKCU\\SOFTWARE\\Classes\\Local Settings\\MrtCache\\x",
             "HKLM\\SOFTWARE\\Microsoft\\GamingServices",
+            // Found in the 2026-10-31 AntiCheatExpert cycle.
+            "HKCU\\SOFTWARE\\Gryphline\\sdk_data\\0123456789abcdef0123456789abcdef",
         ] {
             assert!(is_excluded(key), "{key} must not be walked");
         }
+        // The rule names the SDK's key, not the publisher's whole subtree.
+        assert!(!is_excluded("HKCU\\SOFTWARE\\Gryphline\\Endfield"));
     }
 
     #[test]
