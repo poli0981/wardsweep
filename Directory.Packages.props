@@ -38,7 +38,7 @@
       Meziantou.Analyzer alongside TreatWarningsAsErrors.
     -->
     <GlobalPackageReference Include="Roslynator.Analyzers" Version="5.0.1" />
-    <GlobalPackageReference Include="Meziantou.Analyzer" Version="3.0.317" />
+    <GlobalPackageReference Include="Meziantou.Analyzer" Version="3.0.320" />
   </ItemGroup>
 
 </Project>
